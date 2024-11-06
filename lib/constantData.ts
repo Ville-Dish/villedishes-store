@@ -307,3 +307,26 @@ export const testimonials = [
 
 export const taxRate = 5;
 export const shippingFee = 10;
+
+export const demoItems = [
+  {
+    name: "Jollof rice",
+    quantity: 0,
+    price: 0.0,
+  },
+  {
+    name: "Suya",
+    quantity: 0,
+    price: 0.0,
+  },
+  {
+    name: "Puff-puff",
+    quantity: 0,
+    price: 0.0,
+  },
+  {
+    name: "Zobo",
+    quantity: 0,
+    price: 0.0,
+  },
+];
