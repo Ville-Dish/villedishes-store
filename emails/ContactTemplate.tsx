@@ -15,18 +15,12 @@ import { EmailHeader } from "./email-header";
 import { EmailFooter } from "./email-footer";
 
 type ContactEmailProps = {
-  email: string;
   subject?: string;
   name: string;
   message: string;
 };
 
-const ContactTemplate = ({
-  name,
-  email,
-  message,
-  subject,
-}: ContactEmailProps) => {
+const ContactTemplate = ({ name, message, subject }: ContactEmailProps) => {
   const previewText = subject ? `${subject}` : "General Inquiry";
   return (
     <Html>
