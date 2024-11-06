@@ -17,39 +17,39 @@ import { EmailFooter } from "./email-footer";
 import { EmailHeader } from "./email-header";
 import { demoItems } from "@/lib/constantData";
 
-interface OrderConfirmationEmailProps {
+type OrderConfirmationEmailProps = {
   customerName: string;
   orderNumber: string;
   orderDate: string;
-  subTotalAmount: number;
+  subtotal: number;
   tax: number;
-  shipping: number;
-  totalAmount: number;
+  shippingFee: number;
+  total: number;
   items: Array<{ name: string; quantity: number; price: number }>;
-  estimatedDelivery: string;
-}
+  estimatedDelivery?: string;
+};
 
-const OrderConfirmationTemplate: React.FC<OrderConfirmationEmailProps> = ({
-  customerName,
-  orderNumber,
-  orderDate,
-  subTotalAmount,
-  tax,
-  shipping,
-  totalAmount,
-  items,
-  estimatedDelivery,
-}) => {
-  const previewText = `Order Confirmation for ${customerName}`;
+const OrderConfirmationTemplate = ({
+  customerName, //get from user input
+  orderNumber, // auto generate when admin click verify payment
+  orderDate, // get from date when user click place order
+  subtotal, // got from cart
+  tax, // got from cart
+  shippingFee, // got from cart
+  total, // got from cart
+  items, // got from cart
+  estimatedDelivery, // got from cart
+}: OrderConfirmationEmailProps) => {
   customerName = customerName || "John Doe";
   orderNumber = orderNumber || "ORD-00000";
   orderDate = orderDate || "2023-03-01";
-  subTotalAmount = subTotalAmount || 0.0;
+  subtotal = subtotal || 0.0;
   tax = tax || 0.0;
-  shipping = shipping || 0.0;
-  totalAmount = totalAmount || 0.0;
+  shippingFee = shippingFee || 0.0;
+  total = total || 0.0;
   items = items || demoItems;
   estimatedDelivery = estimatedDelivery || "2023-03-05";
+  const previewText = `Order Confirmation for ${customerName}`;
 
   return (
     <Html>
@@ -122,12 +122,12 @@ const OrderConfirmationTemplate: React.FC<OrderConfirmationEmailProps> = ({
                       Subtotal
                     </Column>
                     <Column className="w-1/4 p-2">
-                      ${subTotalAmount.toFixed(2)}
+                      ${subtotal.toFixed(2)}
                     </Column>
                   </Row>
                   <Row className="text-right">
                     <Column className="w-1/2"></Column>
-                    <Column className="w-1/4 p-2 font-semibold">Tax</Column>
+                    <Column className="w-1/4 p-2 font-semibold">Tax(5%)</Column>
                     <Column className="w-1/4 p-2">${tax.toFixed(2)}</Column>
                   </Row>
                   <Row className="text-right">
@@ -136,16 +136,14 @@ const OrderConfirmationTemplate: React.FC<OrderConfirmationEmailProps> = ({
                       Shipping
                     </Column>
                     <Column className="w-1/4 p-2">
-                      ${shipping.toFixed(2)}
+                      ${shippingFee.toFixed(2)}
                     </Column>
                   </Row>
                   <Hr className="border-gray-300 my-2" />
                   <Row className="text-right font-bold">
                     <Column className="w-1/2"></Column>
                     <Column className="w-1/4 p-2">Total</Column>
-                    <Column className="w-1/4 p-2">
-                      ${totalAmount.toFixed(2)}
-                    </Column>
+                    <Column className="w-1/4 p-2">${total.toFixed(2)}</Column>
                   </Row>
                 </Section>
               </Section>

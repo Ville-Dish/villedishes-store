@@ -17,37 +17,33 @@ import {
 import { EmailFooter } from "./email-footer";
 import { EmailHeader } from "./email-header";
 
-interface VerifyPaymentAdminEmailProps {
-  orderNumber: string;
+type VerifyPaymentAdminEmailProps = {
   customerName: string;
   paymentAmount: number;
   paymentDate: string;
-  paymentMethod: string;
+  paymentMethod?: string;
   referenceNumber: string;
   verificationCode: string;
-  verificationLink: string;
-}
+  verificationLink?: string;
+};
 
-export const VerifyPaymentTemplate: React.FC<VerifyPaymentAdminEmailProps> = ({
-  orderNumber,
-  customerName,
-  paymentAmount,
-  paymentDate,
+export const VerifyPaymentTemplate = ({
+  customerName, // get from user input in form
+  paymentAmount, // total from cart
+  paymentDate, // get from current date when user clicked place order button
   paymentMethod,
-  referenceNumber,
-  verificationCode,
+  referenceNumber, //get from form
+  verificationCode, //auto generate and store
   verificationLink,
-}) => {
-  const previewText = `Verify Payment for Order ${orderNumber}`;
-  orderNumber = orderNumber || "ORD-00000";
+}: VerifyPaymentAdminEmailProps) => {
+  const previewText = `Verify Payment for New Order`;
   customerName = customerName || "John Doe";
   paymentAmount = paymentAmount || 0.0;
   paymentDate = paymentDate || "2023-11-04";
-  paymentMethod = paymentMethod || "Interac";
+  paymentMethod = "Interac";
   referenceNumber = referenceNumber || "A0AaBCdE12FG";
   verificationCode = verificationCode || "000000";
-  verificationLink =
-    verificationLink || "http://localhost:3000/admin/verify-payment";
+  verificationLink = "http://localhost:3000/admin/verify-payment";
 
   return (
     <Html>
@@ -81,9 +77,6 @@ export const VerifyPaymentTemplate: React.FC<VerifyPaymentAdminEmailProps> = ({
                 <table className="w-full border-collapse">
                   <thead>
                     <tr className="bg-gray-200">
-                      <th className="p-3 text-left text-sm font-semibold text-gray-700">
-                        Order Number
-                      </th>
                       <th className="p-3 text-right text-sm font-semibold text-gray-700">
                         Amount Paid
                       </th>
@@ -100,9 +93,6 @@ export const VerifyPaymentTemplate: React.FC<VerifyPaymentAdminEmailProps> = ({
                   </thead>
                   <tbody>
                     <tr className="bg-gray-50">
-                      <td className="p-3 text-sm text-gray-700">
-                        {orderNumber}
-                      </td>
                       <td className="p-3 text-sm text-gray-700 text-right">
                         ${paymentAmount.toFixed(2)}
                       </td>
