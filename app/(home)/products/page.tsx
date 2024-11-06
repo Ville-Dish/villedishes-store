@@ -65,7 +65,7 @@ const ProductPage = () => {
                   No products found
                 </p>
                 <p className="text-gray-500 mt-2">
-                  Try adjusting your search or filter to find what you're
+                  Try adjusting your search or filter to find what you&apos;re
                   looking for.
                 </p>
                 <Button
