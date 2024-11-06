@@ -3,8 +3,6 @@ import { Banner } from "@/components/custom/banner";
 import { Button } from "@/components/ui/button";
 import { ChefHat, Clock, Truck } from "lucide-react";
 import Link from "next/link";
-import Image from "next/image";
-import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { popularProducts, testimonials } from "@/lib/constantData";
 import { useState } from "react";
@@ -82,14 +80,12 @@ export default function Home() {
             <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl text-center mb-12">
               Our Popular Menu
             </h2>
-            <div className="grid gap-6 lg:grid-cols-3 lg:gap-12">
-              <ProductCard
-                categories={categories}
-                items={filteredItems}
-                activeCategory={activeCategory}
-                onCategoryChange={setActiveCategory}
-              />
-            </div>
+            <ProductCard
+              categories={categories}
+              items={filteredItems}
+              activeCategory={activeCategory}
+              onCategoryChange={setActiveCategory}
+            />
             <div className="text-center mt-12">
               <Button asChild>
                 <Link href="/products">View Full Menu</Link>
@@ -106,7 +102,9 @@ export default function Home() {
               {testimonials.map((testimonial) => (
                 <Card key={testimonial.name}>
                   <CardContent className="pt-6">
-                    <p className="mb-4 italic">"{testimonial.quote}"</p>
+                    <p className="mb-4 italic">
+                      &quot;{testimonial.quote}&quot;
+                    </p>
                     <p className="font-bold">- {testimonial.name}</p>
                   </CardContent>
                 </Card>
