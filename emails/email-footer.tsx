@@ -16,7 +16,7 @@ export const EmailFooter = () => {
       }}
     >
       <Text>&copy; {currentYear} Villedishes. All rights reserved.</Text>
-      <Text>
+      <Text className="dynamic-text">
         This is an automated message. Please do not reply to this email.
       </Text>
       <Text>Email: villedishes@gmail.com | Phone: +1 (555) 789-4429</Text>

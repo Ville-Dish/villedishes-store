@@ -24,26 +24,32 @@ type VerifyPaymentAdminEmailProps = {
   paymentMethod?: string;
   referenceNumber: string;
   verificationCode: string;
+  orderId: number;
   verificationLink?: string;
 };
 
 export const VerifyPaymentTemplate = ({
-  customerName, // get from user input in form
-  paymentAmount, // total from cart
-  paymentDate, // get from current date when user clicked place order button
+  customerName,
+  paymentAmount,
+  paymentDate,
   paymentMethod,
-  referenceNumber, //get from form
-  verificationCode, //auto generate and store
+  referenceNumber,
+  verificationCode,
+  orderId,
   verificationLink,
 }: VerifyPaymentAdminEmailProps) => {
   const previewText = `Verify Payment for New Order`;
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
   customerName = customerName || "John Doe";
   paymentAmount = paymentAmount || 0.0;
   paymentDate = paymentDate || "2023-11-04";
   paymentMethod = "Interac";
   referenceNumber = referenceNumber || "A0AaBCdE12FG";
   verificationCode = verificationCode || "000000";
-  verificationLink = "http://localhost:3000/admin/verify-payment";
+  orderId = orderId || 1234567890;
+  verificationLink = `${
+    verificationLink || `${baseUrl}/admin/verify-payment`
+  }?orderId=${orderId}`;
 
   return (
     <Html>
@@ -74,40 +80,50 @@ export const VerifyPaymentTemplate = ({
                 >
                   Payment Details
                 </Heading>
-                <table className="w-full border-collapse">
-                  <thead>
-                    <tr className="bg-gray-200">
-                      <th className="p-3 text-right text-sm font-semibold text-gray-700">
-                        Amount Paid
-                      </th>
-                      <th className="p-3 text-right text-sm font-semibold text-gray-700">
-                        Payment Date
-                      </th>
-                      <th className="p-3 text-right text-sm font-semibold text-gray-700">
-                        Payment Method
-                      </th>
-                      <th className="p-3 text-right text-sm font-semibold text-gray-700">
-                        Reference Number
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr className="bg-gray-50">
-                      <td className="p-3 text-sm text-gray-700 text-right">
-                        ${paymentAmount.toFixed(2)}
-                      </td>
-                      <td className="p-3 text-sm text-gray-700 text-right">
-                        {paymentDate}
-                      </td>
-                      <td className="p-3 text-sm text-gray-700 text-right">
-                        {paymentMethod}
-                      </td>
-                      <td className="p-3 text-sm text-gray-700 text-right">
-                        {referenceNumber}
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
+                <Row className="bg-gray-200">
+                  <Column className="p-3 text-right">
+                    <Text className="text-sm font-semibold text-gray-700 m-0">
+                      Amount Paid
+                    </Text>
+                  </Column>
+                  <Column className="p-3 text-right">
+                    <Text className="text-sm font-semibold text-gray-700 m-0">
+                      Payment Date
+                    </Text>
+                  </Column>
+                  <Column className="p-3 text-right">
+                    <Text className="text-sm font-semibold text-gray-700 m-0">
+                      Payment Method
+                    </Text>
+                  </Column>
+                  <Column className="p-3 text-right">
+                    <Text className="text-sm font-semibold text-gray-700 m-0">
+                      Reference Number
+                    </Text>
+                  </Column>
+                </Row>
+                <Row className="bg-gray-50">
+                  <Column className="p-3 text-right">
+                    <Text className="text-sm text-gray-700 m-0">
+                      ${paymentAmount.toFixed(2)}
+                    </Text>
+                  </Column>
+                  <Column className="p-3 text-right">
+                    <Text className="text-sm text-gray-700 m-0">
+                      {paymentDate}
+                    </Text>
+                  </Column>
+                  <Column className="p-3 text-right">
+                    <Text className="text-sm text-gray-700 m-0">
+                      {paymentMethod}
+                    </Text>
+                  </Column>
+                  <Column className="p-3 text-right">
+                    <Text className="text-sm text-gray-700 m-0">
+                      {referenceNumber}
+                    </Text>
+                  </Column>
+                </Row>
               </Section>
 
               <Hr className="border-t border-gray-300 my-6" />

@@ -3,9 +3,9 @@ import {
   Container,
   Head,
   Heading,
-  Hr,
+  // Hr,
   Html,
-  Img,
+  // Img,
   Preview,
   Section,
   Text,
@@ -71,15 +71,15 @@ const coverSection = {
   backgroundColor: "#ffffff",
 };
 
-const imageSection = {
-  textAlign: "center" as const,
-  padding: "20px 0",
-};
+// const imageSection = {
+//   textAlign: "center" as const,
+//   padding: "20px 0",
+// };
 
-const logoStyle = {
-  maxWidth: "100%",
-  height: "auto",
-};
+// const logoStyle = {
+//   maxWidth: "100%",
+//   height: "auto",
+// };
 
 const h1 = {
   color: "#333333",
@@ -113,14 +113,14 @@ const codeText = {
   wordBreak: "break-word" as const,
 };
 
-const mainText = {
-  fontSize: "14px",
-  lineHeight: "24px",
-  margin: "16px 0",
-  color: "#333333",
-};
+// const mainText = {
+//   fontSize: "14px",
+//   lineHeight: "24px",
+//   margin: "16px 0",
+//   color: "#333333",
+// };
 
-const hrStyle = {
-  borderColor: "#e6ebf1",
-  margin: "20px 0",
-};
+// const hrStyle = {
+//   borderColor: "#e6ebf1",
+//   margin: "20px 0",
+// };
