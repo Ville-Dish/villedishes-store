@@ -25,6 +25,7 @@ const SHIPPING_FEE = shippingFee; // Example shipping fee
 
 const useCartStore = create<CartState>()(
   persist(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     (set, get) => ({
       cartItems: [],
       subtotal: 0,
