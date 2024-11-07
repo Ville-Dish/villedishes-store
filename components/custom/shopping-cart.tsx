@@ -16,18 +16,9 @@ import Link from "next/link";
 
 import useCartStore from "@/stores/useCartStore";
 
-interface CartItem {
-  id: string;
-  name: string;
-  price: number;
-  quantity: number;
-}
-
 export default function ShoppingCart() {
-  const { cartItems, addToCart, removeFromCart, subtotal, totalQuantity } =
-    useCartStore();
+  const { cartItems, removeFromCart, subtotal, totalQuantity } = useCartStore();
   const [sheetOpen, setSheetOpen] = useState(false);
-  console.log(cartItems.length);
   return (
     <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
       <SheetTrigger asChild>
