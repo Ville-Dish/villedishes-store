@@ -306,7 +306,7 @@ export const testimonials = [
 ];
 
 export const taxRate = 5;
-export const shippingFee = 10;
+export const shippingFee = 10.0;
 
 export const demoItems = [
   {
@@ -330,3 +330,6 @@ export const demoItems = [
     price: 0.0,
   },
 ];
+
+export const adminEmail = "villedishes@gmail.com";
+export const testEmail = "oluwapelumi.ajuwon@gmail.com";

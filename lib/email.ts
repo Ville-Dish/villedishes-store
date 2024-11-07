@@ -5,15 +5,16 @@ type EmailPayload = {
   to: string;
   subject: string;
   html: string;
+  replyTo: string;
 };
 
 // Replace with your SMTP credentials
 const smtpOptions = {
-  host: process.env.SMTP_HOST || "smtp.mailtrap.io",
-  port: parseInt(process.env.SMTP_PORT || "2525"),
-  secure: false,
+  host: process.env.SMTP_HOST || "smtp.gmail.com",
+  port: parseInt(process.env.SMTP_PORT || "465"),
+  secure: true,
   auth: {
-    user: process.env.SMTP_USER || "user",
+    user: process.env.SMTP_USER || "villedishes@gmail.com",
     pass: process.env.SMTP_PASSWORD || "password",
   },
 };
