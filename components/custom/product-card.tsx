@@ -136,7 +136,7 @@ export const ProductCard = ({
           {currentItems.map((item) => (
             <Card
               key={item.id}
-              className="flex flex-col justify-between overflow-hidden h-[250px] w-full md:w-[275px]"
+              className="flex flex-col justify-between overflow-hidden h-[250px] w-full md:w-[245px]"
             >
               <div className="relative w-full h-[120px]">
                 <Image
