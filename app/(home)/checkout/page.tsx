@@ -1,9 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
 import { Button } from "@/components/ui/button";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -12,21 +22,24 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import useCartStore from "@/stores/useCartStore";
+import { shippingFee, taxRate, testEmail } from "@/lib/constantData";
+import useOrderStore from "@/stores/useOrderStore";
+import { toast } from "sonner";
 
-type CartItem = {
-  id: number;
-  name: string;
-  quantity: number;
-  price: number;
-};
+const baseSchema = z.object({
+  firstName: z.string().min(2, "First name is required"),
+  lastName: z.string().min(2, "Last name is required"),
+  email: z.string().email("Valid email is required"),
+  phoneNumber: z.string().min(10, "Valid phone number is required"),
+  address: z.string().min(5, "Address is required"),
+  city: z.string().min(1, "City is required"),
+  postalCode: z.string().min(5, "Valid postal code is required"),
+  orderNotes: z.string().optional(),
+});
+
+type FormValues = z.infer<typeof baseSchema> & { referenceNumber?: string };
 
 export default function CheckoutPage() {
   const [orderPlaced, setOrderPlaced] = useState(false);
@@ -34,133 +47,329 @@ export default function CheckoutPage() {
 
   const { cartItems, subtotal, total } = useCartStore();
 
-  const tax = subtotal * 0.05; // Assuming 5% tax
+  const tax = subtotal * (taxRate / 100);
+  const shipping = shippingFee;
 
-  const handleSubmit = (event: React.FormEvent) => {
-    event.preventDefault();
-    setOrderPlaced(true);
+  const { addToPendingOrder, updatePendingOrder } = useOrderStore();
+  // const { clearCart } = useCartStore();
+
+  const [formSchema, setFormSchema] =
+    useState<z.ZodType<FormValues>>(baseSchema);
+
+  useEffect(() => {
+    if (payment) {
+      setFormSchema(
+        baseSchema.extend({
+          referenceNumber: z.string().min(1, "Reference number is required"),
+        })
+      );
+    } else {
+      setFormSchema(baseSchema);
+    }
+  }, [payment]);
+
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      firstName: "",
+      lastName: "",
+      email: "",
+      phoneNumber: "",
+      address: "",
+      city: "",
+      postalCode: "",
+      orderNotes: "",
+    },
+  });
+
+  const sendVerificationEmail = (orderDetails: OrderDetails) => {
+    // Call a function to send a verification email
+    // console.log("Sending verification email with order details:", orderDetails); // Log order details
+    // Use the data from the orderDetails, particularly the shippingInfo and order ID
+    fetch("/api/payment", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: orderDetails.shippingInfo.email,
+        to: testEmail,
+        subject: `VERIFY INTERAC PAYMENT FOR ${orderDetails.id}`,
+        customerName: `${orderDetails.shippingInfo.firstName} ${orderDetails.shippingInfo.lastName}`,
+        paymentAmount: orderDetails.total,
+        paymentDate: orderDetails.paymentDate,
+        referenceNumber: orderDetails.referenceNumber,
+        verificationCode: orderDetails.verificationCode,
+        orderId: orderDetails.id,
+      }),
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        toast.success("Payment Verified", {
+          description:
+            "An email has been sent to the user confirming their payment.",
+        });
+        console.log("Email sent successfully:", data);
+      })
+      .catch((error) => {
+        toast.error("Verification Failed", {
+          description:
+            error instanceof Error
+              ? error.message
+              : "An unknown error occurred",
+        });
+        console.error("Error sending email:", error);
+      });
   };
 
-  const handlePayment = (event: React.FormEvent) => {
-    event.preventDefault();
-    setPayment(true);
+  const onSubmit = (values: z.infer<typeof formSchema>) => {
+    const orderId = Date.now();
+    // console.log("FORM VALUES", values);
+    const orderDetails = {
+      id: orderId,
+      products: cartItems,
+      subtotal,
+      tax,
+      shippingFee: shipping,
+      total,
+      shippingInfo: { ...values },
+    };
+    console.log("ORDER DEETS", orderDetails);
+    if (!payment) {
+      addToPendingOrder(orderDetails);
+      setPayment(true);
+    } else {
+      const referenceNumber = values?.referenceNumber ?? "";
+      if (referenceNumber) {
+        updatePendingOrder(referenceNumber);
+        setOrderPlaced(true);
+        // Trigger email verification after order placement
+        sendVerificationEmail(orderDetails);
+
+        // Clear cart after successful order placement
+        // clearCart();
+      } else {
+        console.error("Reference number is required");
+      }
+    }
   };
 
   if (orderPlaced) {
     return (
-      <div className="flex flex-col min-h-screen">
+      <div className="flex flex-col min-h-screen bg-gray-50">
         <main className="flex-1 container mx-auto px-4 py-8">
-          <h1 className="text-3xl font-bold mb-8">Order Confirmation</h1>
-          <p className="mb-4">
-            Thank you for your order! Your delicious Nigerian cuisine will be on
-            its way as soon as your payment has been confirmed.
-          </p>
-          <p className="mb-4">
-            You will receive a confirmation email with your order number and
-            estimated delivery time.
-          </p>
-          <Button onClick={() => (window.location.href = "/")}>
-            Return to Home
-          </Button>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-3xl font-bold">
+                Order Confirmation
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p>
+                Thank you for your order! Your delicious Nigerian cuisine will
+                be on its way as soon as your payment has been confirmed.
+              </p>
+              <p>
+                You will receive a confirmation email with your order number and
+                estimated delivery time.
+              </p>
+              <Button onClick={() => (window.location.href = "/")}>
+                Return to Home
+              </Button>
+            </CardContent>
+          </Card>
         </main>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-screen bg-gray-50">
       <main className="flex-1 container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold mb-8">Checkout</h1>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <div>
-            <form onSubmit={handlePayment} className="space-y-8">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Shipping Information</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="firstName">First Name</Label>
-                      <Input id="firstName" required />
-                    </div>
-                    <div>
-                      <Label htmlFor="lastName">Last Name</Label>
-                      <Input id="lastName" required />
-                    </div>
-                  </div>
-                  <div>
-                    <Label htmlFor="address">Address</Label>
-                    <Input id="address" required />
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="state">City</Label>
-                      <Select>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a city" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="airdrie">Airdrie</SelectItem>
-                          <SelectItem value="calgary">Calgary</SelectItem>
-                          {/* Add more states as needed */}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label htmlFor="zipCode">Postal Code</Label>
-                      <Input id="zipCode" required />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader>
-                  <CardTitle>Order Notes</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Textarea
-                    placeholder="Any special instructions for your order?"
-                    className="resize-none"
-                  />
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent>
-                  <h4 className="font-semibold mb-2">Payment Instructions</h4>
-                  <p>
-                    Make payment via your interac. Our interac mail is
-                    villedishes@gmail.com
-                  </p>
-                </CardContent>
-              </Card>
-              {!payment && (
-                <Button type="submit" size="lg" className="w-full">
-                  Pay
-                </Button>
-              )}
-            </form>
-
-            {payment && (
-              <form onSubmit={handleSubmit} className="mt-8">
+        <h1 className="text-3xl font-bold mb-8 text-center">Checkout</h1>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2">
+            <Form {...form}>
+              <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="space-y-8"
+              >
                 <Card>
                   <CardHeader>
-                    <CardTitle>Payment Information</CardTitle>
+                    <CardTitle>Shipping Information</CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <div>
-                      <Label htmlFor="refNumber">Reference Number</Label>
-                      <Input id="refNumber" required />
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="firstName"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>First Name</FormLabel>
+                            <FormControl>
+                              <Input {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="lastName"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Last Name</FormLabel>
+                            <FormControl>
+                              <Input {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="email"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Email</FormLabel>
+                            <FormControl>
+                              <Input type="email" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="phoneNumber"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Phone Number</FormLabel>
+                            <FormControl>
+                              <Input type="tel" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    <FormField
+                      control={form.control}
+                      name="address"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Address</FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="city"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>City</FormLabel>
+                            <Select
+                              onValueChange={field.onChange}
+                              defaultValue={field.value}
+                            >
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select a city" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="airdrie">Airdrie</SelectItem>
+                                <SelectItem value="calgary">Calgary</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="postalCode"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Postal Code</FormLabel>
+                            <FormControl>
+                              <Input {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
                     </div>
                   </CardContent>
                 </Card>
-                <Button type="submit" size="lg" className="w-full mt-4">
-                  Place Order
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Order Notes</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <FormField
+                      control={form.control}
+                      name="orderNotes"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <Textarea
+                              placeholder="Any special instructions for your order?"
+                              className="resize-none"
+                              {...field}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent>
+                    <h4 className="font-semibold mb-2 mt-3">
+                      Payment Instructions
+                    </h4>
+                    <p>
+                      Make payment via your interac. Our interac mail is
+                      villedishes@gmail.com
+                    </p>
+                  </CardContent>
+                </Card>
+                {payment && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Payment Information</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <FormField
+                        control={form.control}
+                        name="referenceNumber"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Reference Number</FormLabel>
+                            <FormControl>
+                              <Input {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </CardContent>
+                  </Card>
+                )}
+                <Button type="submit" size="lg" className="w-full">
+                  {payment ? "Place Order" : "Pay"}
                 </Button>
               </form>
-            )}
+            </Form>
           </div>
-
           <div>
             <Card>
               <CardHeader>
@@ -188,8 +397,12 @@ export default function CheckoutPage() {
                       <p>${subtotal.toFixed(2)}</p>
                     </div>
                     <div className="flex justify-between">
-                      <p>Tax (5%)</p>
+                      <p>Tax ({taxRate}%)</p>
                       <p>${tax.toFixed(2)}</p>
+                    </div>
+                    <div className="flex justify-between">
+                      <p>Shipping Fee</p>
+                      <p>${shipping.toFixed(2)}</p>
                     </div>
                     <div className="flex justify-between font-semibold text-lg mt-2">
                       <p>Total</p>

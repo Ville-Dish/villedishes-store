@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -11,30 +11,35 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { toast } from "sonner";
+import { useSearchParams } from "next/navigation";
+import useOrderStore from "@/stores/useOrderStore";
 
 // Simulated function to send email
 const sendVerificationEmail = async (email: string) => {
-  // In a real application, this would send an actual email
   console.log(`Sending verification email to ${email}`);
-  // Simulate an API call delay
   await new Promise((resolve) => setTimeout(resolve, 1000));
   return true;
 };
 
 export default function VerifyPaymentPage() {
+  const searchParams = useSearchParams();
+  const { verifyPendingOrder } = useOrderStore();
   const [verificationCode, setVerificationCode] = useState("");
   const [isVerifying, setIsVerifying] = useState(false);
+
+  const orderId = Number(searchParams.get("orderId")); // Retrieve orderId from URL params
 
   const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsVerifying(true);
 
     try {
-      // In a real application, you would verify the code against a database
-      // For this example, we'll assume any non-empty code is valid
       if (verificationCode.trim() === "") {
         throw new Error("Please enter a valid verification code");
       }
+
+      // Call the verify function from Zustand store
+      verifyPendingOrder(orderId, verificationCode);
 
       // Simulate sending an email to the user
       const emailSent = await sendVerificationEmail("user@example.com");
@@ -58,6 +63,12 @@ export default function VerifyPaymentPage() {
       setIsVerifying(false);
     }
   };
+
+  useEffect(() => {
+    if (!orderId) {
+      toast.error("Order ID is missing");
+    }
+  }, [orderId]);
 
   return (
     <div className="flex flex-col min-h-screen">
