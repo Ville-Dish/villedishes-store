@@ -18,9 +18,18 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Earth, Mail, Phone } from "lucide-react";
 import { PageHeader } from "../page-header";
+import { testEmail } from "@/lib/constantData";
+
+interface ContactDetails {
+  subject?: string;
+  name: string;
+  message: string;
+  email: string;
+  phone: string;
+}
 
 const formSchema = z.object({
-  name: z.string().min(2, "Name is required").max(50),
+  name: z.string().min(2, { message: "Name is required" }).max(50),
   email: z.string().email("Valid email is required"),
   phone: z
     .string()
@@ -46,11 +55,58 @@ const Contact = () => {
     },
   });
 
+  const sendContactEmail = (contactDetails: ContactDetails) => {
+    fetch("/api/contact", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: contactDetails.email,
+        to: testEmail,
+        subject: contactDetails.subject,
+        name: contactDetails.name,
+        email: contactDetails.email,
+        phone: contactDetails.phone,
+        message: contactDetails.message,
+      }),
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Failed to send email");
+        }
+        return response.json();
+      })
+      .then((data) => {
+        console.log("Email sent successfully:", data);
+        toast.success("Email Sent", {
+          description:
+            "An email has been sent to the admin. You should get a response soon.",
+        });
+        form.reset(); // Clear the form fields after successful submission
+      })
+      .catch((error) => {
+        toast.error("Something went wrong", {
+          description:
+            error instanceof Error
+              ? error.message
+              : "An unknown error occurred",
+        });
+        console.error("Error sending email:", error);
+      });
+  };
+
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     console.log(values);
-    toast.success(
-      "Message sent successfully! You should hear back in 3 business days"
-    );
+    const contactData = {
+      name: values.name,
+      email: values.email,
+      phone: values.phone || "",
+      subject: values.subject,
+      message: values.message,
+    };
+
+    sendContactEmail(contactData);
   };
 
   return (
