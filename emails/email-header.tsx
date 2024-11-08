@@ -1,10 +1,9 @@
 import { Img, Section, Text } from "@react-email/components";
-import Image from "next/image";
 export const EmailHeader = () => {
   return (
     <Section style={header}>
       <Img
-        src="http://localhost:3000/assets/ville.svg"
+        src="/static/ville.png"
         alt="VilleDishes Logo"
         width={50}
         height={50}
