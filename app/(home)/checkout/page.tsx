@@ -24,7 +24,12 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import useCartStore from "@/stores/useCartStore";
-import { shippingFee, taxRate, testEmail } from "@/lib/constantData";
+import {
+  adminEmail,
+  shippingFee,
+  taxRate,
+  testEmail,
+} from "@/lib/constantData";
 import useOrderStore from "@/stores/useOrderStore";
 import { toast } from "sonner";
 
@@ -44,17 +49,23 @@ type FormValues = z.infer<typeof baseSchema> & { referenceNumber?: string };
 export default function CheckoutPage() {
   const [orderPlaced, setOrderPlaced] = useState(false);
   const [payment, setPayment] = useState(false);
+  const [orderId, setOrderId] = useState<number>(0);
 
   const { cartItems, subtotal, total } = useCartStore();
 
   const tax = subtotal * (taxRate / 100);
   const shipping = shippingFee;
 
-  const { addToPendingOrder, updatePendingOrder } = useOrderStore();
-  // const { clearCart } = useCartStore();
+  const { addOrder, updateOrder } = useOrderStore();
+  const { clearCart } = useCartStore();
 
   const [formSchema, setFormSchema] =
     useState<z.ZodType<FormValues>>(baseSchema);
+
+  useEffect(() => {
+    const tempOrderId = Date.now();
+    setOrderId(tempOrderId);
+  }, []);
 
   useEffect(() => {
     if (payment) {
@@ -79,13 +90,11 @@ export default function CheckoutPage() {
       city: "",
       postalCode: "",
       orderNotes: "",
+      referenceNumber: "",
     },
   });
 
   const sendVerificationEmail = (orderDetails: OrderDetails) => {
-    // Call a function to send a verification email
-    // console.log("Sending verification email with order details:", orderDetails); // Log order details
-    // Use the data from the orderDetails, particularly the shippingInfo and order ID
     fetch("/api/payment", {
       method: "POST",
       headers: {
@@ -93,7 +102,7 @@ export default function CheckoutPage() {
       },
       body: JSON.stringify({
         from: orderDetails.shippingInfo.email,
-        to: testEmail,
+        to: adminEmail,
         subject: `VERIFY INTERAC PAYMENT FOR ${orderDetails.id}`,
         customerName: `${orderDetails.shippingInfo.firstName} ${orderDetails.shippingInfo.lastName}`,
         paymentAmount: orderDetails.total,
@@ -105,9 +114,9 @@ export default function CheckoutPage() {
     })
       .then((response) => response.json())
       .then((data) => {
-        toast.success("Payment Verified", {
+        toast.success("Order Placed", {
           description:
-            "An email has been sent to the user confirming their payment.",
+            "An email has been sent to the admin to confirm your payment.",
         });
         console.log("Email sent successfully:", data);
       })
@@ -122,9 +131,8 @@ export default function CheckoutPage() {
       });
   };
 
-  const onSubmit = (values: z.infer<typeof formSchema>) => {
-    const orderId = Date.now();
-    // console.log("FORM VALUES", values);
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    const code = Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit verification code
     const orderDetails = {
       id: orderId,
       products: cartItems,
@@ -132,22 +140,29 @@ export default function CheckoutPage() {
       tax,
       shippingFee: shipping,
       total,
+      verificationCode: code,
       shippingInfo: { ...values },
+      status: undefined,
     };
     console.log("ORDER DEETS", orderDetails);
     if (!payment) {
-      addToPendingOrder(orderDetails);
+      await addOrder(orderDetails);
       setPayment(true);
     } else {
       const referenceNumber = values?.referenceNumber ?? "";
       if (referenceNumber) {
-        updatePendingOrder(referenceNumber);
+        const updatedOrderDetails = await updateOrder(orderId, {
+          referenceNumber,
+          paymentDate: new Date().toISOString().split("T")[0],
+        });
         setOrderPlaced(true);
         // Trigger email verification after order placement
-        sendVerificationEmail(orderDetails);
+        if (updatedOrderDetails && updatedOrderDetails?.status === "pending") {
+          sendVerificationEmail(updatedOrderDetails);
+        }
 
         // Clear cart after successful order placement
-        // clearCart();
+        clearCart();
       } else {
         console.error("Reference number is required");
       }
