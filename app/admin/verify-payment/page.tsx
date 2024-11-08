@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -11,50 +11,116 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { toast } from "sonner";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import useOrderStore from "@/stores/useOrderStore";
-
-// Simulated function to send email
-const sendVerificationEmail = async (email: string) => {
-  console.log(`Sending verification email to ${email}`);
-  await new Promise((resolve) => setTimeout(resolve, 1000));
-  return true;
-};
+import { adminEmail, testEmail } from "@/lib/constantData";
 
 export default function VerifyPaymentPage() {
+  const router = useRouter();
   const searchParams = useSearchParams();
-  const { verifyPendingOrder } = useOrderStore();
+  const { verifyOrder } = useOrderStore();
   const [verificationCode, setVerificationCode] = useState("");
   const [isVerifying, setIsVerifying] = useState(false);
+  const [orderId, setOrderId] = useState<number | null>(null);
 
-  const orderId = Number(searchParams.get("orderId")); // Retrieve orderId from URL params
+  useEffect(() => {
+    const id = Number(searchParams.get("orderId")) || 0;
+    setOrderId(id);
+    if (!id) {
+      toast.error("Order ID is missing");
+    } else {
+      console.log("Order ID:", id);
+    }
+  }, [searchParams]);
 
-  const handleVerify = async (e: React.FormEvent) => {
+  const calculateEstimatedDelivery = (orderDate: string) => {
+    const orderDateObj = new Date(orderDate);
+    orderDateObj.setHours(orderDateObj.getHours() + 48);
+    return orderDateObj.toISOString().split("T")[0];
+  };
+
+  const sendConfirmationEmail = async (orderDetails: OrderDetails) => {
+    const estimatedDelivery = calculateEstimatedDelivery(
+      orderDetails.orderDate ?? new Date().toISOString().split("T")[0]
+    );
+
+    console.log(
+      `Sending verification email to ${orderDetails.shippingInfo.email}`
+    );
+
+    try {
+      const response = await fetch("/api/order", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          from: adminEmail,
+          to: orderDetails.shippingInfo.email,
+          subject: "ORDER CONFIRMATION",
+          customerName: `${orderDetails.shippingInfo.firstName} ${orderDetails.shippingInfo.lastName}`,
+          orderNumber: orderDetails.orderNumber,
+          orderDate: orderDetails.orderDate,
+          subtotal: orderDetails.subtotal,
+          tax: orderDetails.tax,
+          shippingFee: orderDetails.shippingFee,
+          total: orderDetails.total,
+          items: orderDetails.products,
+          estimatedDelivery,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to send email: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      toast.success("Payment Verified", {
+        description:
+          "An email has been sent to the user confirming their payment.",
+      });
+      console.log("Email sent successfully:", data);
+    } catch (error) {
+      toast.error("Verification Failed", {
+        description:
+          error instanceof Error ? error.message : "An unknown error occurred",
+      });
+      console.error("Error sending email:", error);
+    }
+  };
+
+  const handleVerify = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsVerifying(true);
 
+    console.log("Handle Verify() invoked");
+
     try {
-      if (verificationCode.trim() === "") {
+      if (!verificationCode.trim()) {
         throw new Error("Please enter a valid verification code");
       }
-
-      // Call the verify function from Zustand store
-      verifyPendingOrder(orderId, verificationCode);
-
-      // Simulate sending an email to the user
-      const emailSent = await sendVerificationEmail("user@example.com");
-
-      if (emailSent) {
-        toast.success("Payment Verified", {
-          description:
-            "An email has been sent to the user confirming their payment.",
-        });
-      } else {
-        throw new Error("Failed to send verification email");
+      if (orderId === null) {
+        throw new Error("Order ID is missing");
       }
+      console.log("Calling VerifyPending order");
 
-      setVerificationCode("");
+      const verifiedOrder: OrderDetails | null = await verifyOrder(
+        orderId,
+        verificationCode
+      );
+
+      console.log("Called VerifyPending order");
+
+      if (verifiedOrder) {
+        console.log("Order verified:", verifiedOrder);
+        await sendConfirmationEmail(verifiedOrder);
+        setVerificationCode("");
+        router.push(`/admin/success`);
+      } else {
+        throw new Error("Order verification failed.");
+      }
     } catch (error) {
+      console.error("Verification error:", error);
       toast.error("Verification Failed", {
         description:
           error instanceof Error ? error.message : "An unknown error occurred",
@@ -63,12 +129,6 @@ export default function VerifyPaymentPage() {
       setIsVerifying(false);
     }
   };
-
-  useEffect(() => {
-    if (!orderId) {
-      toast.error("Order ID is missing");
-    }
-  }, [orderId]);
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -89,6 +149,8 @@ export default function VerifyPaymentPage() {
                   </label>
                   <Input
                     id="verificationCode"
+                    type="text"
+                    name="verificationCode"
                     placeholder="Enter verification code"
                     value={verificationCode}
                     onChange={(e) => setVerificationCode(e.target.value)}
