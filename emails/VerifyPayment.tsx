@@ -155,7 +155,7 @@ export const VerifyPaymentTemplate = ({
                 If you have any concerns about this payment, please contact the
                 IT department immediately.
               </Text>
-              <EmailFooter />
+              <EmailFooter variant="payment" />
             </Section>
           </Container>
         </Body>

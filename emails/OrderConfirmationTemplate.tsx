@@ -30,15 +30,15 @@ type OrderConfirmationEmailProps = {
 };
 
 const OrderConfirmationTemplate = ({
-  customerName, //get from user input
-  orderNumber, // auto generate when admin click verify payment
-  orderDate, // get from date when user click place order
-  subtotal, // got from cart
-  tax, // got from cart
-  shippingFee, // got from cart
-  total, // got from cart
-  items, // got from cart
-  estimatedDelivery, // got from cart
+  customerName,
+  orderNumber,
+  orderDate,
+  subtotal,
+  tax,
+  shippingFee,
+  total,
+  items,
+  estimatedDelivery,
 }: OrderConfirmationEmailProps) => {
   customerName = customerName || "John Doe";
   orderNumber = orderNumber || "ORD-00000";
@@ -81,7 +81,7 @@ const OrderConfirmationTemplate = ({
                   Order Date: {orderDate}
                 </Text>
                 <Text className="text-base mb-4 text-center">
-                  Estimated Delivery: {estimatedDelivery}
+                  Estimated Delivery*: {estimatedDelivery}
                 </Text>
               </Section>
 
@@ -150,6 +150,10 @@ const OrderConfirmationTemplate = ({
 
               <Section className="mt-6 text-center">
                 <Text className="text-base mb-4">
+                  *The estimated delivery date is the standard for all orders.
+                  Your actual delivery date may be communicated later.
+                </Text>
+                <Text className="text-base mb-4">
                   If you have any questions, please contact our customer support
                   team.
                 </Text>
@@ -159,7 +163,7 @@ const OrderConfirmationTemplate = ({
                 </Text>
               </Section>
 
-              <EmailFooter />
+              <EmailFooter variant="order" />
             </Section>
           </Container>
         </Body>

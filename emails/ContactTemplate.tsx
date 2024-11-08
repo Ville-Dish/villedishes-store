@@ -18,9 +18,16 @@ type ContactEmailProps = {
   subject?: string;
   name: string;
   message: string;
+  email: string;
+  phone: string;
 };
 
-const ContactTemplate = ({ name, message, subject }: ContactEmailProps) => {
+const ContactTemplate = ({
+  name,
+  message,
+  phone,
+  subject,
+}: ContactEmailProps) => {
   const previewText = subject ? `${subject}` : "General Inquiry";
   return (
     <Html>
@@ -42,8 +49,11 @@ const ContactTemplate = ({ name, message, subject }: ContactEmailProps) => {
               <Text style={codeText}>
                 {message || "Demo message from Marissa Storm"}
               </Text>
+              <Text style={verifyText}>
+                You can reach {name} on {phone}
+              </Text>
             </Section>
-            <EmailFooter />
+            <EmailFooter variant="contact" />
           </Section>
         </Container>
       </Body>
