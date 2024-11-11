@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import ShoppingCart from "./shopping-cart";
 import { NavbarMenu } from "./navbar_menu";
+import { AdminNavbarMenu } from "./admin_navbar_menu";
 
 export const Header = ({ show }: { show: boolean }) => {
   return (
@@ -16,10 +17,15 @@ export const Header = ({ show }: { show: boolean }) => {
         />
         <h1 className="text-3xl font-bold hidden md:inline">VilleDishes</h1>
       </Link>
-      {show && (
+      {show ? (
         <div className="md:flex-[40%] flex flex-row-reverse md:flex-row items-center md:justify-between">
           <NavbarMenu />
           <ShoppingCart />
+        </div>
+      ) : (
+        <div className="md:flex-[40%] flex flex-row-reverse md:flex-row items-center md:justify-between">
+          <AdminNavbarMenu />
+          <div />
         </div>
       )}
     </div>
