@@ -5,6 +5,11 @@ export const menuItems = [
   { href: "/contact", label: "Contact" },
   { href: "/faq", label: "FAQ" },
 ];
+export const adminMenuItems = [
+  { href: "/admin/", label: "Dashboard" },
+  { href: "/admin/orders", label: "Order" },
+  { href: "/admin/invoices", label: "Invoice" },
+];
 
 export const allProduct = [
   {
