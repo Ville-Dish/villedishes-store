@@ -34,7 +34,13 @@ interface OrderDetails {
   verificationCode?: string;
   orderNumber?: string; // Added order number
   orderDate?: string; // Added order date
-  status: "pending" | "verified" | "cancelled" | undefined;
+  status:
+    | "pending"
+    | "verified"
+    | "processing"
+    | "fulfilled"
+    | "cancelled"
+    | undefined;
 }
 
 interface OrderState {
