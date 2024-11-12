@@ -5,8 +5,9 @@ type MenuItem = {
   price: number;
   category: string;
   image: string;
-  rating: number;
-  reviews: { id: string; rating: number; comment: string; author: string }[];
+  stock?: number;
+  rating?: number;
+  reviews?: { id: string; rating: number; comment: string; author: string }[];
 };
 
 interface Product {
