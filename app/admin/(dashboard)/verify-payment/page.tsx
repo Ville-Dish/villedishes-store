@@ -13,7 +13,7 @@ import {
 import { toast } from "sonner";
 import { useRouter, useSearchParams } from "next/navigation";
 import useOrderStore from "@/stores/useOrderStore";
-import { adminEmail, testEmail } from "@/lib/constantData";
+import { adminEmail } from "@/lib/constantData";
 
 export default function VerifyPaymentPage() {
   const router = useRouter();
@@ -49,7 +49,7 @@ export default function VerifyPaymentPage() {
     );
 
     try {
-      const response = await fetch("/api/order", {
+      const response = await fetch("/api/emails/order", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

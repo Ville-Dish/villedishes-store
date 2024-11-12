@@ -24,12 +24,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import useCartStore from "@/stores/useCartStore";
-import {
-  adminEmail,
-  shippingFee,
-  taxRate,
-  testEmail,
-} from "@/lib/constantData";
+import { adminEmail, shippingFee, taxRate } from "@/lib/constantData";
 import useOrderStore from "@/stores/useOrderStore";
 import { toast } from "sonner";
 
@@ -95,7 +90,7 @@ export default function CheckoutPage() {
   });
 
   const sendVerificationEmail = (orderDetails: OrderDetails) => {
-    fetch("/api/payment", {
+    fetch("/api/emails/payment", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

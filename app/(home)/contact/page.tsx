@@ -56,7 +56,7 @@ const Contact = () => {
   });
 
   const sendContactEmail = (contactDetails: ContactDetails) => {
-    fetch("/api/contact", {
+    fetch("/api/emails/contact", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
