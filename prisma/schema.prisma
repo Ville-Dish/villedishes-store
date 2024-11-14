@@ -1,0 +1,96 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Product {
+  id              String            @id @unique @default(uuid())
+  name            String            @unique
+  description     String
+  price           Float
+  image           String
+  category        String?
+  rating          Float?
+  OrderProduct    OrderProduct[]
+  reviews         Review[]
+  InvoiceProducts InvoiceProducts[]
+  invoiceId       String?
+}
+
+model Review {
+  id        String   @id @unique @default(uuid())
+  rating    Int
+  comment   String
+  author    String
+  productId String?
+  Product   Product? @relation(fields: [productId], references: [id])
+}
+
+model Order {
+  id               String         @id @unique @default(uuid())
+  orderId          BigInt         @unique
+  subtotal         Float
+  tax              Float
+  shippingFee      Float
+  total            Float
+  referenceNumber  String?
+  paymentDate      DateTime?
+  verificationCode String?
+  orderNumber      String?
+  orderDate        String?
+  shippingInfoId   String
+  status           String
+  shippingInfo     ShippingInfo   @relation(fields: [shippingInfoId], references: [id])
+  products         OrderProduct[]
+}
+
+model ShippingInfo {
+  id          String  @id @unique @default(uuid())
+  firstName   String
+  lastName    String
+  email       String
+  phoneNumber String
+  address     String
+  city        String
+  postalCode  String
+  orderNotes  String?
+  Order       Order[]
+}
+
+model OrderProduct {
+  id        String  @id @unique @default(uuid())
+  quantity  Int
+  productId String
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id])
+  product   Product @relation(fields: [productId], references: [id])
+}
+
+model Invoice {
+  id                 String            @id @unique @default(uuid())
+  invoiceNumber      String            @unique
+  customerName       String
+  customerEmail      String
+  customerPhone      String
+  amount             Float
+  discountPercentage Int
+  dateCreated        String
+  dueDate            String
+  status             String
+  InvoiceProducts    InvoiceProducts[] @relation("InvoiceProducts")
+}
+
+// Relation to Invoice
+model InvoiceProducts {
+  id        String    @id @unique @default(uuid())
+  basePrice Float
+  quantity  Int
+  price     Float
+  invoiceId String?
+  invoice   Invoice?  @relation("InvoiceProducts", fields: [invoiceId], references: [id])
+  Product   Product[]
+}
