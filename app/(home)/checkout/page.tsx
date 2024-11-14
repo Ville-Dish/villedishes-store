@@ -126,6 +126,26 @@ export default function CheckoutPage() {
       });
   };
 
+  //function to handle moving order data from local storage to db
+  const handleUpdateOrderDB = async () => {
+    const storedOrder = localStorage.getItem("order");
+    if (storedOrder) {
+      try {
+        const orderDetails = JSON.parse(storedOrder);
+        await fetch("/api/orders", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(orderDetails),
+        });
+        console.log("Order added to database successfully");
+      } catch (error) {
+        console.error("Failed to add order to the database:", error);
+      }
+    }
+  };
+
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     const code = Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit verification code
     const orderDetails = {
@@ -150,6 +170,8 @@ export default function CheckoutPage() {
           referenceNumber,
           paymentDate: new Date().toISOString().split("T")[0],
         });
+        await handleUpdateOrderDB();
+        console.log("Data moved to DB");
         setOrderPlaced(true);
         // Trigger email verification after order placement
         if (updatedOrderDetails && updatedOrderDetails?.status === "pending") {
