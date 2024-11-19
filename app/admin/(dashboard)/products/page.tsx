@@ -86,11 +86,19 @@ export default function AdminProductsPage() {
   const handleUpdateItem = async () => {
     if (!editingItem) return;
     try {
-      const response = await fetch("/api/products", {
-        method: "PUT",
+      const response = await fetch(`/api/products`, {
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...editingItem }),
       });
+
+      console.log("Response status:", response.status);
+      console.log("Response text:", await response.text());
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to update product.");
+      }
 
       const data = await response.json();
 

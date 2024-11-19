@@ -16,7 +16,7 @@ import { DollarSign, ShoppingBag, Users, FileText } from "lucide-react";
 import Link from "next/link";
 import useOrderStore from "@/stores/useOrderStore";
 
-import { adminDashboardData } from "@/lib/constantData";
+import { adminOverViewData } from "@/lib/constantData";
 
 const Dashboard = () => {
   const { orders } = useOrderStore();
@@ -30,7 +30,7 @@ const Dashboard = () => {
     (order) => order.status === "fulfilled"
   ).length;
 
-  const data = adminDashboardData;
+  const data = adminOverViewData;
 
   return (
     <div className="container mx-auto px-4 py-8">

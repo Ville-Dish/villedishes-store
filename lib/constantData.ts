@@ -338,7 +338,7 @@ export const demoItems = [
   },
 ];
 
-export const adminDashboardData = [
+export const adminOverViewData = [
   {
     name: "Jan",
     total: Math.floor(Math.random() * 5000) + 1000,
@@ -386,6 +386,61 @@ export const adminDashboardData = [
   {
     name: "Dec",
     total: Math.floor(Math.random() * 5000) + 1000,
+  },
+];
+
+export const adminRevenueGrowthData = [
+  { name: "Jan", revenue: 4000 },
+  { name: "Feb", revenue: 3000 },
+  { name: "Mar", revenue: 5000 },
+  { name: "Apr", revenue: 4500 },
+  { name: "May", revenue: 6000 },
+  { name: "Jun", revenue: 5500 },
+  { name: "Jul", revenue: 7000 },
+  { name: "Aug", revenue: 6500 },
+  { name: "Sep", revenue: 8000 },
+  { name: "Oct", revenue: 7500 },
+  { name: "Nov", revenue: 9000 },
+  { name: "Dec", revenue: 10000 },
+];
+
+export const adminProductPerformanceData = [
+  { name: "Jollof Rice", value: 400 },
+  { name: "Efo Riro", value: 300 },
+  { name: "Puff-Puff", value: 300 },
+  { name: "Banana Bread", value: 200 },
+];
+
+export const adminRecentOrders = [
+  {
+    customer: "Olivia Martin",
+    order: "ORD-0005",
+    orderDate: "2024-11-18",
+    total: 199.0,
+  },
+  {
+    customer: "Jackson Lee",
+    order: "ORD-0004",
+    orderDate: "2024-11-16",
+    total: 19.99,
+  },
+  {
+    customer: "Isabella Nguyen",
+    order: "ORD-0003",
+    orderDate: "2024-11-14",
+    total: 21.99,
+  },
+  {
+    customer: "William Kim",
+    order: "ORD-0002",
+    orderDate: "2024-11-12",
+    total: 39.95,
+  },
+  {
+    customer: "Sofia Davis",
+    order: "ORD-0001",
+    orderDate: "2024-11-10",
+    total: 50.59,
   },
 ];
 

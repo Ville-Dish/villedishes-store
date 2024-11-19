@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma/client";
 import { isValidInvoiceStatus } from "@/lib/invoiceUtils";
 import { generateInvoiceNumber } from "@/lib/invoiceHelperFunction";
+import { shippingFee, taxRate } from "@/lib/constantData";
 
 // POST method to create a new invoice
 export async function POST(req: Request) {
@@ -164,7 +165,11 @@ export async function PATCH(req: Request) {
       products,
       amount,
       discountPercentage,
+      taxRate,
+      shippingFee,
     } = await req.json();
+
+    console.log({ taxRate, shippingFee });
 
     if (!id) {
       return NextResponse.json(
@@ -189,6 +194,8 @@ export async function PATCH(req: Request) {
     if (dueDate !== undefined) updateData.dueDate = dueDate;
     if (status !== undefined) updateData.status = status;
     if (amount !== undefined) updateData.amount = amount;
+    if (taxRate !== undefined) updateData.taxRate = taxRate;
+    if (shippingFee !== undefined) updateData.shippingFee = shippingFee;
     if (discountPercentage !== undefined)
       updateData.discountPercentage = discountPercentage;
 

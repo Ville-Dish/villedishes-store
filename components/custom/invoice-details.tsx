@@ -1,6 +1,6 @@
 import Image from "next/image";
-import { Button } from "../ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -8,56 +8,28 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "../ui/table";
-import { shippingFee, taxRate } from "@/lib/constantData";
-import { Label } from "../ui/label";
-import { Input } from "../ui/input";
+} from "@/components/ui/table";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "../ui/select";
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "../ui/dialog";
+} from "@/components/ui/dialog";
 
 import { Trash2, Edit } from "lucide-react";
 
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-
-interface Invoice {
-  id: string;
-  invoiceNumber: string;
-  customerName: string;
-  customerEmail: string;
-  customerPhone: string;
-  amount: number;
-  dateCreated: string;
-  dueDate: string;
-  status: "PAID" | "UNPAID" | "DUE" | "PENDING";
-  products?: Array<{
-    id: string;
-    name: string;
-    basePrice: number;
-    quantity: number;
-    price: number;
-  }>;
-}
-
-type InvoiceDetailsProps = {
-  invoice: Invoice;
-  availableProducts: Array<{ id: string; name: string; basePrice: number }>;
-  onUpdate: (updatedInvoice: Invoice) => void;
-};
-
-const discount = 3;
 
 export const InvoiceDetails = ({
   invoice,
@@ -75,7 +47,13 @@ export const InvoiceDetails = ({
   const [editingProductIndex, setEditingProductIndex] = useState<number | null>(
     null
   );
-  const [discountPercentage, setDiscountPercentage] = useState(0);
+  const [discountPercentage, setDiscountPercentage] = useState(
+    invoice.discountPercentage || 0
+  );
+  // const [taxRate, setTaxRate] = useState<number>(5); // Default tax rate
+  const [taxRate, setTaxRate] = useState(invoice.taxRate || 0); // Default tax rate
+  // const [shippingFee, setShippingFee] = useState<number>(10); // Default shipping fee
+  const [shippingFee, setShippingFee] = useState(invoice.shippingFee || 0); // Default shipping fee
 
   useEffect(() => {
     setUpdatedInvoice(invoice);
@@ -89,6 +67,14 @@ export const InvoiceDetails = ({
   const handleDiscountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseFloat(e.target.value);
     setDiscountPercentage(isNaN(value) ? 0 : value);
+  };
+  const handleTaxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = parseFloat(e.target.value);
+    setTaxRate(isNaN(value) ? 0 : value);
+  };
+  const handleShippingChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = parseFloat(e.target.value);
+    setShippingFee(isNaN(value) ? 0 : value);
   };
 
   const handleStatusChange = (value: string) => {
@@ -192,6 +178,8 @@ export const InvoiceDetails = ({
         ...updatedInvoice,
         amount: parseFloat(calculateTotal()),
         discountPercentage,
+        taxRate,
+        shippingFee,
       };
 
       onUpdate(updatedInvoiceData);
@@ -204,7 +192,7 @@ export const InvoiceDetails = ({
   };
 
   const subTotal = calculateSubtotal() || 0;
-  const total = calculateTotal() || 0;
+  // const total = calculateTotal() || 0;
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
@@ -231,7 +219,11 @@ export const InvoiceDetails = ({
                 villedishes@gmail.com
               </p>
               <p>
-                <span className="font-medium">Phone:</span> 643-218-9056
+                <span className="font-medium">Phone:</span> 587-984-4409
+              </p>
+              <p>
+                <span className="font-medium">Pay via Interac using:</span>{" "}
+                villedishes@gmail.com
               </p>
             </div>
           </CardContent>
@@ -248,7 +240,7 @@ export const InvoiceDetails = ({
                 <Input
                   id="customerName"
                   name="customerName"
-                  value={invoice.customerName}
+                  value={updatedInvoice.customerName}
                   onChange={handleInputChange}
                 />
               </div>
@@ -257,7 +249,7 @@ export const InvoiceDetails = ({
                 <Input
                   id="customerEmail"
                   name="customerEmail"
-                  value={invoice.customerEmail}
+                  value={updatedInvoice.customerEmail}
                   onChange={handleInputChange}
                 />
               </div>
@@ -266,7 +258,7 @@ export const InvoiceDetails = ({
                 <Input
                   id="customerPhone"
                   name="customerPhone"
-                  value={invoice.customerPhone}
+                  value={updatedInvoice.customerPhone}
                   onChange={handleInputChange}
                 />
               </div>
@@ -283,11 +275,11 @@ export const InvoiceDetails = ({
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <div>
               <p className="font-medium">Invoice Number:</p>
-              <p>{invoice.invoiceNumber}</p>
+              <p>{updatedInvoice.invoiceNumber}</p>
             </div>
             <div>
               <p className="font-medium">Date Created:</p>
-              <p>{invoice.dateCreated}</p>
+              <p>{updatedInvoice.dateCreated}</p>
             </div>
             <div>
               <Label htmlFor="dueDate">Due Date</Label>
@@ -295,13 +287,16 @@ export const InvoiceDetails = ({
                 id="dueDate"
                 name="dueDate"
                 type="date"
-                value={invoice.dueDate}
+                value={updatedInvoice.dueDate}
                 onChange={handleInputChange}
               />
             </div>
             <div>
               <Label htmlFor="status">Status</Label>
-              <Select onValueChange={handleStatusChange} value={invoice.status}>
+              <Select
+                onValueChange={handleStatusChange}
+                value={updatedInvoice.status}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
@@ -465,14 +460,34 @@ export const InvoiceDetails = ({
                 </span>
               </div>
             </div>
-            <div className="flex justify-between">
-              <span>Tax ({taxRate}%):</span>
-              <span>${(subTotal * (taxRate / 100)).toFixed(2)}</span>
+            <div className="flex justify-between items-center">
+              <span>Tax (%):</span>
+              <div className="flex items-center">
+                <Input
+                  id="taxRate"
+                  type="number"
+                  value={taxRate}
+                  className="w-20 mr-2"
+                  min="0"
+                  onChange={handleTaxChange}
+                />
+                <span>${(subTotal * (taxRate / 100)).toFixed(2)}</span>
+              </div>
             </div>
 
             <div className="flex justify-between">
               <span>Shipping Fee:</span>
-              <span>${shippingFee.toFixed(2)}</span>
+              <div className="flex items-center">
+                <Input
+                  id="shippingFee"
+                  type="number"
+                  value={shippingFee}
+                  className="w-20 mr-2"
+                  min="0"
+                  onChange={handleShippingChange}
+                />
+                <span>${shippingFee.toFixed(2)}</span>
+              </div>
             </div>
             <div className="flex justify-between text-lg font-bold">
               <span>Total:</span>
