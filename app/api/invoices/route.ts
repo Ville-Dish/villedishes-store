@@ -169,8 +169,6 @@ export async function PATCH(req: Request) {
       shippingFee,
     } = await req.json();
 
-    console.log({ taxRate, shippingFee });
-
     if (!id) {
       return NextResponse.json(
         { message: "Invoice ID is required" },
