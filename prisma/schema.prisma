@@ -32,13 +32,13 @@ model Review {
 
 model Order {
   id               String         @id @unique @default(uuid())
-  orderId          BigInt         @unique
+  orderId          String         @unique
   subtotal         Float
   tax              Float
   shippingFee      Float
   total            Float
   referenceNumber  String?
-  paymentDate      DateTime?
+  paymentDate      String?
   verificationCode String?
   orderNumber      String?
   orderDate        String?
