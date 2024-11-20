@@ -341,51 +341,51 @@ export const demoItems = [
 export const adminOverViewData = [
   {
     name: "Jan",
-    total: Math.floor(Math.random() * 5000) + 1000,
+    total: Math.floor(Math.random() * 500) + 10,
   },
   {
     name: "Feb",
-    total: Math.floor(Math.random() * 5000) + 1000,
+    total: Math.floor(Math.random() * 500) + 10,
   },
   {
     name: "Mar",
-    total: Math.floor(Math.random() * 5000) + 1000,
+    total: Math.floor(Math.random() * 500) + 10,
   },
   {
     name: "Apr",
-    total: Math.floor(Math.random() * 5000) + 1000,
+    total: Math.floor(Math.random() * 500) + 10,
   },
   {
     name: "May",
-    total: Math.floor(Math.random() * 5000) + 1000,
+    total: Math.floor(Math.random() * 500) + 10,
   },
   {
     name: "Jun",
-    total: Math.floor(Math.random() * 5000) + 1000,
+    total: Math.floor(Math.random() * 500) + 10,
   },
   {
     name: "Jul",
-    total: Math.floor(Math.random() * 5000) + 1000,
+    total: Math.floor(Math.random() * 500) + 10,
   },
   {
     name: "Aug",
-    total: Math.floor(Math.random() * 5000) + 1000,
+    total: Math.floor(Math.random() * 500) + 10,
   },
   {
     name: "Sep",
-    total: Math.floor(Math.random() * 5000) + 1000,
+    total: Math.floor(Math.random() * 500) + 10,
   },
   {
     name: "Oct",
-    total: Math.floor(Math.random() * 5000) + 1000,
+    total: Math.floor(Math.random() * 500) + 10,
   },
   {
     name: "Nov",
-    total: Math.floor(Math.random() * 5000) + 1000,
+    total: Math.floor(Math.random() * 500) + 10,
   },
   {
     name: "Dec",
-    total: Math.floor(Math.random() * 5000) + 1000,
+    total: Math.floor(Math.random() * 500) + 10,
   },
 ];
 
@@ -405,10 +405,10 @@ export const adminRevenueGrowthData = [
 ];
 
 export const adminProductPerformanceData = [
-  { name: "Jollof Rice", value: 400 },
-  { name: "Efo Riro", value: 300 },
-  { name: "Puff-Puff", value: 300 },
-  { name: "Banana Bread", value: 200 },
+  { name: "Jollof Rice", value: 400, date: "2024-10-25" },
+  { name: "Efo Riro", value: 300, date: "2024-09-22" },
+  { name: "Puff-Puff", value: 300, date: "2024-01-15" },
+  { name: "Banana Bread", value: 200, date: "2024-02-15" },
 ];
 
 export const adminRecentOrders = [
