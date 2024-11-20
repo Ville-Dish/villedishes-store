@@ -6,11 +6,10 @@ export const menuItems = [
   { href: "/faq", label: "FAQ" },
 ];
 export const adminMenuItems = [
-  { href: "/admin/", label: "Dashboard" },
+  { href: "/admin/dashboard", label: "Dashboard" },
   { href: "/admin/products", label: "Products" },
   { href: "/admin/orders", label: "Order" },
   { href: "/admin/invoices", label: "Invoice" },
-  { href: "/admin/dashboard", label: "Deets" },
 ];
 
 export const allProduct = [
