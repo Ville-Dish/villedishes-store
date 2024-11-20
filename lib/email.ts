@@ -1,4 +1,5 @@
 import nodemailer from "nodemailer";
+import { createInvoicePDF } from "./invoicePdfGenerate";
 
 type EmailPayload = {
   from: string;
@@ -26,5 +27,27 @@ export const sendEmail = async (data: EmailPayload) => {
 
   return await transporter.sendMail({
     ...data,
+  });
+};
+
+export const sendInvoiceEmail = async (
+  invoiceData: Invoice,
+  emailData: EmailPayload
+) => {
+  const transporter = nodemailer.createTransport({
+    ...smtpOptions,
+  });
+
+  const pdfData = await createInvoicePDF(invoiceData);
+
+  return await transporter.sendMail({
+    ...emailData,
+    attachments: [
+      {
+        filename: `Invoice-${invoiceData.invoiceNumber}.pdf`,
+        content: Buffer.from(pdfData), // Convert Uint8Array to Buffer
+        contentType: "application/pdf",
+      },
+    ],
   });
 };
