@@ -31,57 +31,10 @@ import {
 } from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import { InvoiceDetails } from "@/components/custom/invoice-details";
-import jsPDF from "jspdf";
-import "jspdf-autotable";
-import { imageToBase64 } from "@/lib/imageToBase64";
 
-// const invoiceData = [
-//   {
-//     id: "1",
-//     invoiceNumber: "INV001",
-//     customerName: "John Doe",
-//     amount: 100,
-//     dateCreated: "2023-05-28",
-//     dueDate: "2023-06-01",
-//     status: "UNPAID",
-//   },
-//   {
-//     id: "2",
-//     invoiceNumber: "INV002",
-//     customerName: "Jane Smith",
-//     amount: 150,
-//     dateCreated: "2023-05-28",
-//     dueDate: "2023-06-15",
-//     status: "PAID",
-//   },
-//   {
-//     id: "3",
-//     invoiceNumber: "INV003",
-//     customerName: "Bob Johnson",
-//     amount: 320.75,
-//     dateCreated: "2023-05-28",
-//     dueDate: "2023-10-28",
-//     status: "DUE",
-//   },
-//   {
-//     id: "4",
-//     invoiceNumber: "INV004",
-//     customerName: "Alice Brown",
-//     amount: 420.0,
-//     dateCreated: "2023-05-28",
-//     dueDate: "2023-11-05",
-//     status: "PAID",
-//   },
-//   {
-//     id: "5",
-//     invoiceNumber: "INV005",
-//     customerName: "Charlie Davis",
-//     amount: 150.25,
-//     dateCreated: "2023-05-28",
-//     dueDate: "2023-11-07",
-//     status: "PENDING",
-//   },
-// ];
+import { saveAs } from "file-saver";
+import "jspdf-autotable";
+import { createInvoicePDF } from "@/lib/invoicePdfGenerate";
 
 export default function AdminInvoicesPage() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
@@ -241,232 +194,22 @@ export default function AdminInvoicesPage() {
     setSelectedInvoice(invoice);
   };
 
-  const handleDownloadInvoice = (invoice: Invoice) => {
-    toast.info(`Downloading Invoice ${invoice.invoiceNumber}`);
-    const doc = new jsPDF();
-    const pageWidth = doc.internal.pageSize.width;
-    const pageHeight = doc.internal.pageSize.height;
+  const handleDownloadInvoice = async (invoice: Invoice) => {
+    try {
+      toast.info(`Downloading Invoice ${invoice.invoiceNumber}`);
 
-    let yPosition = 20;
+      // Call createInvoicePDF to generate the PDF content as Uint8Array
+      const pdfData = await createInvoicePDF(invoice);
 
-    // const logoBase64 = imageToBase64("/assets/ville.svg");
-    // console.log("Logo Base64 For SVG", logoBase64);
+      // Create a Blob from the Uint8Array and download it
+      const blob = new Blob([pdfData], { type: "application/pdf" });
+      saveAs(blob, `Invoice_${invoice.invoiceNumber}.pdf`);
 
-    const logoPNGBase64 = imageToBase64("/assets/villeCap.png");
-    console.log("Logo Base64 For PNG", logoPNGBase64);
-
-    // Helper function to add a card-like section
-    const addCard = (
-      title: string,
-      content: () => void,
-      width: number,
-      height: number
-    ) => {
-      if (yPosition + height > pageHeight - 20) {
-        doc.addPage();
-        yPosition = 20;
-      }
-
-      doc.setDrawColor(200);
-      doc.setFillColor(250, 250, 250);
-      doc.roundedRect(10, yPosition, width, height, 3, 3, "FD");
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(12);
-      doc.setTextColor(44, 62, 80);
-      doc.text(title, 10 + width / 2, yPosition + 10, { align: "center" });
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(10);
-      doc.setTextColor(52, 73, 94);
-      content();
-      yPosition += height + 5; // Reduced spacing between sections
-    };
-
-    // Helper function to add bold text
-    const addBoldText = (text: string, x: number, y: number) => {
-      doc.setFont("helvetica", "bold");
-      doc.text(text, x, y);
-      doc.setFont("helvetica", "normal");
-    };
-
-    // Add header with invoice title
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(24);
-    doc.setTextColor(44, 62, 80);
-    doc.text("INVOICE", pageWidth / 2, yPosition, { align: "center" });
-    yPosition += 15;
-
-    // Bill From and Bill To cards side by side
-    const cardWidth = (pageWidth - 30) / 2;
-    doc.setDrawColor(200);
-    doc.setFillColor(250, 250, 250);
-    doc.roundedRect(10, yPosition, cardWidth, 60, 3, 3, "FD");
-    doc.roundedRect(20 + cardWidth, yPosition, cardWidth, 60, 3, 3, "FD");
-
-    // Bill From card
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(12);
-    doc.text("Bill From", 10 + cardWidth / 2, yPosition + 10, {
-      align: "center",
-    });
-    // doc.addImage(logoBase64, "SVG", 15, yPosition + 15, 20, 20);
-    // doc.addImage(logoPNGBase64, "PNG", 15, yPosition + 15, 20, 20);
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(10);
-    addBoldText("Company Name:", 15, yPosition + 25);
-    doc.text("VilleDishes", 50, yPosition + 25);
-    addBoldText("Company Email:", 15, yPosition + 35);
-    doc.text("villedishes@gmail.com", 50, yPosition + 35);
-    addBoldText("Company Phone:", 15, yPosition + 45);
-    doc.text("587-984-4409", 50, yPosition + 45);
-    doc.text("Pay via Interac using:", 15, yPosition + 55);
-    addBoldText("villedishes@gmail.com", 50, yPosition + 55);
-
-    // Bill To card
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(12);
-    doc.text("Bill To", 20 + cardWidth * 1.5, yPosition + 10, {
-      align: "center",
-    });
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(10);
-    addBoldText("Customer Name:", 25 + cardWidth, yPosition + 25);
-    doc.text(invoice.customerName, 65 + cardWidth, yPosition + 25);
-    addBoldText("Customer Email:", 25 + cardWidth, yPosition + 35);
-    doc.text(invoice.customerEmail, 65 + cardWidth, yPosition + 35);
-    addBoldText("Customer Phone:", 25 + cardWidth, yPosition + 45);
-    doc.text(invoice.customerPhone, 65 + cardWidth, yPosition + 45);
-
-    yPosition += 65;
-
-    // Invoice Overview card
-    addCard(
-      "Invoice Overview",
-      () => {
-        const labelX = 15;
-        const valueX = 15;
-        const lineHeight = 7;
-
-        doc.setFont("helvetica", "bold");
-        doc.text("Invoice Number", labelX, yPosition + 20);
-        doc.text("Date Created", labelX + 50, yPosition + 20);
-        doc.text("Due Date", labelX + 100, yPosition + 20);
-        doc.text("Status", labelX + 150, yPosition + 20);
-
-        doc.setFont("helvetica", "normal");
-        doc.text(invoice.invoiceNumber, valueX, yPosition + 20 + lineHeight);
-        doc.text(invoice.dateCreated, valueX + 50, yPosition + 20 + lineHeight);
-        doc.text(invoice.dueDate, valueX + 100, yPosition + 20 + lineHeight);
-        doc.text(invoice.status, valueX + 150, yPosition + 20 + lineHeight);
-      },
-      pageWidth - 20,
-      40
-    );
-
-    // Product Details card
-    addCard(
-      "Invoice Product Details",
-      () => {
-        if (invoice.products && invoice.products.length > 0) {
-          const tableColumn = [
-            "S/N",
-            "Product",
-            "Base Price ($)",
-            "Quantity",
-            "Price ($)",
-          ];
-          const tableRows = invoice.products.map((product, index) => [
-            index + 1,
-            product.name,
-            product.basePrice.toFixed(2),
-            product.quantity,
-            (product.basePrice * product.quantity).toFixed(2),
-          ]);
-
-          (doc as any).autoTable({
-            startY: yPosition + 15,
-            head: [tableColumn],
-            body: tableRows,
-            theme: "grid",
-            headStyles: {
-              fillColor: [41, 128, 185],
-              textColor: 255,
-              fontSize: 10,
-              fontStyle: "bold",
-            },
-            bodyStyles: { textColor: 50, fontSize: 9 },
-            alternateRowStyles: { fillColor: [242, 242, 242] },
-            margin: { top: 15, right: 10, bottom: 10, left: 10 },
-            // startY: yPosition + 15,
-          });
-        } else {
-          doc.text("No products found", 15, yPosition + 25);
-        }
-      },
-      pageWidth - 20,
-      (doc as any).autoTable.previous.finalY
-        ? (doc as any).autoTable.previous.finalY - yPosition + 20
-        : 40
-    );
-
-    yPosition = (doc as any).autoTable.previous.finalY + 10;
-
-    // Invoice Summary card
-    addCard(
-      "Invoice Summary",
-      () => {
-        const subtotal = invoice.products
-          ? invoice.products.reduce(
-              (sum, product) => sum + product.basePrice * product.quantity,
-              0
-            )
-          : 0;
-        const discountAmount =
-          subtotal * ((invoice.discountPercentage || 0) / 100);
-        const taxAmount = subtotal * ((invoice.taxRate || 0) / 100);
-        const total =
-          subtotal - discountAmount + taxAmount + (invoice.shippingFee || 0);
-
-        const addSummaryRow = (
-          label: string,
-          value: string,
-          y: number,
-          isBold: boolean = false
-        ) => {
-          if (isBold) doc.setFont("helvetica", "bold");
-          doc.text(label, 15, y);
-          doc.text(value, pageWidth - 15, y, { align: "right" });
-          if (isBold) doc.setFont("helvetica", "normal");
-        };
-
-        addSummaryRow("Subtotal:", `$${subtotal.toFixed(2)}`, yPosition + 25);
-        addSummaryRow(
-          "Discount:",
-          `$${discountAmount.toFixed(2)}`,
-          yPosition + 32
-        );
-        addSummaryRow("Tax:", `$${taxAmount.toFixed(2)}`, yPosition + 39);
-        addSummaryRow(
-          "Shipping Fee:",
-          `$${(invoice.shippingFee || 0).toFixed(2)}`,
-          yPosition + 46
-        );
-        addSummaryRow("Total:", `$${total.toFixed(2)}`, yPosition + 56, true);
-      },
-      pageWidth - 20,
-      70
-    );
-
-    // Add a footer
-    doc.setFont("helvetica", "italic");
-    doc.setFontSize(8);
-    doc.setTextColor(127, 140, 141);
-    doc.text("Thank you for your business!", pageWidth / 2, pageHeight - 10, {
-      align: "center",
-    });
-
-    // Save the PDF
-    doc.save(`Invoice_${invoice.invoiceNumber}.pdf`);
-    toast.info(`Downloaded Invoice ${invoice.invoiceNumber} successfully`);
+      toast.info(`Downloaded Invoice ${invoice.invoiceNumber} successfully`);
+    } catch (error) {
+      console.error("Error generating invoice PDF:", error);
+      toast.error("Failed to download the invoice. Please try again.");
+    }
   };
 
   if (loading) {
