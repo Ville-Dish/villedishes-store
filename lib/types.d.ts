@@ -30,7 +30,7 @@ interface ShippingInfo {
 
 // Update OrderDetails to include order number and order date.
 type OrderDetails = {
-  id: number;
+  id: string;
   products: Product[];
   subtotal: number;
   tax: number;
@@ -42,6 +42,7 @@ type OrderDetails = {
   verificationCode?: string;
   orderNumber?: string; // Added order number
   orderDate?: string; // Added order date
+  status?: "UNVERIFIED" | "PENDING" | "CANCELLED" | "FULFILLED";
 };
 
 interface Invoice {
@@ -107,4 +108,75 @@ type orderDashboardData = {
 
 type orderDashboardProps = {
   data: orderDashboardData[];
+};
+
+type MonthlySales = {
+  week: string;
+  sales: number;
+  orders: number;
+  averageOrderValue: number;
+};
+
+type TopProducts = {
+  name: string;
+  sales: number;
+  revenue: number;
+  unitsSold: number;
+};
+
+type MonthlySalesReport = {
+  monthlySales: MonthlySales[];
+  topProducts: TopProducts[];
+};
+
+type QuarterlyProps = {
+  month: string;
+  revenue: number;
+  expenses: number;
+  profit: number;
+};
+
+type ExpenseBreakdownProps = {
+  category: string;
+  amount: number;
+};
+
+type QuarterlyReport = {
+  quarterlyData: QuarterlyProps[];
+  expenseBreakdown: ExpenseBreakdownProps[];
+};
+
+type QuarterlyPerformanceProps = {
+  quarter: string;
+  sales: number;
+  target: number;
+  customerSatisfaction: number;
+};
+
+type KeyMetricsProps = {
+  metric: string;
+  value: string;
+};
+
+type AnnualPerformance = {
+  quarterlyPerformance: QuarterlyPerformanceProps[];
+  keyMetrics: KeyMetricsProps[];
+};
+
+type ReportItem = {
+  date: string;
+  status: string;
+  action?: string;
+  monthlySalesReport?: MonthlySalesReport;
+  quarterlyReport?: QuarterlyReport;
+  annualPerformance?: AnnualPerformance;
+};
+
+type ReportData = {
+  type: string;
+  items: ReportItem[];
+};
+
+type AdminReportProps = {
+  data: ReportData[];
 };

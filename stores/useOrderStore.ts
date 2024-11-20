@@ -22,7 +22,7 @@ interface ShippingInfo {
 
 // Update OrderDetails to include order number and order date.
 interface OrderDetails {
-  id: number;
+  id: string;
   products: Product[];
   subtotal: number;
   tax: number;
@@ -34,30 +34,24 @@ interface OrderDetails {
   verificationCode?: string;
   orderNumber?: string; // Added order number
   orderDate?: string; // Added order date
-  status:
-    | "pending"
-    | "verified"
-    | "processing"
-    | "fulfilled"
-    | "cancelled"
-    | undefined;
+  status: "UNVERIFIED" | "PENDING" | "CANCELLED" | "FULFILLED" | undefined;
 }
 
 interface OrderState {
   orders: OrderDetails[];
   addOrder: (order: OrderDetails) => Promise<OrderDetails | null>;
   updateOrder: (
-    orderId: number,
+    orderId: string,
     updates: Partial<OrderDetails>
   ) => Promise<OrderDetails | null>;
   verifyOrder: (
-    orderId: number,
+    orderId: string,
     providedVerificationCode: string
   ) => Promise<OrderDetails | null>;
-  cancelOrder: (orderId: number) => void;
-  getOrderById: (orderId: number) => OrderDetails | undefined;
+  cancelOrder: (orderId: string) => void;
+  getOrderById: (orderId: string) => OrderDetails | undefined;
   getPendingOrders: () => OrderDetails[];
-  getVerifiedOrders: () => OrderDetails[];
+  getUnverifiedOrders: () => OrderDetails[];
 }
 
 export const useOrderStore = create<OrderState>()(
@@ -76,7 +70,7 @@ export const useOrderStore = create<OrderState>()(
               return state;
             }
             const newOrder = { ...order };
-            newOrder.status = "pending";
+            newOrder.status = "UNVERIFIED";
             state.orders.push(newOrder);
             resolve(newOrder);
             return { orders: state.orders };
@@ -126,7 +120,7 @@ export const useOrderStore = create<OrderState>()(
 
             const verifiedOrder = {
               ...order,
-              status: "verified" as const,
+              status: "PENDING" as const,
               orderNumber: `ORD-${Math.floor(Math.random() * 1000000)}`,
               orderDate: new Date().toISOString().split("T")[0],
             };
@@ -145,7 +139,7 @@ export const useOrderStore = create<OrderState>()(
         set((state) => ({
           orders: state.orders.map((order) =>
             order.id === orderId
-              ? { ...order, status: "cancelled" as const }
+              ? { ...order, status: "CANCELLED" as const }
               : order
           ),
         }));
@@ -156,11 +150,11 @@ export const useOrderStore = create<OrderState>()(
       },
 
       getPendingOrders: () => {
-        return get().orders.filter((order) => order.status === "pending");
+        return get().orders.filter((order) => order.status === "PENDING");
       },
 
-      getVerifiedOrders: () => {
-        return get().orders.filter((order) => order.status === "verified");
+      getUnverifiedOrders: () => {
+        return get().orders.filter((order) => order.status === "UNVERIFIED");
       },
     }),
     {
