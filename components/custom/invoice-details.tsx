@@ -26,10 +26,11 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 
-import { Trash2, Edit } from "lucide-react";
+import { Trash2, Edit, Loader } from "lucide-react";
 
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { adminEmail } from "@/lib/constantData";
 
 export const InvoiceDetails = ({
   invoice,
@@ -50,6 +51,8 @@ export const InvoiceDetails = ({
   const [discountPercentage, setDiscountPercentage] = useState(
     invoice.discountPercentage || 0
   );
+  const [sending, setSending] = useState(false);
+  const [updating, setUpdating] = useState(false);
   // const [taxRate, setTaxRate] = useState<number>(5); // Default tax rate
   const [taxRate, setTaxRate] = useState(invoice.taxRate || 0); // Default tax rate
   // const [shippingFee, setShippingFee] = useState<number>(10); // Default shipping fee
@@ -174,6 +177,7 @@ export const InvoiceDetails = ({
 
   const handleUpdateInvoice = async () => {
     try {
+      setUpdating(true);
       const updatedInvoiceData = {
         ...updatedInvoice,
         amount: parseFloat(calculateTotal()),
@@ -188,6 +192,41 @@ export const InvoiceDetails = ({
       toast.error("Error trying to update invoice", {
         description: "Failed to update invoice",
       });
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handleSendInvoiceEmail = async () => {
+    try {
+      setSending(true);
+      const response = await fetch("/api/emails/invoice", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          from: adminEmail,
+          to: updatedInvoice.customerEmail,
+          subject: `Your Invoice ${updatedInvoice.invoiceNumber} from VilleDishes is ready`,
+          customerName: updatedInvoice.customerName,
+          invoiceNumber: updatedInvoice.invoiceNumber,
+          invoice: updatedInvoice,
+        }),
+      });
+
+      if (response.ok) {
+        toast.success("Invoice sent successfully");
+      } else {
+        throw new Error("Failed to send invoice");
+      }
+    } catch (error) {
+      console.error("Error sending invoice email:", error);
+      toast.error("Failed to send invoice email", {
+        description: "Please try again later",
+      });
+    } finally {
+      setSending(false);
     }
   };
 
@@ -498,10 +537,22 @@ export const InvoiceDetails = ({
       </Card>
 
       <div className="flex flex-col sm:flex-row gap-4 justify-between">
-        <Button className="w-full sm:w-auto" onClick={handleUpdateInvoice}>
+        <Button
+          className="w-full sm:w-auto"
+          onClick={handleUpdateInvoice}
+          disabled={updating || sending}
+        >
+          {updating && <Loader className="animate-spin w-4 h-4 mr-2" />}
           Update Invoice
         </Button>
-        <Button className="w-full sm:w-auto">Send Invoice</Button>
+        <Button
+          className="w-full sm:w-auto"
+          onClick={handleSendInvoiceEmail}
+          disabled={sending || updating}
+        >
+          {sending && <Loader className="animate-spin w-4 h-4 mr-2" />}
+          Send Invoice
+        </Button>
       </div>
     </div>
   );
