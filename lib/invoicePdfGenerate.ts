@@ -15,8 +15,8 @@ export const createInvoicePDF = (data: Invoice): Promise<Uint8Array> => {
       // const logoBase64 = imageToBase64("/assets/ville.svg");
       // console.log("Logo Base64 For SVG", logoBase64);
 
-      const logoPNGBase64 = imageToBase64("/assets/villeCap.png");
-      console.log("Logo Base64 For PNG", logoPNGBase64);
+      // const logoPNGBase64 = imageToBase64("/assets/villeCap.png");
+      // console.log("Logo Base64 For PNG", logoPNGBase64);
 
       // Helper function to add a card-like section
       const addCard = (
