@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma/client";
 import { isValidInvoiceStatus } from "@/lib/invoiceUtils";
 import { generateInvoiceNumber } from "@/lib/invoiceHelperFunction";
-import { shippingFee, taxRate } from "@/lib/constantData";
 
 // POST method to create a new invoice
 export async function POST(req: Request) {
