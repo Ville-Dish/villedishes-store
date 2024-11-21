@@ -1,7 +1,5 @@
 "use client";
 
-import { allProduct } from "@/lib/constantData";
-
 import { Button } from "@/components/ui/button";
 import Search from "@/components/custom/search";
 import { ProductCard } from "@/components/custom/product-card";
@@ -12,20 +10,41 @@ import { Banner } from "@/components/custom/banner";
 
 import { useEffect, useState } from "react";
 
-const productItems = allProduct;
-
-const categories = [
-  "All",
-  ...new Set(productItems.map((item) => item.category)),
-];
-
 const ProductPage = () => {
+  const [products, setProducts] = useState<MenuItem[]>([]);
   const [activeCategory, setActiveCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
-  const [filteredItems, setFilteredItems] = useState(productItems);
+  const [filteredItems, setFilteredItems] = useState<MenuItem[]>([]);
+
+  const [loading, setLoading] = useState<boolean>(true);
+
+  // Fetch products from the API
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const response = await fetch("/api/products", { method: "GET" });
+        const data = await response.json();
+
+        if (response.ok) {
+          setProducts(data.data);
+          setFilteredItems(data.data); // Set filtered items initially to all products
+        } else {
+          console.error("Error fetching products:", data.message);
+        }
+      } catch (error) {
+        console.error("Error fetching products:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, []);
+
+  const categories = ["All", ...new Set(products.map((item) => item.category))];
 
   useEffect(() => {
-    const filtered = allProduct.filter(
+    const filtered = products.filter(
       (item) =>
         item.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
         (activeCategory === "All" || item.category === activeCategory)
@@ -51,7 +70,13 @@ const ProductPage = () => {
             <div className="mb-8">
               <Search onSearch={setSearchQuery} />
             </div>
-            {filteredItems.length > 0 ? (
+            {loading ? (
+              <div className="flex justify-center items-center h-64">
+                <p className="text-xl font-semibold text-gray-600">
+                  Loading Products...
+                </p>
+              </div>
+            ) : filteredItems.length > 0 ? (
               <ProductCard
                 categories={categories}
                 items={filteredItems}
