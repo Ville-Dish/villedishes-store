@@ -15,6 +15,9 @@ interface Product {
   name: string;
   price: number;
   quantity: number;
+  product: MenuItem & {
+    invoiceId: string | null;
+  };
 }
 
 interface ShippingInfo {
@@ -31,6 +34,7 @@ interface ShippingInfo {
 // Update OrderDetails to include order number and order date.
 type OrderDetails = {
   id: string;
+  orderId?: string;
   products: Product[];
   subtotal: number;
   tax: number;
