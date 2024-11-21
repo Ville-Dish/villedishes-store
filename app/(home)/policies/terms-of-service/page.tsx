@@ -14,7 +14,7 @@ const TermsOfService = () => {
               1. Acceptance of Terms
             </h2>
             <p>
-              By accessing and using Villedishes' services, you agree to be
+              By accessing and using Villedishes&apos; services, you agree to be
               bound by these Terms of Service. If you do not agree to these
               terms, please do not use our services.
             </p>
@@ -22,9 +22,10 @@ const TermsOfService = () => {
           <section>
             <h2 className="text-2xl font-semibold mb-2">2. Use of Service</h2>
             <p>
-              You agree to use Villedishes' services only for lawful purposes
-              and in accordance with these Terms. You are prohibited from
-              violating or attempting to violate the security of the website.
+              You agree to use Villedishes&apos; services only for lawful
+              purposes and in accordance with these Terms. You are prohibited
+              from violating or attempting to violate the security of the
+              website.
             </p>
           </section>
           <section>
