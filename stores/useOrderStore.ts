@@ -52,6 +52,7 @@ interface OrderState {
   getOrderById: (orderId: string) => OrderDetails | undefined;
   getPendingOrders: () => OrderDetails[];
   getUnverifiedOrders: () => OrderDetails[];
+  clearOrder: () => void;
 }
 
 export const useOrderStore = create<OrderState>()(
@@ -156,6 +157,7 @@ export const useOrderStore = create<OrderState>()(
       getUnverifiedOrders: () => {
         return get().orders.filter((order) => order.status === "UNVERIFIED");
       },
+      clearOrder: () => set({ orders: [] }),
     }),
     {
       name: "order-storage", // unique name for localStorage key
