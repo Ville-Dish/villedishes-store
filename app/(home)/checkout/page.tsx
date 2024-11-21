@@ -44,7 +44,7 @@ type FormValues = z.infer<typeof baseSchema> & { referenceNumber?: string };
 export default function CheckoutPage() {
   const [orderPlaced, setOrderPlaced] = useState(false);
   const [payment, setPayment] = useState(false);
-  const [orderId, setOrderId] = useState<number>(0);
+  const [orderId, setOrderId] = useState<string>("");
 
   const { cartItems, subtotal, total } = useCartStore();
 
@@ -58,7 +58,8 @@ export default function CheckoutPage() {
     useState<z.ZodType<FormValues>>(baseSchema);
 
   useEffect(() => {
-    const tempOrderId = Date.now();
+    const tempOrderId = Date.now().toString();
+    console.log(tempOrderId);
     setOrderId(tempOrderId);
   }, []);
 
@@ -89,60 +90,113 @@ export default function CheckoutPage() {
     },
   });
 
-  const sendVerificationEmail = (orderDetails: OrderDetails) => {
-    fetch("/api/emails/payment", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from: orderDetails.shippingInfo.email,
-        to: adminEmail,
-        subject: `VERIFY INTERAC PAYMENT FOR ${orderDetails.id}`,
-        customerName: `${orderDetails.shippingInfo.firstName} ${orderDetails.shippingInfo.lastName}`,
-        paymentAmount: orderDetails.total,
-        paymentDate: orderDetails.paymentDate,
-        referenceNumber: orderDetails.referenceNumber,
-        verificationCode: orderDetails.verificationCode,
-        orderId: orderDetails.id,
-      }),
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        toast.success("Order Placed", {
-          description:
-            "An email has been sent to the admin to confirm your payment.",
-        });
-        console.log("Email sent successfully:", data);
-      })
-      .catch((error) => {
-        toast.error("Verification Failed", {
-          description:
-            error instanceof Error
-              ? error.message
-              : "An unknown error occurred",
-        });
-        console.error("Error sending email:", error);
+  const sendVerificationEmail = async (orderDetails: OrderDetails) => {
+    try {
+      const response = await fetch("/api/emails/payment", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          from: orderDetails.shippingInfo.email,
+          to: adminEmail,
+          subject: `VERIFY INTERAC PAYMENT FOR ${orderDetails.id}`,
+          customerName: `${orderDetails.shippingInfo.firstName} ${orderDetails.shippingInfo.lastName}`,
+          paymentAmount: orderDetails.total,
+          paymentDate: orderDetails.paymentDate,
+          referenceNumber: orderDetails.referenceNumber,
+          verificationCode: orderDetails.verificationCode,
+          orderId: orderDetails.id,
+        }),
       });
+
+      if (!response.ok) {
+        throw new Error(
+          `Failed to send verification email: ${response.status} ${response.statusText}`
+        );
+      }
+
+      const data = await response.json();
+      console.log("Verification email sent successfully:", data);
+      toast.success("Order Placed", {
+        description:
+          "An email has been sent to the admin to confirm your payment.",
+      });
+    } catch (error) {
+      console.error("Error sending verification email:", error);
+      toast.error("Verification Failed", {
+        description:
+          error instanceof Error ? error.message : "An unknown error occurred",
+      });
+    }
   };
 
   //function to handle moving order data from local storage to db
   const handleUpdateOrderDB = async () => {
-    const storedOrder = localStorage.getItem("order");
+    const storedOrder = localStorage.getItem("order-storage");
+
     if (storedOrder) {
       try {
-        const orderDetails = JSON.parse(storedOrder);
-        await fetch("/api/orders", {
+        const parsedOrder = JSON.parse(storedOrder);
+        const orderDetails = parsedOrder?.state?.orders?.[0];
+        if (!orderDetails) {
+          throw new Error("Invalid order details");
+        }
+        console.log({ orderDetails });
+
+        // Prepare the order data for the API
+        const orderData = {
+          id: orderDetails.id,
+          paymentDate: orderDetails.paymentDate,
+          products: orderDetails.products.map((product: Product) => ({
+            productId: product.id,
+            quantity: product.quantity,
+          })),
+          referenceNumber: orderDetails.referenceNumber,
+          shippingFee: orderDetails.shippingFee,
+          shippingInfo: orderDetails.shippingInfo,
+          status: orderDetails.status || "UNVERIFIED",
+          subtotal: orderDetails.subtotal,
+          tax: orderDetails.tax,
+          total: orderDetails.total,
+          orderDate: orderDetails.orderDate,
+          orderNumber: orderDetails.orderNumber,
+          verificationCode: orderDetails.verificationCode,
+        };
+
+        console.log("Prepared order data:", orderData);
+
+        const res = await fetch("/api/orders", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify(orderDetails),
+          body: JSON.stringify(orderData),
         });
-        console.log("Order added to database successfully");
+
+        console.log("API response status:", res.status);
+
+        if (!res.ok) {
+          const errorText = await res.text();
+          console.error("API error response:", errorText);
+          throw new Error(
+            `Failed to add order to the database: ${res.status} ${res.statusText}`
+          );
+        }
+
+        const result = await res.json();
+        console.log("Order added to database successfully:");
+        // Remove order from local storage
+        localStorage.removeItem("order-storage");
+
+        return result.data;
       } catch (error) {
         console.error("Failed to add order to the database:", error);
+        throw error;
       }
+    } else {
+      console.log("No order data found in local storage");
+      throw new Error("No order data found in local storage");
     }
   };
 
@@ -160,6 +214,7 @@ export default function CheckoutPage() {
       status: undefined,
     };
     console.log("ORDER DEETS", orderDetails);
+
     if (!payment) {
       await addOrder(orderDetails);
       setPayment(true);
@@ -167,21 +222,31 @@ export default function CheckoutPage() {
       const referenceNumber = values?.referenceNumber ?? "";
       if (referenceNumber) {
         const updatedOrderDetails = await updateOrder(orderId, {
+          orderNumber: `TEMP_ORD-${Math.floor(Math.random() * 1000000)}`,
           referenceNumber,
           paymentDate: new Date().toISOString().split("T")[0],
+          orderDate: new Date().toISOString().split("T")[0],
         });
-        await handleUpdateOrderDB();
-        console.log("Data moved to DB");
-        setOrderPlaced(true);
-        // Trigger email verification after order placement
-        if (updatedOrderDetails && updatedOrderDetails?.status === "pending") {
-          sendVerificationEmail(updatedOrderDetails);
-        }
+        console.log("Updated order details:", updatedOrderDetails);
+        try {
+          const dbOrder = await handleUpdateOrderDB();
+          console.log("Order added to DB:", dbOrder);
+          setOrderPlaced(true);
+          clearCart();
 
-        // Clear cart after successful order placement
-        clearCart();
+          if (dbOrder && dbOrder.status === "UNVERIFIED") {
+            sendVerificationEmail(updatedOrderDetails as OrderDetails);
+          }
+        } catch (error) {
+          console.error("Order could not be added to DB:", error);
+          toast.error("Failed to place order", {
+            description: "Please try again later",
+          });
+          return;
+        }
       } else {
         console.error("Reference number is required");
+        toast.error("Reference number is required");
       }
     }
   };
