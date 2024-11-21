@@ -9,7 +9,12 @@ import {
   CardContent,
   CardFooter,
 } from "../ui/card";
-import { ChevronLeft, ChevronRight, ShoppingBasket } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Loader,
+  ShoppingBasket,
+} from "lucide-react";
 import useCartStore from "@/stores/useCartStore";
 import {
   Carousel,
@@ -36,6 +41,7 @@ export const ProductCard = ({
   const [isLargeScreen, setIsLargeScreen] = useState(false);
   const itemsPerPage = isLargeScreen ? 9 : 5;
   const [currentPage, setCurrentPage] = useState(1);
+  const [loadingItem, setLoadingItem] = useState<string | null>(null);
 
   const handleResize = useCallback(() => {
     setIsLargeScreen(window.innerWidth > 768);
@@ -62,6 +68,18 @@ export const ProductCard = ({
   useEffect(() => {
     setCurrentPage(1);
   }, [activeCategory, items]);
+
+  const handleAddToCart = async (item: MenuItem) => {
+    setLoadingItem(item.id);
+    await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulate network delay
+    addToCart({
+      id: item.id,
+      name: item.name,
+      quantity: 1,
+      price: item.price,
+    });
+    setLoadingItem(null);
+  };
 
   return (
     <Tabs defaultValue="All" className="w-full">
@@ -131,6 +149,7 @@ export const ProductCard = ({
           </div>
         )}
       </TabsList>
+
       <TabsContent value={activeCategory} className="mt-0">
         <div className="grid gap-6 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
           {currentItems.map((item) => (
@@ -162,16 +181,14 @@ export const ProductCard = ({
                 <span className="font-bold">${item.price}</span>
                 <Button
                   size="sm"
-                  onClick={() =>
-                    addToCart({
-                      id: item.id,
-                      name: item.name,
-                      quantity: 1,
-                      price: item.price,
-                    })
-                  }
+                  onClick={() => handleAddToCart(item)}
+                  disabled={loadingItem === item.id}
                 >
-                  <ShoppingBasket />
+                  {loadingItem === item.id ? (
+                    <Loader className="animate-spin" />
+                  ) : (
+                    <ShoppingBasket />
+                  )}
                 </Button>
               </CardFooter>
             </Card>
