@@ -29,7 +29,7 @@ export const NavbarMenu = () => {
       window.addEventListener("resize", handleResize);
       return () => window.removeEventListener("resize", handleResize);
     }
-  }, []);
+  }, [handleResize]);
 
   const NavLink = ({
     href,
