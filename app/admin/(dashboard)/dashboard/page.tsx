@@ -23,8 +23,8 @@ import { RecentOrders } from "@/components/custom/dashboard/recent-orders";
 import { Overview } from "@/components/custom/dashboard/overview";
 import { ReportsSection } from "@/components/custom/dashboard/report-accordion";
 import { DatePickerWithRange } from "@/components/custom/date-range-picker";
-import { YearPicker } from "@/components/custom/year-picker";
-import { MonthYearPicker } from "@/components/custom/month-year-picker";
+import { YearPicker } from "@/components/custom/dashboard/year-picker";
+import { MonthYearPicker } from "@/components/custom/dashboard/month-year-picker";
 import {
   Card,
   CardContent,
