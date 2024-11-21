@@ -1,5 +1,5 @@
-// invoiceUtils.ts
-// invoiceStatus.ts
+// orderUtils.ts
+// orderStatus.ts
 export enum OrderStatus {
   UNVERIFIED = "UNVERIFIED",
   PENDING = "PENDING",
