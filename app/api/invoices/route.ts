@@ -183,7 +183,7 @@ export async function PATCH(req: Request) {
       );
     }
 
-    const updateData: any = {};
+    const updateData: Record<string, unknown> = {};
 
     if (customerName !== undefined) updateData.customerName = customerName;
     if (customerEmail !== undefined) updateData.customerEmail = customerEmail;
@@ -207,7 +207,7 @@ export async function PATCH(req: Request) {
     // Start a transaction
     const updatedInvoice = await prisma.$transaction(async (prisma) => {
       // Update the invoice
-      const invoice = await prisma.invoice.update({
+      await prisma.invoice.update({
         where: { id },
         data: updateData,
       });
