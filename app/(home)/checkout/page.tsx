@@ -51,7 +51,7 @@ export default function CheckoutPage() {
   const tax = subtotal * (taxRate / 100);
   const shipping = shippingFee;
 
-  const { addOrder, updateOrder } = useOrderStore();
+  const { addOrder, updateOrder, clearOrder } = useOrderStore();
   const { clearCart } = useCartStore();
 
   const [formSchema, setFormSchema] =
@@ -187,7 +187,7 @@ export default function CheckoutPage() {
         const result = await res.json();
         console.log("Order added to database successfully:");
         // Remove order from local storage
-        localStorage.removeItem("order-storage");
+        // localStorage.removeItem("order-storage");
 
         return result.data;
       } catch (error) {
@@ -233,6 +233,7 @@ export default function CheckoutPage() {
           console.log("Order added to DB:", dbOrder);
           setOrderPlaced(true);
           clearCart();
+          clearOrder();
 
           if (dbOrder && dbOrder.status === "UNVERIFIED") {
             sendVerificationEmail(updatedOrderDetails as OrderDetails);
