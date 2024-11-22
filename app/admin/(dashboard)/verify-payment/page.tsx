@@ -18,13 +18,13 @@ import { adminEmail } from "@/lib/constantData";
 export default function VerifyPaymentPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { verifyOrder } = useOrderStore();
+  // const { verifyOrder } = useOrderStore();
   const [verificationCode, setVerificationCode] = useState("");
   const [isVerifying, setIsVerifying] = useState(false);
-  const [orderId, setOrderId] = useState<number | null>(null);
+  const [orderId, setOrderId] = useState<string | null>(null);
 
   useEffect(() => {
-    const id = Number(searchParams.get("orderId")) || 0;
+    const id = String(searchParams.get("orderId")) || "";
     setOrderId(id);
     if (!id) {
       toast.error("Order ID is missing");
@@ -71,7 +71,10 @@ export default function VerifyPaymentPage() {
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to send email: ${response.statusText}`);
+        const errorData = await response.json();
+        throw new Error(
+          `Failed to send email: ${errorData.message || response.statusText}`
+        );
       }
 
       const data = await response.json();
@@ -87,6 +90,30 @@ export default function VerifyPaymentPage() {
       });
       console.error("Error sending email:", error);
     }
+  };
+
+  const verifyOrder = async (
+    orderId: string,
+    verificationCode: string
+  ): Promise<OrderDetails> => {
+    const response = await fetch("/api/orders", {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        orderId,
+        providedVerificationCode: verificationCode,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Order verification failed");
+    }
+
+    const { data } = await response.json();
+    return data;
   };
 
   const handleVerify = async (e: FormEvent<HTMLFormElement>) => {
