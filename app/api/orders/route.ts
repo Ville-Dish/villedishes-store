@@ -237,7 +237,16 @@ export async function PATCH(req: Request) {
 // New PUT method to update only the order status
 export async function PUT(req: NextRequest) {
   try {
-    const { orderId, newStatus } = await req.json();
+    const body = await req.json();
+
+    if (!body || typeof body !== "object") {
+      return NextResponse.json(
+        { message: "Invalid request body" },
+        { status: 400 }
+      );
+    }
+
+    const { orderId, newStatus } = body;
 
     if (!orderId || !newStatus) {
       return NextResponse.json(
