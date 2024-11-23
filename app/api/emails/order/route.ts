@@ -27,22 +27,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // Log the received data
-    console.log("Received email data:", {
-      from,
-      to,
-      subject,
-      customerName,
-      orderNumber,
-      orderDate,
-      subtotal,
-      tax,
-      shippingFee,
-      total,
-      items,
-      estimatedDelivery,
-    });
-
     const emailHtml = await render(
       OrderConfirmationTemplate({
         customerName,
@@ -57,8 +41,6 @@ export async function POST(req: Request) {
       })
     );
 
-    console.log("After rendering emailHTML");
-
     const options = {
       from,
       to,
@@ -69,7 +51,6 @@ export async function POST(req: Request) {
 
     try {
       await sendEmail(options);
-      console.log("After sendEmail() invoked", options);
     } catch (emailError) {
       console.error("Error in sendEmail:", emailError);
       return NextResponse.json(
