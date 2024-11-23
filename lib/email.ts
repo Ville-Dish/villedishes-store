@@ -9,6 +9,10 @@ type EmailPayload = {
   replyTo: string;
 };
 
+interface ScheduledEmailOptions extends EmailPayload {
+  scheduledDate: Date;
+}
+
 // Replace with your SMTP credentials
 const smtpOptions = {
   host: process.env.SMTP_HOST || "smtp.gmail.com",
@@ -50,4 +54,15 @@ export const sendInvoiceEmail = async (
       },
     ],
   });
+};
+
+export const scheduleEmail = async (options: ScheduledEmailOptions) => {
+  const { scheduledDate, ...email } = options;
+  const delay = scheduledDate.getTime() - Date.now();
+
+  setTimeout(() => {
+    sendEmail(email).catch(console.error);
+  }, delay);
+
+  console.log(`Email scheduled for ${scheduledDate}`);
 };
