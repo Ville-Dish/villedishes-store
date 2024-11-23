@@ -27,19 +27,37 @@ export async function POST(req: Request) {
       );
     }
 
+    // Log the received data
+    console.log("Received email data:", {
+      from,
+      to,
+      subject,
+      customerName,
+      orderNumber,
+      orderDate,
+      subtotal,
+      tax,
+      shippingFee,
+      total,
+      items,
+      estimatedDelivery,
+    });
+
     const emailHtml = await render(
       OrderConfirmationTemplate({
         customerName,
         orderNumber,
         orderDate,
-        subtotal,
-        tax,
-        shippingFee,
-        total,
+        subtotal: Number(subtotal),
+        tax: Number(tax),
+        shippingFee: Number(shippingFee),
+        total: Number(total),
         items,
         estimatedDelivery,
       })
     );
+
+    console.log("After rendering emailHTML");
 
     const options = {
       from,
@@ -49,15 +67,25 @@ export async function POST(req: Request) {
       replyTo: from,
     };
 
-    await sendEmail(options);
+    try {
+      await sendEmail(options);
+      console.log("After sendEmail() invoked", options);
+    } catch (emailError) {
+      console.error("Error in sendEmail:", emailError);
+      return NextResponse.json(
+        { message: "Error sending email", error: emailError },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json(
       { message: "Email sent successfully" },
       { status: 200 }
     );
   } catch (error) {
+    console.error("Error in POST handler:", error);
     return NextResponse.json(
-      { message: "Error sending email", error },
+      { message: "Error processing request", error },
       { status: 500 }
     );
   }
