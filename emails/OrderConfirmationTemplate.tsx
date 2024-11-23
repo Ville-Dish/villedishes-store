@@ -25,7 +25,7 @@ type OrderConfirmationEmailProps = {
   tax: number;
   shippingFee: number;
   total: number;
-  items: Array<{ name: string; quantity: number; price: number }>;
+  items: Product[];
   estimatedDelivery?: string;
 };
 
@@ -104,12 +104,12 @@ const OrderConfirmationTemplate = ({
                     key={index}
                     className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}
                   >
-                    <Column className="p-3 w-1/2">{item.name}</Column>
+                    <Column className="p-3 w-1/2">{item.product.name}</Column>
                     <Column className="p-3 w-1/4 text-center">
                       {item.quantity}
                     </Column>
                     <Column className="p-3 w-1/4 text-right">
-                      ${item.price.toFixed(2)}
+                      ${item.product.price.toFixed(2)}
                     </Column>
                   </Row>
                 ))}
