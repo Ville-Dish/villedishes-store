@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Footer } from "@/components/custom/footer";
+import { Header } from "@/components/custom/header";
 
 export const metadata: Metadata = {
   title: "VilleDishes",
@@ -13,8 +14,11 @@ export default function HomeLayout({
 }>) {
   return (
     <>
-      <div className="min-h-screen">{children}</div>
-      <Footer />
+      <div className="min-h-screen">
+        <Header show />
+        {children}
+        <Footer />
+      </div>
     </>
   );
 }
