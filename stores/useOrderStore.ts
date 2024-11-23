@@ -44,14 +44,6 @@ interface OrderState {
     orderId: string,
     updates: Partial<OrderDetails>
   ) => Promise<OrderDetails | null>;
-  verifyOrder: (
-    orderId: string,
-    providedVerificationCode: string
-  ) => Promise<OrderDetails | null>;
-  cancelOrder: (orderId: string) => void;
-  getOrderById: (orderId: string) => OrderDetails | undefined;
-  getPendingOrders: () => OrderDetails[];
-  getUnverifiedOrders: () => OrderDetails[];
   clearOrder: () => void;
 }
 
@@ -101,62 +93,6 @@ export const useOrderStore = create<OrderState>()(
         });
       },
 
-      // Verify the pending order and add order number and order date
-      verifyOrder: (orderId, providedVerificationCode) => {
-        return new Promise<OrderDetails | null>((resolve) => {
-          set((state) => {
-            const orderIndex = state.orders.findIndex(
-              (order) => order.id === orderId
-            );
-            if (orderIndex === -1) {
-              resolve(null);
-              return state;
-            }
-
-            const order = state.orders[orderIndex];
-            if (order.verificationCode !== providedVerificationCode) {
-              resolve(null);
-              return state;
-            }
-
-            const verifiedOrder = {
-              ...order,
-              status: "PENDING" as const,
-              orderNumber: `ORD-${Math.floor(Math.random() * 1000000)}`,
-              orderDate: new Date().toISOString().split("T")[0],
-            };
-
-            const newOrders = [...state.orders];
-            newOrders[orderIndex] = verifiedOrder;
-
-            resolve(verifiedOrder);
-            return { orders: newOrders };
-          });
-        });
-      },
-
-      // Clear the state
-      cancelOrder: (orderId) => {
-        set((state) => ({
-          orders: state.orders.map((order) =>
-            order.id === orderId
-              ? { ...order, status: "CANCELLED" as const }
-              : order
-          ),
-        }));
-      },
-
-      getOrderById: (orderId) => {
-        return get().orders.find((order) => order.id === orderId);
-      },
-
-      getPendingOrders: () => {
-        return get().orders.filter((order) => order.status === "PENDING");
-      },
-
-      getUnverifiedOrders: () => {
-        return get().orders.filter((order) => order.status === "UNVERIFIED");
-      },
       clearOrder: () => set({ orders: [] }),
     }),
     {
