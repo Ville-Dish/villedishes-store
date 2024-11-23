@@ -35,7 +35,7 @@ import {
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { DateRange } from "react-day-picker";
 import { subDays } from "date-fns";
 
@@ -72,7 +72,7 @@ export default function AdminDashboard() {
     adminProductPerformanceData
   );
 
-  const filterData = () => {
+  const filterData = useCallback(() => {
     let fromDate: Date, toDate: Date;
 
     if (activeTab === "overview" && dateRange?.from && dateRange?.to) {
@@ -108,7 +108,7 @@ export default function AdminDashboard() {
       return itemDate >= fromDate && itemDate <= toDate;
     });
     setFilteredProductData(filteredProduct);
-  };
+  }, [activeTab, dateRange?.from, dateRange?.to, selectedMonth, selectedYear]);
 
   useEffect(() => {
     filterData();
