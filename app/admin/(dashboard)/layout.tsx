@@ -1,3 +1,4 @@
+import { Header } from "@/components/custom/header";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -10,5 +11,10 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <div className="min-h-screen">{children}</div>;
+  return (
+    <div className="min-h-screen">
+      <Header show={false} />
+      {children}
+    </div>
+  );
 }
