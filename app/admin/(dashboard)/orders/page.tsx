@@ -16,29 +16,60 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-// import useOrderStore from "@/stores/useOrderStore";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronUp, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
+
+type OrderStatus = "UNVERIFIED" | "PENDING" | "CANCELLED" | "FULFILLED";
 
 export default function AdminOrdersPage() {
   const [orders, setOrder] = useState<OrderDetails[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  // const { orders, updateOrder } = useOrderStore();
   const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
   const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
 
-  // const [selectedOrder, setSelectedOrder] = useState<OrderDetails | null>(null);
+  const updateOrderStatus = async (orderId: string, newStatus: OrderStatus) => {
+    try {
+      const response = await fetch("/api/orders", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ orderId, newStatus }),
+      });
 
-  const handleStatusChange = async (orderId: string, newStatus: string) => {
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to update order status");
+      }
+
+      const { data } = await response.json();
+      return data;
+    } catch (error) {
+      console.error("Error updating order status:", error);
+      throw error;
+    }
+  };
+
+  const handleStatusChange = async (
+    orderId: string,
+    newStatus: OrderStatus
+  ) => {
     setUpdatingOrderId(orderId);
     try {
-      // Placeholder for updateOrder function
-      // await updateOrder(orderId, {
-      //   status: newStatus as "PENDING" | "FULFILLED" | "CANCELLED",
-      // });
+      const updatedOrder = await updateOrderStatus(orderId, newStatus);
+      setOrder(
+        orders.map((order) =>
+          order.orderId === orderId
+            ? { ...order, status: updatedOrder.status }
+            : order
+        )
+      );
       console.log(`Order ${orderId} status updated to ${newStatus}`);
+      toast.success(`Order ${orderId} status updated to ${newStatus}`);
     } catch (error) {
+      toast.error("Failed to update order status");
       console.error("Failed to update order status:", error);
     } finally {
       setUpdatingOrderId(null);
@@ -48,10 +79,6 @@ export default function AdminOrdersPage() {
   const toggleOrderDetails = (orderId: string) => {
     setExpandedOrderId(expandedOrderId === orderId ? null : orderId);
   };
-
-  // const handleViewInvoice = (invoice: Invoice) => {
-  //   setSelectedInvoice(invoice);
-  // };
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -80,7 +107,6 @@ export default function AdminOrdersPage() {
 
   return (
     <div className="flex-1 space-y-4 p-8 pt-6">
-      {/* <h1 className="text-2xl font-bold mb-4 text-center">Orders</h1> */}
       <div className="flex items-center justify-between space-y-2">
         <h2 className="text-3xl font-bold tracking-tight">Orders</h2>
         <div className="flex items-center space-x-2">
@@ -117,7 +143,7 @@ export default function AdminOrdersPage() {
         ) : (
           <TableBody>
             {orders.map((order) => (
-              <React.Fragment key={order.id}>
+              <React.Fragment key={order.orderId}>
                 <TableRow>
                   <TableCell>{order.orderId}</TableCell>
                   <TableCell>{order.orderNumber}</TableCell>
@@ -130,18 +156,21 @@ export default function AdminOrdersPage() {
                   <TableCell>
                     <Select
                       onValueChange={(value) =>
-                        handleStatusChange(order.id, value)
+                        handleStatusChange(
+                          order.orderId as string,
+                          value as OrderStatus
+                        )
                       }
                       defaultValue={order.status}
-                      disabled={updatingOrderId === order.id}
+                      disabled={updatingOrderId === order.orderId}
                     >
                       <SelectTrigger className="w-[180px]">
                         <SelectValue placeholder="Change status" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="pending">Pending</SelectItem>
-                        <SelectItem value="fulfilled">Fulfilled</SelectItem>
-                        <SelectItem value="cancelled">Cancelled</SelectItem>
+                        <SelectItem value="PENDING">PENDING</SelectItem>
+                        <SelectItem value="FULFILLED">FULFILLED</SelectItem>
+                        <SelectItem value="CANCELLED">CANCELLED</SelectItem>
                       </SelectContent>
                     </Select>
                   </TableCell>
@@ -149,7 +178,9 @@ export default function AdminOrdersPage() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => toggleOrderDetails(order.id)}
+                      onClick={() =>
+                        toggleOrderDetails(order.orderId as string)
+                      }
                     >
                       {expandedOrderId === order.id ? (
                         <ChevronUp />
@@ -159,7 +190,7 @@ export default function AdminOrdersPage() {
                     </Button>
                   </TableCell>
                 </TableRow>
-                {expandedOrderId === order.id && (
+                {expandedOrderId === order.orderId && (
                   <TableRow>
                     <TableCell colSpan={8}>
                       <div className="bg-gray-50 p-4 rounded-md">
