@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma/client";
 import { isValidOrderStatus } from "@/lib/orderUtils";
 import { generateOrderNumber } from "@/lib/orderHelperFunction";
+import { verifyToken } from "@/lib/helper";
 
 export async function POST(req: NextRequest) {
   try {
@@ -12,6 +13,8 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
+
+    await verifyToken(req);
 
     const {
       id,
@@ -167,6 +170,8 @@ export async function PATCH(req: Request) {
   try {
     const { orderId, providedVerificationCode } = await req.json();
 
+    await verifyToken(req);
+
     if (!orderId) {
       return NextResponse.json(
         { message: "Order ID is required" },
@@ -238,6 +243,8 @@ export async function PATCH(req: Request) {
 export async function PUT(req: NextRequest) {
   try {
     const body = await req.json();
+
+    await verifyToken(req);
 
     if (!body || typeof body !== "object") {
       return NextResponse.json(

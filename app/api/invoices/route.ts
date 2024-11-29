@@ -2,10 +2,12 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma/client";
 import { isValidInvoiceStatus } from "@/lib/invoiceUtils";
 import { generateInvoiceNumber } from "@/lib/invoiceHelperFunction";
+import { verifyToken } from "@/lib/helper";
 
 // POST method to create a new invoice
 export async function POST(req: Request) {
   try {
+    await verifyToken(req);
     const {
       customerName,
       customerEmail,
@@ -154,6 +156,7 @@ export async function GET() {
 // PATCH method to update an invoice
 export async function PATCH(req: Request) {
   try {
+    await verifyToken(req);
     const {
       id,
       customerName,
@@ -282,6 +285,8 @@ export async function PATCH(req: Request) {
 export async function DELETE(req: Request) {
   try {
     const { id } = await req.json();
+
+    await verifyToken(req);
 
     const deletedInvoice = await prisma.invoice.delete({
       where: { id },

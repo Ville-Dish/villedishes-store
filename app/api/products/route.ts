@@ -1,11 +1,14 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma/client";
+import { verifyToken } from "@/lib/helper";
 
 // POST method to create a new product
 export async function POST(req: Request) {
   try {
     const { name, description, price, image, category, rating } =
       await req.json();
+
+    await verifyToken(req);
 
     const newProduct = await prisma.product.create({
       data: {
@@ -60,6 +63,8 @@ export async function PATCH(req: Request) {
     const { id, name, description, price, category, image, rating } =
       await req.json();
 
+    await verifyToken(req);
+
     // Define the type for updateData using Partial and your Prisma model
     const updateData: Partial<{
       name: string;
@@ -107,6 +112,8 @@ export async function PATCH(req: Request) {
 export async function DELETE(req: Request) {
   try {
     const { id } = await req.json();
+
+    await verifyToken(req);
 
     const deletedProduct = await prisma.product.delete({
       where: { id },
