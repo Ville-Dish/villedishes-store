@@ -2,16 +2,6 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ShoppingBasket as CartIcon } from "lucide-react";
-
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
 import {
   Popover,
   PopoverContent,
@@ -19,10 +9,16 @@ import {
 } from "@/components/ui/popover";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuthStore } from "@/stores/useAuthStore";
+import { auth } from "@/config/firebase";
+import { signOut } from "firebase/auth";
 
 export default function AdminAvatar() {
   const [sheetOpen, setSheetOpen] = useState(false);
-  const logout = useAuthStore((state) => state.logout);
+  // const logout = useAuthStore((state) => state.logout);
+
+  const logout = async () => {
+    await signOut(auth);
+  };
 
   const handleSettings = () => {
     console.log("Clicked Setting Button");
@@ -30,19 +26,23 @@ export default function AdminAvatar() {
   return (
     <Popover open={sheetOpen} onOpenChange={setSheetOpen}>
       <PopoverTrigger asChild>
-        <Button variant="ghost" size="icon" className="text-[#adadad] relative">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="text-[#adadad] relative p-0"
+        >
           <Avatar>
-            <AvatarImage src="https://github.com/shadcn.png" />
+            <AvatarImage
+              src="https://github.com/shadcn.png"
+              alt="Admin Avatar"
+            />
             <AvatarFallback>VD</AvatarFallback>
           </Avatar>
-          <span className="absolute top-2 -right-10 text-xs text-[#fe9e1d]">
-            Admin
-          </span>
         </Button>
       </PopoverTrigger>
-      <PopoverContent>
+      <PopoverContent className="w-56">
         <div className="flex flex-col gap-4">
-          <p>Logout or Change your settings</p>
+          <p className="text-sm font-medium">Admin Options</p>
           <Button size="sm" onClick={logout} className="bg-[#da281c]">
             Logout
           </Button>
