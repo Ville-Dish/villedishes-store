@@ -5,6 +5,7 @@ export const metadata: Metadata = {
   title: "VilleDishes- Admin",
   description: "Admin Dashboard",
 };
+export const runtime = "nodejs";
 
 export default function AdminLayout({
   children,
