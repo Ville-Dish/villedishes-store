@@ -178,16 +178,17 @@ export const ProductCard = ({
                         </div> */}
               </CardContent>
               <CardFooter className="p-2 flex justify-between items-center">
-                <span className="font-bold">${item.price}</span>
+                <span className="font-bold">${item.price.toFixed(2)}</span>
                 <Button
                   size="sm"
+                  className="bg-[#fe9e1d]"
                   onClick={() => handleAddToCart(item)}
                   disabled={loadingItem === item.id}
                 >
                   {loadingItem === item.id ? (
                     <Loader className="animate-spin" />
                   ) : (
-                    <ShoppingBasket />
+                    <ShoppingBasket className="text-[#fff1e2]" />
                   )}
                 </Button>
               </CardFooter>

@@ -127,15 +127,15 @@ const Contact = () => {
                 </p>
                 <div className="space-y-2">
                   <div className="flex items-center">
-                    <Phone className="h-5 w-5 mr-2  text-yellow-500" />
+                    <Phone className="h-5 w-5 mr-2  text-[#fd9e1d]" />
                     <p>+1 234 567 8900</p>
                   </div>
                   <div className="flex items-center">
-                    <Mail className="h-5 w-5 mr-2 text-yellow-500" />
+                    <Mail className="h-5 w-5 mr-2 text-[#fd9e1d]" />
                     <p>villedishes@gmail.com</p>
                   </div>
                   <div className="flex items-center">
-                    <Earth className="h-5 w-5 mr-2 text-yellow-500" />
+                    <Earth className="h-5 w-5 mr-2 text-[#fd9e1d]" />
                     <p>www.villedishes.com</p>
                   </div>
                 </div>
@@ -224,7 +224,10 @@ const Contact = () => {
                     />
                   </div>
                   <div className="flex justify-center w-full">
-                    <Button type="submit" className="w-full sm:w-auto">
+                    <Button
+                      type="submit"
+                      className="w-full sm:w-auto bg-[#f5ad07]"
+                    >
                       Send Message
                     </Button>
                   </div>
