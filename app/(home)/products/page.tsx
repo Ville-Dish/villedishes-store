@@ -50,7 +50,7 @@ const ProductPage = () => {
         (activeCategory === "All" || item.category === activeCategory)
     );
     setFilteredItems(filtered);
-  }, [searchQuery, activeCategory]);
+  }, [searchQuery, activeCategory, products]);
 
   return (
     <div className="flex flex-col min-h-screen">
