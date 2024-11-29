@@ -75,6 +75,7 @@ export const AdminNavbarMenu = () => {
                   onClick={() => setIsOpen(false)}
                 />
               ))}
+              <Button>Logout</Button>
             </nav>
           </SheetContent>
         </Sheet>
