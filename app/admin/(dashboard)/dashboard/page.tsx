@@ -59,7 +59,6 @@ const StatCard: React.FC<{
 
 export default function AdminDashboard() {
   const user = useAuthStore((state) => state.user);
-  const logout = useAuthStore((state) => state.logout);
   const router = useRouter();
 
   const [activeTab, setActiveTab] = useState("overview");
