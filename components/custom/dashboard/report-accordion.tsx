@@ -103,8 +103,6 @@ type AdminReportProps = {
 export const ReportsSection = ({ data }: AdminReportProps) => {
   const [openDialog, setOpenDialog] = useState<string | null>(null);
 
-  console.log("Reports Data", data);
-
   return (
     <Accordion type="single" collapsible className="w-full">
       {data.map((report, index) => (
