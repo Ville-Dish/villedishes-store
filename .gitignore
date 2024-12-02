@@ -44,3 +44,7 @@ next-env.d.ts
 
 # text
 *.txt
+
+
+#json
+ville-dishes-firebase-adminsdk-srwmr-d4e93b106b.json
