@@ -21,8 +21,6 @@ export const MonthlySalesReport = ({
   monthlySales,
   topProducts,
 }: MonthlySalesReport) => {
-  console.log("Monthly Sales Report", monthlySales);
-  console.log("Top Products", topProducts);
   return (
     <div className="container mx-auto p-4">
       <h1 className="text-3xl font-bold mb-6">Monthly Sales Report</h1>
