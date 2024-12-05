@@ -10,13 +10,7 @@ import {
   ClockAlert,
   CircleX,
 } from "lucide-react";
-import {
-  adminOverViewData,
-  adminProductPerformanceData,
-  adminRevenueGrowthData,
-  adminRecentOrders,
-  adminReportData,
-} from "@/lib/constantData";
+
 import { RevenueGrowth } from "@/components/custom/dashboard/revenue-growth";
 import { ProductPerformance } from "@/components/custom/dashboard/product-performance";
 import { RecentOrders } from "@/components/custom/dashboard/recent-orders";
@@ -35,9 +29,33 @@ import {
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { DateRange } from "react-day-picker";
-import { subDays } from "date-fns";
+import { subDays, format, parse, isBefore, isSameMonth } from "date-fns";
+
+type overview = {
+  month: string;
+  total: string;
+};
+
+type revenue = {
+  month: string;
+  revenue: number;
+};
+
+type quarterly = {
+  month: number;
+  revenue: number;
+  expenses: number;
+  profit: number;
+};
+
+type quarterlyPerformance = {
+  quarter: number;
+  sales: number;
+  orders: number;
+  customerSatisfaction: number;
+};
 
 const StatCard: React.FC<{
   title: string;
@@ -55,6 +73,22 @@ const StatCard: React.FC<{
   </Card>
 );
 
+const monthNames = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+];
+const quarterNames = ["Q1", "Q2", "Q3", "Q4"];
+
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
@@ -63,56 +97,6 @@ export default function AdminDashboard() {
   });
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
-  const [filteredOverviewData, setFiltereredOverviewData] =
-    useState(adminOverViewData);
-  const [filteredRevenueData, setFilteredRevenueData] = useState(
-    adminRevenueGrowthData
-  );
-  const [filteredProductData, setFilteredProductData] = useState(
-    adminProductPerformanceData
-  );
-
-  const filterData = useCallback(() => {
-    let fromDate: Date, toDate: Date;
-
-    if (activeTab === "overview" && dateRange?.from && dateRange?.to) {
-      fromDate = dateRange.from;
-      toDate = dateRange.to;
-    } else if (activeTab === "analytics") {
-      fromDate = new Date(selectedYear, 0, 1);
-      toDate = new Date(selectedYear, 11, 31);
-    } else if (activeTab === "reports") {
-      fromDate = new Date(selectedYear, selectedMonth - 1, 1);
-      toDate = new Date(selectedYear, selectedMonth, 0);
-    } else {
-      return; // If no valid date range, exit the function
-    }
-
-    // Filter Overview Data
-    const filteredOverview = adminOverViewData.filter((item) => {
-      const itemDate = new Date(`${item.name}-01`);
-      return itemDate >= fromDate && itemDate <= toDate;
-    });
-    setFiltereredOverviewData(filteredOverview);
-
-    // Filter Revenue Growth Data
-    const filteredRevenue = adminRevenueGrowthData.filter((item) => {
-      const itemDate = new Date(item.name);
-      return itemDate >= fromDate && itemDate <= toDate;
-    });
-    setFilteredRevenueData(filteredRevenue);
-
-    // Filter Product Performance Data
-    const filteredProduct = adminProductPerformanceData.filter((item) => {
-      const itemDate = new Date(item.date);
-      return itemDate >= fromDate && itemDate <= toDate;
-    });
-    setFilteredProductData(filteredProduct);
-  }, [activeTab, dateRange?.from, dateRange?.to, selectedMonth, selectedYear]);
-
-  useEffect(() => {
-    filterData();
-  }, [activeTab, dateRange, selectedYear, selectedMonth, filterData]);
 
   const renderDatePicker = () => {
     switch (activeTab) {
@@ -139,13 +123,205 @@ export default function AdminDashboard() {
     }
   };
 
+  //Setting useStates for database data
+  const [adminDashboardOverviewData, setAdminDashboardOverviewData] = useState({
+    totalRevenue: 0,
+    totalOrders: 0,
+    unverifiedOrders: 0,
+    pendingOrders: 0,
+    totalInvoices: 0,
+    unpaidInvoices: 0,
+    dueInvoices: 0,
+    recentOrders: [],
+  });
+  const [overviewData, setOverviewData] = useState([]);
+  const [revenueGrowthData, setRevenueGrowthData] = useState([]);
+  const [productPerformanceData, setProductPerformanceData] = useState([]);
+
+  const [adminDashboardReportData, setAdminDashboardReportData] = useState<
+    ReportData[]
+  >([]);
+
+  //get report status
+  const getReportStatus = (date: string) => {
+    const currentDate = new Date();
+    const reportDate = parse(date, "MMMM yyyy", new Date());
+
+    if (
+      isBefore(reportDate, currentDate) &&
+      !isSameMonth(reportDate, currentDate)
+    ) {
+      return "Completed";
+    } else if (isSameMonth(reportDate, currentDate)) {
+      return "In Progress";
+    } else {
+      return "Unavailable";
+    }
+  };
+
+  //get quarter
+  const getQuarter = (month: number) => {
+    return Math.min(Math.floor((month - 1) / 3) + 1, 4);
+  };
+
+  //fetching data from db
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        const fromDate = dateRange?.from
+          ? format(dateRange.from, "yyyy-MM-dd")
+          : "";
+        const toDate = dateRange?.to ? format(dateRange.to, "yyyy-MM-dd") : "";
+        const [
+          ordersResponse,
+          invoicesResponse,
+          overviewResponse,
+          monthlySalesResponse,
+          quarterlyFinancialsResponse,
+          annualPerformanceResponse,
+        ] = await Promise.all([
+          fetch(`/api/orders?limit=5&from=${fromDate}&to=${toDate}`),
+          fetch(`/api/invoices?from=${fromDate}&to=${toDate}`),
+          fetch(`/api/dashboard/overview?year=${selectedYear}`),
+          fetch(
+            `/api/dashboard/monthly-sales?year=${selectedYear}&month=${selectedMonth}`
+          ),
+          fetch(
+            `/api/dashboard/quarterly-financials?year=${selectedYear}&quarter=${getQuarter(
+              selectedMonth
+            )}`
+          ),
+          fetch(`/api/dashboard/annual-performance?year=${selectedYear}`),
+        ]);
+
+        if (
+          !ordersResponse.ok ||
+          !invoicesResponse.ok ||
+          !overviewResponse.ok ||
+          !monthlySalesResponse.ok ||
+          !quarterlyFinancialsResponse.ok ||
+          !annualPerformanceResponse.ok
+        ) {
+          throw new Error("Failed to fetch dashboard data");
+        }
+
+        const ordersData = await ordersResponse.json();
+        const invoicesData = await invoicesResponse.json();
+        const overviewData = await overviewResponse.json();
+        const monthlySalesData = await monthlySalesResponse.json();
+        const quarterlyFinancialsData =
+          await quarterlyFinancialsResponse.json();
+        const annualPerformanceData = await annualPerformanceResponse.json();
+
+        setAdminDashboardOverviewData({
+          totalRevenue:
+            (ordersData.totalOrderRevenue || 0) +
+            (invoicesData.totalInvoiceRevenue || 0),
+          totalOrders: ordersData.totalOrder || 0,
+          unverifiedOrders: ordersData.unverifiedOrders || 0,
+          pendingOrders: ordersData.pendingOrders || 0,
+          totalInvoices: invoicesData.totalInvoices || 0,
+          unpaidInvoices: invoicesData.unpaidInvoices || 0,
+          dueInvoices: invoicesData.dueInvoices || 0,
+          recentOrders: ordersData.recentOrders || [],
+        });
+
+        //Transform overviewData to match the mock data structure
+        const transformedOverviewData = overviewData.overviewData.map(
+          (item: overview) => ({
+            name: monthNames[parseInt(item.month) - 1],
+            total: item.total,
+          })
+        );
+
+        // Transform revenueGrowthData to match the mock data structure
+        const transformedRevenueGrowthData = overviewData.revenueGrowthData.map(
+          (item: revenue) => ({
+            name: monthNames[parseInt(item.month) - 1],
+            revenue: item.revenue,
+          })
+        );
+
+        setOverviewData(transformedOverviewData || []);
+        setRevenueGrowthData(transformedRevenueGrowthData || []);
+        setProductPerformanceData(overviewData.productPerformanceData || []);
+
+        //setting adminDashboardReport
+        setAdminDashboardReportData([
+          {
+            type: "Monthly Sales Report",
+            items: [
+              {
+                date: `${monthNames[selectedMonth - 1]} ${selectedYear}`,
+                status: getReportStatus(
+                  `${monthNames[selectedMonth - 1]} ${selectedYear}`
+                ),
+                monthlySalesReport: {
+                  monthlySales: monthlySalesData.monthlySales || [],
+                  topProducts: monthlySalesData.topProductData || [],
+                },
+              },
+            ],
+          },
+          {
+            type: "Quarterly Financials Report",
+            items: [
+              {
+                date: `Q${getQuarter(selectedMonth)} ${selectedYear}`,
+                status: getReportStatus(
+                  `${monthNames[selectedMonth - 1]} ${selectedYear}`
+                ),
+                quarterlyReport: {
+                  quarterlyData: (
+                    quarterlyFinancialsData.quarterlyData || []
+                  ).map((item: quarterly) => ({
+                    month: monthNames[item.month - 1],
+                    revenue: item.revenue || 0,
+                    expenses: item.expenses || 0,
+                    profit: item.profit || 0,
+                  })),
+                  expenseBreakdown:
+                    quarterlyFinancialsData.expenseBreakdown || [],
+                },
+              },
+            ],
+          },
+          {
+            type: "Annual Performance Report",
+            items: [
+              {
+                date: selectedYear.toString(),
+                status: getReportStatus(`December ${selectedYear}`),
+                annualPerformance: {
+                  quarterlyPerformance: (
+                    annualPerformanceData.quarterlyPerformance || []
+                  ).map((item: quarterlyPerformance) => ({
+                    quarter: quarterNames[item.quarter - 1],
+                    sales: item.sales || 0,
+                    target: item.orders || 0,
+                    customerSatisfaction: item.customerSatisfaction || 0,
+                  })),
+                  keyMetrics: annualPerformanceData.keyMetrics || [],
+                },
+              },
+            ],
+          },
+        ]);
+      } catch (error) {
+        console.error("Error fetching dashboard data:", error);
+      }
+    };
+
+    fetchDashboardData();
+  }, [selectedYear, selectedMonth, dateRange]);
+
   return (
     <div className="flex-1 space-y-4 p-8 pt-6">
       <div className="flex flex-col sm:flex-row items-center justify-between space-y-2 sm:space-y-0">
         <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
         <div className="flex items-center space-x-2">
           {renderDatePicker()}
-          <Button onClick={filterData}>Filter</Button>
+          {/* <Button onClick={filterData}>Filter</Button> */}
         </div>
       </div>
       <Tabs
@@ -163,21 +339,47 @@ export default function AdminDashboard() {
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <StatCard
               title="Total Revenue"
-              value="$45,231.89"
+              value={`$${
+                adminDashboardOverviewData.totalRevenue.toFixed(2) ?? "0.00"
+              }`}
               icon={DollarSign}
             />
-            <StatCard title="Total Orders" value="12,234" icon={CreditCard} />
+            <StatCard
+              title="Total Orders"
+              value={adminDashboardOverviewData.totalOrders.toString() ?? "0"}
+              icon={CreditCard}
+            />
             <StatCard
               title="Unverified Orders"
-              value="543"
+              value={
+                adminDashboardOverviewData.unverifiedOrders.toString() ?? "0"
+              }
               icon={TriangleAlert}
             />
-            <StatCard title="Pending Orders" value="543" icon={ClockArrowUp} />
+            <StatCard
+              title="Pending Orders"
+              value={adminDashboardOverviewData.pendingOrders.toString() ?? "0"}
+              icon={ClockArrowUp}
+            />
           </div>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            <StatCard title="Total Invoices" value="1,234" icon={FileText} />
-            <StatCard title="Unpaid Invoices" value="1,234" icon={CircleX} />
-            <StatCard title="Due Invoices" value="1,234" icon={ClockAlert} />
+            <StatCard
+              title="Total Invoices"
+              value={adminDashboardOverviewData.totalInvoices.toString() ?? "0"}
+              icon={FileText}
+            />
+            <StatCard
+              title="Unpaid Invoices"
+              value={
+                adminDashboardOverviewData.unpaidInvoices.toString() ?? "0"
+              }
+              icon={CircleX}
+            />
+            <StatCard
+              title="Due Invoices"
+              value={adminDashboardOverviewData.dueInvoices.toString() ?? "0"}
+              icon={ClockAlert}
+            />
           </div>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             <Card className="col-span-3">
@@ -188,7 +390,9 @@ export default function AdminDashboard() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <RecentOrders data={adminRecentOrders} />
+                <RecentOrders
+                  data={adminDashboardOverviewData.recentOrders ?? []}
+                />
               </CardContent>
               <CardFooter className="flex justify-center">
                 <Link href="/admin/orders" passHref>
@@ -206,7 +410,8 @@ export default function AdminDashboard() {
                 <CardTitle>Order Overview</CardTitle>
               </CardHeader>
               <CardContent>
-                <Overview data={filteredOverviewData} />
+                {/* <Overview data={filteredOverviewData} /> */}
+                <Overview data={overviewData} />
               </CardContent>
             </Card>
             <Card className="col-span-3 md:col-span-2">
@@ -214,7 +419,8 @@ export default function AdminDashboard() {
                 <CardTitle>Revenue Growth</CardTitle>
               </CardHeader>
               <CardContent>
-                <RevenueGrowth data={filteredRevenueData} />
+                {/* <RevenueGrowth data={filteredRevenueData} /> */}
+                <RevenueGrowth data={revenueGrowthData} />
               </CardContent>
             </Card>
             <Card className="col-span-3 md:col-span-1">
@@ -222,7 +428,8 @@ export default function AdminDashboard() {
                 <CardTitle>Product Performance</CardTitle>
               </CardHeader>
               <CardContent>
-                <ProductPerformance data={filteredProductData} />
+                {/* <ProductPerformance data={filteredProductData} /> */}
+                <ProductPerformance data={productPerformanceData} />
               </CardContent>
             </Card>
           </div>
@@ -235,7 +442,7 @@ export default function AdminDashboard() {
               <CardDescription>View and download your reports</CardDescription>
             </CardHeader>
             <CardContent>
-              <ReportsSection data={adminReportData} />
+              <ReportsSection data={adminDashboardReportData} />
             </CardContent>
           </Card>
         </TabsContent>
