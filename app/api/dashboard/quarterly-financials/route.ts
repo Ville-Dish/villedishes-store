@@ -2,12 +2,27 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma/client";
 
+interface RawMonthlyData {
+  month: bigint;
+  revenue: bigint;
+  expenses: bigint;
+  profit: bigint;
+}
+
 interface MonthlyData {
   month: number;
   revenue: number;
   expenses: number;
   profit: number;
 }
+
+// Custom serializer function to handle BigInt
+// const bigIntSerializer = (key: string, value: unknown) => {
+//   if (typeof value === "bigint") {
+//     return value.toString();
+//   }
+//   return value;
+// };
 
 export async function GET(req: Request) {
   try {
@@ -24,7 +39,7 @@ export async function GET(req: Request) {
     const endMonth = quarter * 3;
 
     // Fetch monthly financial data
-    const monthlyData = await prisma.$queryRaw<MonthlyData[]>`
+    const rawMonthlyData = await prisma.$queryRaw<RawMonthlyData[]>`
       SELECT 
         CAST(SUBSTR("orderDate", 6, 2) AS INTEGER) as month,
         SUM(total) as revenue,
@@ -36,6 +51,16 @@ export async function GET(req: Request) {
       GROUP BY SUBSTR("orderDate", 6, 2)
       ORDER BY month
     `;
+
+    // Convert BigInt values to numbers
+    const monthlyData: MonthlyData[] = rawMonthlyData.map(
+      (item: RawMonthlyData) => ({
+        month: Number(item.month),
+        revenue: Number(item.revenue),
+        expenses: Number(item.expenses),
+        profit: Number(item.profit),
+      })
+    );
 
     // Fetch expense breakdown (simplified, as we don't have detailed expense categories)
     const expenseBreakdown = [
