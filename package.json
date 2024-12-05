@@ -7,9 +7,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "preview-email": "email dev"
+    "preview-email": "email dev",
+    "generate-data": "ts-node --compiler-options \"{\\\"module\\\":\\\"CommonJS\\\"}\" lib/db/generateData.ts"
   },
   "dependencies": {
+    "@faker-js/faker": "^9.3.0",
     "@hookform/resolvers": "^3.9.1",
     "@prisma/client": "^5.22.0",
     "@radix-ui/react-accordion": "^1.2.1",
