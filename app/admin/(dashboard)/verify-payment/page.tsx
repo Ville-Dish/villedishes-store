@@ -12,7 +12,6 @@ import {
 } from "@/components/ui/card";
 import { toast } from "sonner";
 import { useRouter, useSearchParams } from "next/navigation";
-import useOrderStore from "@/stores/useOrderStore";
 import { adminEmail } from "@/lib/constantData";
 
 export default function VerifyPaymentPage() {
