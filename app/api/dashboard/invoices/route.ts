@@ -57,18 +57,6 @@ export async function GET(req: Request) {
       },
     });
 
-    const invoices = await prisma.invoice.findMany({
-      where: whereClause,
-      orderBy: { dateCreated: "desc" },
-      include: {
-        InvoiceProducts: {
-          include: {
-            Product: true,
-          },
-        },
-      },
-    });
-
     const totalInvoiceAmount = await prisma.invoice.aggregate({
       where: whereClause,
       _sum: {
@@ -94,7 +82,6 @@ export async function GET(req: Request) {
       pendingInvoices,
       totalInvoiceAmount: totalInvoiceAmount._sum.amount || 0,
       totalInvoiceRevenue: totalInvoiceRevenue._sum?.amount || 0,
-      invoices,
     };
 
     // console.log("Response:", JSON.stringify(response, null, 2));
