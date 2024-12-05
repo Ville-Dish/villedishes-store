@@ -3,6 +3,13 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma/client";
 
+type OrderDashboardData = {
+  customer: string;
+  order: string;
+  orderDate: string;
+  total: number;
+};
+
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
@@ -75,6 +82,14 @@ export async function GET(req: Request) {
     });
     // console.log("Total Orders:", totalOrders);
 
+    const recentOrders: OrderDashboardData[] = orders.map((order) => ({
+      customer: `${order.shippingInfo.firstName} ${order.shippingInfo.lastName}`,
+      order: order.orderId,
+      orderDate: order.orderDate || "",
+      total: order.total,
+    }));
+    // console.log("Total Orders:", totalOrders);
+
     const unverifiedOrders = await prisma.order.count({
       where: {
         ...whereClause,
@@ -115,7 +130,7 @@ export async function GET(req: Request) {
       cancelledOrders,
       totalOrderAmount: totalOrderAmount._sum?.total ?? 0,
       totalOrderRevenue: totalOrderRevenue._sum?.total ?? 0,
-      recentOrders: orders,
+      recentOrders: recentOrders,
     };
 
     // console.log("Response:", JSON.stringify(response, null, 2));
