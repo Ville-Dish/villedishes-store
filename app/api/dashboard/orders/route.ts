@@ -84,7 +84,7 @@ export async function GET(req: Request) {
 
     const recentOrders: OrderDashboardData[] = orders.map((order) => ({
       customer: `${order.shippingInfo.firstName} ${order.shippingInfo.lastName}`,
-      order: order.orderId,
+      order: order.orderNumber || "",
       orderDate: order.orderDate || "",
       total: order.total,
     }));
