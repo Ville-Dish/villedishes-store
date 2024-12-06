@@ -1,4 +1,4 @@
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 export const RecentOrders = ({ data }: orderDashboardProps) => {
   return (
@@ -6,7 +6,6 @@ export const RecentOrders = ({ data }: orderDashboardProps) => {
       {data.map((sale, index) => (
         <div key={index} className="flex items-center">
           <Avatar className="h-9 w-9">
-            <AvatarImage src={`/avatars/${index + 1}.png`} alt="Avatar" />
             <AvatarFallback>
               {sale.customer
                 .split(" ")
