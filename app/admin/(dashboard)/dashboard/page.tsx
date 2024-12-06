@@ -29,7 +29,7 @@ import {
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { DateRange } from "react-day-picker";
 import { subDays, format, parse, isBefore, isSameMonth } from "date-fns";
 
@@ -97,31 +97,9 @@ export default function AdminDashboard() {
   });
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
-
-  const renderDatePicker = () => {
-    switch (activeTab) {
-      case "overview":
-        return <DatePickerWithRange date={dateRange} setDate={setDateRange} />;
-      case "analytics":
-        return (
-          <YearPicker
-            selectedYear={selectedYear}
-            onYearChange={setSelectedYear}
-          />
-        );
-      case "reports":
-        return (
-          <MonthYearPicker
-            selectedMonth={selectedMonth}
-            selectedYear={selectedYear}
-            onMonthChange={setSelectedMonth}
-            onYearChange={setSelectedYear}
-          />
-        );
-      default:
-        return null;
-    }
-  };
+  const [selectedReportYear, setSelectedReportYear] = useState(
+    new Date().getFullYear()
+  );
 
   //Setting useStates for database data
   const [adminDashboardOverviewData, setAdminDashboardOverviewData] = useState({
@@ -134,186 +112,269 @@ export default function AdminDashboard() {
     dueInvoices: 0,
     recentOrders: [],
   });
-  const [overviewData, setOverviewData] = useState([]);
-  const [revenueGrowthData, setRevenueGrowthData] = useState([]);
-  const [productPerformanceData, setProductPerformanceData] = useState([]);
+
+  const [adminDashboardAnalyticsData, setAdminDashboardAnalyticsData] =
+    useState({
+      overviewData: [],
+      revenueGrowthData: [],
+      productPerformanceData: [],
+    });
 
   const [adminDashboardReportData, setAdminDashboardReportData] = useState<
     ReportData[]
   >([]);
-
-  //get report status
-  const getReportStatus = (date: string) => {
-    const currentDate = new Date();
-    const reportDate = parse(date, "MMMM yyyy", new Date());
-
-    if (
-      isBefore(reportDate, currentDate) &&
-      !isSameMonth(reportDate, currentDate)
-    ) {
-      return "Completed";
-    } else if (isSameMonth(reportDate, currentDate)) {
-      return "In Progress";
-    } else {
-      return "Unavailable";
-    }
-  };
 
   //get quarter
   const getQuarter = (month: number) => {
     return Math.min(Math.floor((month - 1) / 3) + 1, 4);
   };
 
-  //fetching data from db
-  useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
-        const fromDate = dateRange?.from
-          ? format(dateRange.from, "yyyy-MM-dd")
-          : "";
-        const toDate = dateRange?.to ? format(dateRange.to, "yyyy-MM-dd") : "";
-        const [
-          ordersResponse,
-          invoicesResponse,
-          overviewResponse,
-          monthlySalesResponse,
-          quarterlyFinancialsResponse,
-          annualPerformanceResponse,
-        ] = await Promise.all([
-          fetch(`/api/orders?limit=5&from=${fromDate}&to=${toDate}`),
-          fetch(`/api/invoices?from=${fromDate}&to=${toDate}`),
-          fetch(`/api/dashboard/overview?year=${selectedYear}`),
-          fetch(
-            `/api/dashboard/monthly-sales?year=${selectedYear}&month=${selectedMonth}`
-          ),
-          fetch(
-            `/api/dashboard/quarterly-financials?year=${selectedYear}&quarter=${getQuarter(
-              selectedMonth
-            )}`
-          ),
-          fetch(`/api/dashboard/annual-performance?year=${selectedYear}`),
-        ]);
+  const fetchOverviewData = useCallback(async () => {
+    if (!dateRange?.from || !dateRange?.to) return;
+
+    const fromDate = format(dateRange.from, "yyyy-MM-dd");
+    const toDate = format(dateRange.to, "yyyy-MM-dd");
+
+    try {
+      const [ordersResponse, invoicesResponse] = await Promise.all([
+        fetch(
+          `/api/dashboard/orders?limit=5&startDate=${fromDate}&endDate=${toDate}`
+        ),
+        fetch(
+          `/api/dashboard/invoices?startDate=${fromDate}&endDate=${toDate}`
+        ),
+      ]);
+
+      if (!ordersResponse.ok || !invoicesResponse.ok) {
+        throw new Error("Failed to fetch overview data");
+      }
+
+      const ordersData = await ordersResponse.json();
+      const invoicesData = await invoicesResponse.json();
+
+      console.log({ ordersData });
+      console.log({ invoicesData });
+
+      setAdminDashboardOverviewData({
+        totalRevenue:
+          (ordersData.totalOrderRevenue || 0) +
+          (invoicesData.totalInvoiceRevenue || 0),
+        totalOrders: ordersData.totalOrders || 0,
+        unverifiedOrders: ordersData.unverifiedOrders || 0,
+        pendingOrders: ordersData.pendingOrders || 0,
+        totalInvoices: invoicesData.totalInvoices || 0,
+        unpaidInvoices: invoicesData.unpaidInvoices || 0,
+        dueInvoices: invoicesData.dueInvoices || 0,
+        recentOrders: ordersData.recentOrders || [],
+      });
+    } catch (error) {
+      console.error("Error fetching overview data:", error);
+    }
+  }, [dateRange]);
+
+  const fetchAnalyticsData = useCallback(async () => {
+    try {
+      const response = await fetch(
+        `/api/dashboard/overview?year=${selectedYear}`
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch dashboard data");
+      }
+
+      const data = await response.json();
+
+      const transformedOverviewData = (data.overviewData || []).map(
+        (item: overview) => ({
+          name: monthNames[parseInt(item.month) - 1],
+          total: item.total,
+        })
+      );
+
+      const transformedRevenueGrowthData = (data.revenueGrowthData || []).map(
+        (item: revenue) => ({
+          name: monthNames[parseInt(item.month) - 1],
+          revenue: item.revenue,
+        })
+      );
+
+      setAdminDashboardAnalyticsData({
+        overviewData: transformedOverviewData,
+        revenueGrowthData: transformedRevenueGrowthData,
+        productPerformanceData: data.productPerformanceData || [],
+      });
+    } catch (error) {
+      console.error("Error fetching analytics data: ", error);
+    }
+  }, [selectedYear]);
+
+  const fetchReportData = useCallback(async () => {
+    try {
+      const [
+        monthlySalesResponse,
+        quarterlyFinancialsResponse,
+        annualPerformanceResponse,
+      ] = await Promise.all([
+        fetch(
+          `/api/dashboard/monthly-sales?year=${selectedReportYear}&month=${selectedMonth}`
+        ),
+        fetch(
+          `/api/dashboard/quarterly-financials?year=${selectedReportYear}&quarter=${getQuarter(
+            selectedMonth
+          )}`
+        ),
+        fetch(`/api/dashboard/annual-performance?year=${selectedReportYear}`),
+      ]);
+
+      if (
+        !monthlySalesResponse.ok ||
+        !quarterlyFinancialsResponse.ok ||
+        !annualPerformanceResponse.ok
+      ) {
+        throw new Error("Failed to fetch reports data");
+      }
+
+      const monthlySalesData = await monthlySalesResponse.json();
+      const quarterlyFinancialsData = await quarterlyFinancialsResponse.json();
+      const annualPerformanceData = await annualPerformanceResponse.json();
+
+      //get report status
+      const getReportStatus = (date: string) => {
+        const currentDate = new Date();
+        const reportDate = parse(date, "MMMM yyyy", new Date());
 
         if (
-          !ordersResponse.ok ||
-          !invoicesResponse.ok ||
-          !overviewResponse.ok ||
-          !monthlySalesResponse.ok ||
-          !quarterlyFinancialsResponse.ok ||
-          !annualPerformanceResponse.ok
+          isBefore(reportDate, currentDate) &&
+          !isSameMonth(reportDate, currentDate)
         ) {
-          throw new Error("Failed to fetch dashboard data");
+          return "Completed";
+        } else if (isSameMonth(reportDate, currentDate)) {
+          return "In Progress";
+        } else {
+          return "Unavailable";
         }
+      };
 
-        const ordersData = await ordersResponse.json();
-        const invoicesData = await invoicesResponse.json();
-        const overviewData = await overviewResponse.json();
-        const monthlySalesData = await monthlySalesResponse.json();
-        const quarterlyFinancialsData =
-          await quarterlyFinancialsResponse.json();
-        const annualPerformanceData = await annualPerformanceResponse.json();
+      //setting adminDashboardReport
+      setAdminDashboardReportData([
+        {
+          type: "Monthly Sales Report",
+          items: [
+            {
+              date: `${monthNames[selectedMonth - 1]} ${selectedReportYear}`,
+              status: getReportStatus(
+                `${monthNames[selectedMonth - 1]} ${selectedReportYear}`
+              ),
+              monthlySalesReport: {
+                monthlySales: monthlySalesData.monthlySales || [],
+                topProducts: monthlySalesData.topProductData || [],
+              },
+            },
+          ],
+        },
+        {
+          type: "Quarterly Financials Report",
+          items: [
+            {
+              date: `Q${getQuarter(selectedMonth)} ${selectedReportYear}`,
+              status: getReportStatus(
+                `${monthNames[selectedMonth - 1]} ${selectedReportYear}`
+              ),
+              quarterlyReport: {
+                quarterlyData: (
+                  quarterlyFinancialsData.quarterlyData || []
+                ).map((item: quarterly) => ({
+                  month: monthNames[item.month - 1],
+                  revenue: item.revenue || 0,
+                  expenses: item.expenses || 0,
+                  profit: item.profit || 0,
+                })),
+                expenseBreakdown:
+                  quarterlyFinancialsData.expenseBreakdown || [],
+              },
+            },
+          ],
+        },
+        {
+          type: "Annual Performance Report",
+          items: [
+            {
+              date: selectedReportYear.toString(),
+              status: getReportStatus(`December ${selectedReportYear}`),
+              annualPerformance: {
+                quarterlyPerformance: (
+                  annualPerformanceData.quarterlyPerformance || []
+                ).map((item: quarterlyPerformance) => ({
+                  quarter: quarterNames[item.quarter - 1],
+                  sales: item.sales || 0,
+                  target: item.orders || 0,
+                  customerSatisfaction: item.customerSatisfaction || 0,
+                })),
+                keyMetrics: annualPerformanceData.keyMetrics || [],
+              },
+            },
+          ],
+        },
+      ]);
+    } catch (error) {
+      console.error("Error fetching reports data: ", error);
+    }
+  }, [selectedMonth, selectedReportYear]);
 
-        setAdminDashboardOverviewData({
-          totalRevenue:
-            (ordersData.totalOrderRevenue || 0) +
-            (invoicesData.totalInvoiceRevenue || 0),
-          totalOrders: ordersData.totalOrder || 0,
-          unverifiedOrders: ordersData.unverifiedOrders || 0,
-          pendingOrders: ordersData.pendingOrders || 0,
-          totalInvoices: invoicesData.totalInvoices || 0,
-          unpaidInvoices: invoicesData.unpaidInvoices || 0,
-          dueInvoices: invoicesData.dueInvoices || 0,
-          recentOrders: ordersData.recentOrders || [],
-        });
+  //fetching data from db
+  useEffect(() => {
+    if (activeTab === "overview") {
+      fetchOverviewData();
+    } else if (activeTab === "analytics") {
+      fetchAnalyticsData();
+    } else if (activeTab === "reports") {
+      fetchReportData();
+    }
+  }, [activeTab, fetchOverviewData, fetchAnalyticsData, fetchReportData]);
 
-        //Transform overviewData to match the mock data structure
-        const transformedOverviewData = overviewData.overviewData.map(
-          (item: overview) => ({
-            name: monthNames[parseInt(item.month) - 1],
-            total: item.total,
-          })
+  const renderDatePicker = () => {
+    switch (activeTab) {
+      case "overview":
+        return (
+          <DatePickerWithRange
+            date={dateRange}
+            setDate={(newDateRange) => {
+              setDateRange(newDateRange);
+              if (newDateRange?.from && newDateRange?.to) {
+                fetchOverviewData();
+              }
+            }}
+          />
         );
-
-        // Transform revenueGrowthData to match the mock data structure
-        const transformedRevenueGrowthData = overviewData.revenueGrowthData.map(
-          (item: revenue) => ({
-            name: monthNames[parseInt(item.month) - 1],
-            revenue: item.revenue,
-          })
+      case "analytics":
+        return (
+          <YearPicker
+            selectedYear={selectedYear}
+            onYearChange={(newYear) => {
+              setSelectedYear(newYear);
+              fetchAnalyticsData();
+            }}
+          />
         );
-
-        setOverviewData(transformedOverviewData || []);
-        setRevenueGrowthData(transformedRevenueGrowthData || []);
-        setProductPerformanceData(overviewData.productPerformanceData || []);
-
-        //setting adminDashboardReport
-        setAdminDashboardReportData([
-          {
-            type: "Monthly Sales Report",
-            items: [
-              {
-                date: `${monthNames[selectedMonth - 1]} ${selectedYear}`,
-                status: getReportStatus(
-                  `${monthNames[selectedMonth - 1]} ${selectedYear}`
-                ),
-                monthlySalesReport: {
-                  monthlySales: monthlySalesData.monthlySales || [],
-                  topProducts: monthlySalesData.topProductData || [],
-                },
-              },
-            ],
-          },
-          {
-            type: "Quarterly Financials Report",
-            items: [
-              {
-                date: `Q${getQuarter(selectedMonth)} ${selectedYear}`,
-                status: getReportStatus(
-                  `${monthNames[selectedMonth - 1]} ${selectedYear}`
-                ),
-                quarterlyReport: {
-                  quarterlyData: (
-                    quarterlyFinancialsData.quarterlyData || []
-                  ).map((item: quarterly) => ({
-                    month: monthNames[item.month - 1],
-                    revenue: item.revenue || 0,
-                    expenses: item.expenses || 0,
-                    profit: item.profit || 0,
-                  })),
-                  expenseBreakdown:
-                    quarterlyFinancialsData.expenseBreakdown || [],
-                },
-              },
-            ],
-          },
-          {
-            type: "Annual Performance Report",
-            items: [
-              {
-                date: selectedYear.toString(),
-                status: getReportStatus(`December ${selectedYear}`),
-                annualPerformance: {
-                  quarterlyPerformance: (
-                    annualPerformanceData.quarterlyPerformance || []
-                  ).map((item: quarterlyPerformance) => ({
-                    quarter: quarterNames[item.quarter - 1],
-                    sales: item.sales || 0,
-                    target: item.orders || 0,
-                    customerSatisfaction: item.customerSatisfaction || 0,
-                  })),
-                  keyMetrics: annualPerformanceData.keyMetrics || [],
-                },
-              },
-            ],
-          },
-        ]);
-      } catch (error) {
-        console.error("Error fetching dashboard data:", error);
-      }
-    };
-
-    fetchDashboardData();
-  }, [selectedYear, selectedMonth, dateRange]);
+      case "reports":
+        return (
+          <MonthYearPicker
+            selectedMonth={selectedMonth}
+            selectedYear={selectedReportYear}
+            onMonthChange={(newMonth) => {
+              setSelectedMonth(newMonth);
+              fetchReportData();
+            }}
+            onYearChange={(newYear) => {
+              setSelectedReportYear(newYear);
+              fetchReportData();
+            }}
+          />
+        );
+      default:
+        return null;
+    }
+  };
 
   return (
     <div className="flex-1 space-y-4 p-8 pt-6">
@@ -411,7 +472,7 @@ export default function AdminDashboard() {
               </CardHeader>
               <CardContent>
                 {/* <Overview data={filteredOverviewData} /> */}
-                <Overview data={overviewData} />
+                <Overview data={adminDashboardAnalyticsData.overviewData} />
               </CardContent>
             </Card>
             <Card className="col-span-3 md:col-span-2">
@@ -420,7 +481,9 @@ export default function AdminDashboard() {
               </CardHeader>
               <CardContent>
                 {/* <RevenueGrowth data={filteredRevenueData} /> */}
-                <RevenueGrowth data={revenueGrowthData} />
+                <RevenueGrowth
+                  data={adminDashboardAnalyticsData.revenueGrowthData}
+                />
               </CardContent>
             </Card>
             <Card className="col-span-3 md:col-span-1">
@@ -429,7 +492,9 @@ export default function AdminDashboard() {
               </CardHeader>
               <CardContent>
                 {/* <ProductPerformance data={filteredProductData} /> */}
-                <ProductPerformance data={productPerformanceData} />
+                <ProductPerformance
+                  data={adminDashboardAnalyticsData.productPerformanceData}
+                />
               </CardContent>
             </Card>
           </div>
