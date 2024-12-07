@@ -96,6 +96,7 @@ export async function POST(req: Request) {
       status: 201,
     });
   } catch (error) {
+    console.log("Error Adding Invoice", error);
     return NextResponse.json(
       { message: "Error adding invoice", error },
       { status: 500 }
@@ -125,6 +126,8 @@ export async function GET() {
       customerEmail: invoice.customerEmail,
       customerPhone: invoice.customerPhone,
       amount: invoice.amount,
+      amountPaid: invoice.amountPaid,
+      amountDue: invoice.amountDue,
       dateCreated: invoice.dateCreated,
       dueDate: invoice.dueDate,
       status: invoice.status,
@@ -134,6 +137,7 @@ export async function GET() {
         name: ip.Product[0]?.name,
         basePrice: ip.basePrice,
         quantity: ip.quantity,
+        discount: ip.discount,
       })),
     }));
 
@@ -163,6 +167,8 @@ export async function PATCH(req: Request) {
       status,
       products,
       amount,
+      amountPaid,
+      amountDue,
       discountPercentage,
       taxRate,
       shippingFee,
@@ -191,6 +197,8 @@ export async function PATCH(req: Request) {
     if (dueDate !== undefined) updateData.dueDate = dueDate;
     if (status !== undefined) updateData.status = status;
     if (amount !== undefined) updateData.amount = amount;
+    if (amountPaid !== undefined) updateData.amountPaid = amountPaid;
+    if (amountDue !== undefined) updateData.amountDue = amountDue;
     if (taxRate !== undefined) updateData.taxRate = taxRate;
     if (shippingFee !== undefined) updateData.shippingFee = shippingFee;
     if (discountPercentage !== undefined)
@@ -227,6 +235,7 @@ export async function PATCH(req: Request) {
               basePrice: product.basePrice,
               quantity: product.quantity,
               price: product.basePrice * product.quantity,
+              discount: product.discount || 0,
               Product: {
                 connect: { id: product.id },
               },

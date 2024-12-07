@@ -70,7 +70,7 @@ export async function GET(req: Request) {
         status: "PAID",
       },
       _sum: {
-        amount: true,
+        amountPaid: true,
       },
     });
 
@@ -81,7 +81,7 @@ export async function GET(req: Request) {
       paidInvoices,
       pendingInvoices,
       totalInvoiceAmount: totalInvoiceAmount._sum.amount || 0,
-      totalInvoiceRevenue: totalInvoiceRevenue._sum?.amount || 0,
+      totalInvoiceRevenue: totalInvoiceRevenue._sum?.amountPaid || 0,
     };
 
     // console.log("Response:", JSON.stringify(response, null, 2));
