@@ -16,6 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -92,16 +93,7 @@ export default function AdminProductsPage() {
         body: JSON.stringify({ ...editingItem }),
       });
 
-      console.log("Response status:", response.status);
-      console.log("Response text:", await response.text());
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to update product.");
-      }
-
       const data = await response.json();
-
       if (response.ok) {
         setMenuItems((items) =>
           items.map((item) => (item.id === editingItem.id ? editingItem : item))
@@ -146,20 +138,6 @@ export default function AdminProductsPage() {
       console.error("Error deleting product:", error);
     }
   };
-
-  //   const handleAddItem = () => {
-  //     const id = Math.max(...menuItems.map((item) => parseInt(item.id)), 0) + 1;
-  //     setMenuItems([...menuItems, { ...newItem, id: id.toString() }]);
-  //     setNewItem({
-  //       name: "",
-  //       description: "",
-  //       price: 0,
-  //       category: "",
-  //       image: "",
-  //       stock: 0,
-  //       rating: 0,
-  //     });
-  //   };
 
   const handleAddItem = async () => {
     try {
@@ -436,6 +414,9 @@ export default function AdminProductsPage() {
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Edit Menu Item</DialogTitle>
+              <DialogDescription className="sr-only">
+                Edit menu item {editingItem.name}
+              </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <div className="grid grid-cols-4 items-center gap-4">
