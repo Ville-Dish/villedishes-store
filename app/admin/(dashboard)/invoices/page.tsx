@@ -46,6 +46,8 @@ export default function AdminInvoicesPage() {
     customerEmail: "",
     customerPhone: "",
     amount: 0,
+    amountPaid: 0,
+    amountDue: 0,
     dueDate: "",
     status: "UNPAID",
   });
@@ -139,6 +141,8 @@ export default function AdminInvoicesPage() {
           customerEmail: "",
           customerPhone: "",
           amount: 0,
+          amountPaid: 0,
+          amountDue: 0,
           dueDate: "",
           status: "UNPAID",
         });
@@ -388,6 +392,14 @@ export default function AdminInvoicesPage() {
                               ...invoice,
                               status:
                                 invoice.status === "PAID" ? "UNPAID" : "PAID",
+                              amountPaid:
+                                invoice.status === "PAID"
+                                  ? invoice.amount
+                                  : invoice.amountPaid,
+                              amountDue:
+                                invoice.status === "PAID"
+                                  ? 0
+                                  : invoice.amountDue,
                             })
                           }
                         >
