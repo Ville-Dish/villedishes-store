@@ -77,6 +77,8 @@ model Invoice {
   customerEmail      String
   customerPhone      String
   amount             Float
+  amountPaid         Float             @default(0)
+  amountDue          Float             @default(0)
   discountPercentage Int               @default(0)
   taxRate            Int               @default(0)
   shippingFee        Int               @default(0)
@@ -92,6 +94,7 @@ model InvoiceProducts {
   basePrice Float
   quantity  Int
   price     Float
+  discount  Float     @default(0)
   invoiceId String?
   invoice   Invoice?  @relation("InvoiceProducts", fields: [invoiceId], references: [id])
   Product   Product[]
