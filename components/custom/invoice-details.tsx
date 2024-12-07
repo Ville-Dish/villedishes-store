@@ -31,6 +31,7 @@ import { Trash2, Edit, Loader } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { adminEmail } from "@/lib/constantData";
+import { formattedCurrency } from "@/lib/helper";
 
 export const InvoiceDetails = ({
   invoice,
@@ -42,7 +43,8 @@ export const InvoiceDetails = ({
   const [newProduct, setNewProduct] = useState<{
     id: string;
     quantity: number;
-  }>({ id: "", quantity: 1 });
+    discount: number;
+  }>({ id: "", quantity: 1, discount: 0 });
 
   const [isAddProductDialogOpen, setIsAddProductDialogOpen] = useState(false);
   const [editingProductIndex, setEditingProductIndex] = useState<number | null>(
@@ -51,16 +53,27 @@ export const InvoiceDetails = ({
   const [discountPercentage, setDiscountPercentage] = useState(
     invoice.discountPercentage || 0
   );
+  const [productDiscount, setProductDiscount] = useState(0);
   const [sending, setSending] = useState(false);
   const [updating, setUpdating] = useState(false);
-  // const [taxRate, setTaxRate] = useState<number>(5); // Default tax rate
   const [taxRate, setTaxRate] = useState(invoice.taxRate || 0); // Default tax rate
-  // const [shippingFee, setShippingFee] = useState<number>(10); // Default shipping fee
   const [shippingFee, setShippingFee] = useState(invoice.shippingFee || 0); // Default shipping fee
+  const [invoiceAmount, setInvoiceAmount] = useState(invoice.amount || 0);
+  const [amountPaid, setAmountPaid] = useState(invoice.amountPaid || 0);
+  const [amountDue, setAmountDue] = useState(
+    invoice.amount - (invoice.amountPaid || 0)
+  );
 
   useEffect(() => {
     setUpdatedInvoice(invoice);
+    setInvoiceAmount(invoice.amount || 0);
+    setAmountPaid(invoice.amountPaid || 0);
+    setAmountDue(invoice.amount - (invoice.amountPaid || 0));
   }, [invoice]);
+
+  useEffect(() => {
+    setAmountDue(invoiceAmount - amountPaid);
+  }, [invoiceAmount, amountPaid]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -80,11 +93,32 @@ export const InvoiceDetails = ({
     setShippingFee(isNaN(value) ? 0 : value);
   };
 
-  const handleStatusChange = (value: string) => {
-    setUpdatedInvoice((prev) => ({
-      ...prev,
-      status: value as Invoice["status"],
-    }));
+  const handleStatusChange = (value: Invoice["status"]) => {
+    setUpdatedInvoice((prev) => {
+      const newStatus = value;
+      let newAmountPaid = prev.amountPaid;
+      let newAmountDue = prev.amountDue;
+
+      if (newStatus === "PAID") {
+        newAmountPaid = prev.amount;
+        newAmountDue = 0;
+      } else if (
+        prev.status === "PAID" &&
+        (newStatus === "UNPAID" ||
+          newStatus === "DUE" ||
+          newStatus === "PENDING")
+      ) {
+        newAmountPaid = 0;
+        newAmountDue = prev.amount;
+      }
+
+      return {
+        ...prev,
+        status: newStatus,
+        amountPaid: newAmountPaid,
+        amountDue: newAmountDue,
+      };
+    });
   };
 
   const handleProductChange = (
@@ -106,12 +140,29 @@ export const InvoiceDetails = ({
           quantity: updatedProducts[index].quantity || 1,
           price:
             selectedProduct.basePrice * updatedProducts[index].quantity || 0,
+          discount: updatedProducts[index].discount || 0,
         };
       }
+    } else if (field === "discount") {
+      updatedProducts[index] = {
+        ...updatedProducts[index],
+        discount: Number(value),
+        price:
+          updatedProducts[index].basePrice *
+          updatedProducts[index].quantity *
+          (1 - Number(value) / 100),
+      };
     } else {
       updatedProducts[index] = { ...updatedProducts[index], [field]: value };
     }
     setUpdatedInvoice((prev) => ({ ...prev, products: updatedProducts }));
+  };
+
+  const resetProductDialog = () => {
+    setNewProduct({ id: "", quantity: 1, discount: 0 });
+    setProductDiscount(0);
+    setEditingProductIndex(null);
+    setIsAddProductDialogOpen(false);
   };
 
   const addProduct = () => {
@@ -122,23 +173,36 @@ export const InvoiceDetails = ({
       const updatedProducts = updatedInvoice.products
         ? [...updatedInvoice.products]
         : []; // Ensure invoice.products is not undefined
-      updatedProducts.push({
-        id: selectedProduct.id,
-        name: selectedProduct.name,
-        basePrice: selectedProduct.basePrice,
-        quantity: newProduct.quantity,
-        price: selectedProduct.basePrice * newProduct.quantity,
-      });
+
+      const existingProductIndex = updatedProducts.findIndex(
+        (p) => p.id === selectedProduct.id
+      );
+      if (existingProductIndex !== -1) {
+        updatedProducts[existingProductIndex].quantity += newProduct.quantity;
+        updatedProducts[existingProductIndex].discount = productDiscount;
+      } else {
+        updatedProducts.push({
+          id: selectedProduct.id,
+          name: selectedProduct.name,
+          basePrice: selectedProduct.basePrice,
+          quantity: newProduct.quantity,
+          price:
+            selectedProduct.basePrice *
+            newProduct.quantity *
+            (1 - productDiscount / 100),
+          discount: productDiscount,
+        });
+      }
       setUpdatedInvoice((prev) => ({ ...prev, products: updatedProducts }));
-      setNewProduct({ id: "", quantity: 1 });
-      setIsAddProductDialogOpen(false);
+      resetProductDialog();
     }
   };
 
   const removeProduct = (index: number) => {
-    const updatedProducts = updatedInvoice.products?.filter(
-      (_, i) => i !== index
-    );
+    const updatedProducts = updatedInvoice.products
+      ? [...updatedInvoice.products]
+      : [];
+    updatedProducts.splice(index, 1);
     setUpdatedInvoice((prev) => ({ ...prev, products: updatedProducts }));
   };
 
@@ -146,24 +210,41 @@ export const InvoiceDetails = ({
     if (updatedInvoice.products) {
       setEditingProductIndex(index);
       const productToEdit = updatedInvoice.products[index];
-      setNewProduct({ id: productToEdit.id, quantity: productToEdit.quantity });
+      setNewProduct({
+        id: productToEdit.id,
+        quantity: productToEdit.quantity,
+        discount: productToEdit.discount,
+      });
       setIsAddProductDialogOpen(true);
     }
   };
 
   const saveEditedProduct = () => {
     if (editingProductIndex !== null) {
-      handleProductChange(editingProductIndex, "id", newProduct.id);
-      handleProductChange(editingProductIndex, "quantity", newProduct.quantity);
-      setEditingProductIndex(null);
-      setIsAddProductDialogOpen(false);
-      setNewProduct({ id: "", quantity: 1 });
+      const updatedProducts = updatedInvoice.products
+        ? [...updatedInvoice.products]
+        : [];
+      updatedProducts[editingProductIndex] = {
+        ...updatedProducts[editingProductIndex],
+        quantity: newProduct.quantity,
+        discount: productDiscount,
+        price:
+          updatedProducts[editingProductIndex].basePrice *
+          newProduct.quantity *
+          (1 - productDiscount / 100),
+      };
+      setUpdatedInvoice((prev) => ({ ...prev, products: updatedProducts }));
+      resetProductDialog();
     }
   };
 
   const calculateSubtotal = () => {
     return updatedInvoice.products?.reduce(
-      (sum, product) => sum + product.basePrice * product.quantity,
+      (sum, product) =>
+        sum +
+        product.basePrice *
+          product.quantity *
+          (1 - (product.discount || 0) / 100),
       0
     );
   };
@@ -172,7 +253,7 @@ export const InvoiceDetails = ({
     const subtotal = calculateSubtotal() || 0;
     const discountAmount = subtotal * (discountPercentage / 100);
     const taxAmount = subtotal * (taxRate / 100);
-    return (subtotal - discountAmount + taxAmount + shippingFee).toFixed(2);
+    return subtotal - discountAmount + taxAmount + shippingFee;
   };
 
   const handleUpdateInvoice = async () => {
@@ -180,7 +261,9 @@ export const InvoiceDetails = ({
       setUpdating(true);
       const updatedInvoiceData = {
         ...updatedInvoice,
-        amount: parseFloat(calculateTotal()),
+        amount: calculateTotal(),
+        amountPaid: amountPaid,
+        amountDue: amountDue,
         discountPercentage,
         taxRate,
         shippingFee,
@@ -231,7 +314,6 @@ export const InvoiceDetails = ({
   };
 
   const subTotal = calculateSubtotal() || 0;
-  // const total = calculateTotal() || 0;
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
@@ -240,10 +322,10 @@ export const InvoiceDetails = ({
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
               <Image
-                src="/assets/ville.svg"
+                src="/assets/ville-logo.svg"
                 alt="Company Logo"
-                width={40}
-                height={40}
+                width={80}
+                height={80}
               />
               <span>Bill From</span>
             </CardTitle>
@@ -310,7 +392,7 @@ export const InvoiceDetails = ({
         <CardHeader>
           <CardTitle>Invoice Overview</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <div>
               <p className="font-medium">Invoice Number:</p>
@@ -348,6 +430,43 @@ export const InvoiceDetails = ({
               </Select>
             </div>
           </div>
+
+          <div className="w-full grid grid-cols-3 gap-x-24">
+            {/*Invoice Amount div starts here */}
+            <div className="">
+              <Label htmlFor="invoiceAmount">Invoice Amount</Label>
+              <p className="">
+                {formattedCurrency.format(updatedInvoice.amount)}
+              </p>
+            </div>
+            {/*Invoice Amount div ends here */}
+
+            {/*Amount Paid div starts here */}
+            <div>
+              <Label htmlFor="amountPaid">Amount Paid</Label>
+              <div className="flex items-center justify-center">
+                <span className="h-9 p-1 border border-input bg-slate-200 rounded-md rounded-r-none italic text-muted-foreground">
+                  $
+                </span>
+                <Input
+                  id="amountPaid"
+                  name="amountPaid"
+                  type="number"
+                  value={amountPaid.toFixed(2)}
+                  onChange={(e) => setAmountPaid(parseFloat(e.target.value))}
+                  className="border-l-0 rounded-l-none"
+                />
+              </div>
+            </div>
+            {/*Amount Paid div ends here */}
+
+            {/*Amount Due div starts here */}
+            <div>
+              <Label htmlFor="amountDue">Amount Due</Label>
+              <p>{formattedCurrency.format(amountDue)}</p>
+            </div>
+            {/*Amount Due div ends here */}
+          </div>
         </CardContent>
       </Card>
 
@@ -365,6 +484,7 @@ export const InvoiceDetails = ({
                     <TableHead>Product</TableHead>
                     <TableHead>Base price($)</TableHead>
                     <TableHead>Quantity</TableHead>
+                    <TableHead>Discount(%)</TableHead>
                     <TableHead>Price($)</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
@@ -377,7 +497,27 @@ export const InvoiceDetails = ({
                       <TableCell>{product.basePrice.toFixed(2)}</TableCell>
                       <TableCell>{product.quantity}</TableCell>
                       <TableCell>
-                        {(product.basePrice * product.quantity).toFixed(2)}
+                        <Input
+                          type="number"
+                          value={product.discount || 0}
+                          onChange={(e) =>
+                            handleProductChange(
+                              index,
+                              "discount",
+                              e.target.value
+                            )
+                          }
+                          className="w-16"
+                          min="0"
+                          max="100"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        {(
+                          product.basePrice *
+                          product.quantity *
+                          (1 - (product.discount || 0) / 100)
+                        ).toFixed(2)}
                       </TableCell>
                       <TableCell>
                         <Button
@@ -407,7 +547,9 @@ export const InvoiceDetails = ({
             onOpenChange={setIsAddProductDialogOpen}
           >
             <DialogTrigger asChild>
-              <Button className="mt-4">Add Product</Button>
+              <Button onClick={resetProductDialog} className="mt-4">
+                Add Product
+              </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
@@ -458,6 +600,25 @@ export const InvoiceDetails = ({
                     min="1"
                   />
                 </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="discount" className="text-right">
+                    Discount (%)
+                  </Label>
+                  <Input
+                    id="discount"
+                    type="number"
+                    value={newProduct.discount}
+                    onChange={(e) =>
+                      setNewProduct((prev) => ({
+                        ...prev,
+                        discount: parseFloat(e.target.value),
+                      }))
+                    }
+                    className="col-span-3"
+                    min="0"
+                    max="100"
+                  />
+                </div>
               </div>
               <Button
                 onClick={
@@ -481,7 +642,7 @@ export const InvoiceDetails = ({
           <div className="space-y-2">
             <div className="flex justify-between">
               <span>Subtotal:</span>
-              <span>${subTotal.toFixed(2)}</span>
+              <span>{formattedCurrency.format(subTotal)}</span>
             </div>
             <div className="flex justify-between items-center">
               <span>Discount (%):</span>
@@ -495,7 +656,9 @@ export const InvoiceDetails = ({
                   max="100"
                 />
                 <span>
-                  ${(subTotal * (discountPercentage / 100)).toFixed(2)}
+                  {formattedCurrency.format(
+                    subTotal * (discountPercentage / 100)
+                  )}
                 </span>
               </div>
             </div>
@@ -510,7 +673,9 @@ export const InvoiceDetails = ({
                   min="0"
                   onChange={handleTaxChange}
                 />
-                <span>${(subTotal * (taxRate / 100)).toFixed(2)}</span>
+                <span>
+                  {formattedCurrency.format(subTotal * (taxRate / 100))}
+                </span>
               </div>
             </div>
 
@@ -523,14 +688,15 @@ export const InvoiceDetails = ({
                   value={shippingFee}
                   className="w-20 mr-2"
                   min="0"
+                  step={0.05}
                   onChange={handleShippingChange}
                 />
-                <span>${shippingFee.toFixed(2)}</span>
+                <span>{formattedCurrency.format(shippingFee)}</span>
               </div>
             </div>
             <div className="flex justify-between text-lg font-bold">
               <span>Total:</span>
-              <span>${calculateTotal()}</span>
+              <span>{formattedCurrency.format(calculateTotal())}</span>
             </div>
           </div>
         </CardContent>

@@ -78,6 +78,8 @@ const generateInvoiceData = async (length: number, products: Product[]) => {
           customerEmail: faker.internet.email(),
           customerPhone: faker.phone.number(),
           amount: 0,
+          amountPaid: 0,
+          amountDue: 0,
           discountPercentage: faker.number.float({
             multipleOf: 0.5,
             min: 0,
@@ -112,7 +114,12 @@ const generateInvoiceData = async (length: number, products: Product[]) => {
         () => {
           const product = faker.helpers.arrayElement(products); //Randomly select  from products
           const quantity = faker.number.int({ min: 1, max: 5 });
-          const price = product.price * quantity;
+          const discount = faker.number.float({
+            multipleOf: 0.05,
+            min: 10,
+            max: 100,
+          });
+          const price = product.price * quantity * discount;
           totalAmount += price;
 
           return {
@@ -127,10 +134,20 @@ const generateInvoiceData = async (length: number, products: Product[]) => {
 
       await prisma.invoiceProducts.createMany({ data: invoiceProducts });
 
+      const amountsPaid = faker.number.float({
+        multipleOf: 0.05,
+        min: 0,
+        max: totalAmount,
+      });
+
       //Update the total amount for the invoice
       await prisma.invoice.update({
         where: { id: invoice.id },
-        data: { amount: totalAmount },
+        data: {
+          amount: totalAmount,
+          amountPaid: amountsPaid,
+          amountDue: totalAmount - amountsPaid,
+        },
       });
     } catch (error) {
       console.error("Error generating invoice:", error);

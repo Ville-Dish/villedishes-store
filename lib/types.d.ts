@@ -59,6 +59,8 @@ interface Invoice {
   taxRate?: number;
   shippingFee?: number;
   amount: number;
+  amountPaid: number;
+  amountDue: number;
   dateCreated: string;
   dueDate: string;
   status: "PAID" | "UNPAID" | "DUE" | "PENDING";
@@ -68,6 +70,7 @@ interface Invoice {
     basePrice: number;
     quantity: number;
     price: number;
+    discount: number;
   }>;
 }
 

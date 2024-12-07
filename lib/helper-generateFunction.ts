@@ -32,6 +32,8 @@ export async function generateInvoiceNumber() {
         customerEmail: "placeholder@example.com",
         customerPhone: "0000000000",
         amount: 0,
+        amountPaid: 0,
+        amountDue: 0,
         discountPercentage: 0,
         status: "PENDING",
         dateCreated: new Date().toISOString().split("T")[0],
