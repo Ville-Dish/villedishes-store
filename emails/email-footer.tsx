@@ -26,16 +26,20 @@ export const EmailFooter = ({ variant }: Props) => {
   return (
     <Section
       style={{
-        backgroundColor: "#4a5568",
+        backgroundColor: "#fff1e2",
         color: "white",
         padding: "20px",
         fontSize: "0.8em",
         textAlign: "center",
       }}
     >
-      <Text>&copy; {currentYear} Villedishes. All rights reserved.</Text>
-      <Text>{dynamicText}</Text>
-      <Text>Email: villedishes@gmail.com | Phone: +1 (555) 789-4429</Text>
+      <Text className="text-slate-700">
+        &copy; {currentYear} Villedishes. All rights reserved.
+      </Text>
+      <Text className="text-slate-700">{dynamicText}</Text>
+      <Text className="text-slate-700">
+        Email: villedishes@gmail.com | Phone: +1 (555) 789-4429
+      </Text>
     </Section>
   );
 };

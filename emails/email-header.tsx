@@ -3,19 +3,21 @@ export const EmailHeader = () => {
   return (
     <Section style={header}>
       <Img
-        src="/static/ville.png"
+        src="/static/ville-logo.png"
         alt="VilleDishes Logo"
         width={50}
         height={50}
         style={image}
       />
-      <Text style={textStyle}>VilleDishes</Text>
+      <Text style={textStyle} className="text-slate-500">
+        VilleDishes
+      </Text>
     </Section>
   );
 };
 
 const header = {
-  backgroundColor: "#4a5568",
+  backgroundColor: "#fff1e2",
   color: "white",
   padding: "20px",
   textAlign: "center" as const,
