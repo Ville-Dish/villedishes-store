@@ -13,7 +13,6 @@ import {
 } from "@react-email/components";
 import { EmailFooter } from "./email-footer";
 import { EmailHeader } from "./email-header";
-import { demoItems } from "@/lib/constantData";
 
 type InvoiceEmailProps = {
   customerName: string;
