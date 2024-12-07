@@ -8,6 +8,7 @@ import {
   // Img,
   Preview,
   Section,
+  Tailwind,
   Text,
 } from "@react-email/components";
 import * as React from "react";
@@ -31,32 +32,31 @@ const ContactTemplate = ({
   const previewText = subject ? `${subject}` : "General Inquiry";
   return (
     <Html>
-      <Head>
-        <title>Contact Inquiry - Villedishes</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      </Head>
+      <Head />
       <Preview>{previewText}</Preview>
-      <Body style={main}>
-        <Container style={container}>
-          <Section style={coverSection}>
-            <EmailHeader />
-            <Section style={verificationSection}>
-              <Heading style={h1}>
-                You have received an inquiry via the Villedishes website
-              </Heading>
-              <Text style={verifyText}>Dear VilleDishes,</Text>
-              <Text style={verifyText}>Here is the message from {name}</Text>
-              <Text style={codeText}>
-                {message || "Demo message from Marissa Storm"}
-              </Text>
-              <Text style={verifyText}>
-                You can reach {name} on {phone}
-              </Text>
+      <Tailwind>
+        <Body style={main}>
+          <Container style={container}>
+            <Section style={coverSection}>
+              <EmailHeader />
+              <Section style={verificationSection}>
+                <Heading style={h1}>
+                  You have received an inquiry via the Villedishes website
+                </Heading>
+                <Text style={verifyText}>Dear VilleDishes,</Text>
+                <Text style={verifyText}>Here is the message from {name}</Text>
+                <Text style={codeText}>
+                  {message || "Demo message from Marissa Storm"}
+                </Text>
+                <Text style={verifyText}>
+                  You can reach {name} on {phone}
+                </Text>
+              </Section>
+              <EmailFooter variant="contact" />
             </Section>
-            <EmailFooter variant="contact" />
-          </Section>
-        </Container>
-      </Body>
+          </Container>
+        </Body>
+      </Tailwind>
     </Html>
   );
 };
