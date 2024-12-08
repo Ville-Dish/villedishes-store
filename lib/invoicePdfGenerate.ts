@@ -1,6 +1,7 @@
 import { jsPDF } from "jspdf";
 import "jspdf-autotable";
 import { logoImageData } from "./imageData";
+import { formattedCurrency } from "./helper";
 
 // export const createInvoicePDF:Promise<Buffer> = (data: Invoice) => {}
 export const createInvoicePDF = (data: Invoice): Promise<Uint8Array> => {
@@ -106,6 +107,7 @@ export const createInvoicePDF = (data: Invoice): Promise<Uint8Array> => {
           const labelX = 15;
           const valueX = 15;
           const lineHeight = 7;
+          const columnWidth = (pageWidth - 30) / 4;
 
           doc.setFont("helvetica", "bold");
           doc.text("Invoice Number", labelX, yPosition + 20);
@@ -118,9 +120,31 @@ export const createInvoicePDF = (data: Invoice): Promise<Uint8Array> => {
           doc.text(data.dateCreated, valueX + 50, yPosition + 20 + lineHeight);
           doc.text(data.dueDate, valueX + 100, yPosition + 20 + lineHeight);
           doc.text(data.status, valueX + 150, yPosition + 20 + lineHeight);
+
+          doc.setFont("helvetica", "bold");
+          doc.text("Invoice Amount", labelX, yPosition + 40);
+          doc.text("Amount Paid", labelX + 70, yPosition + 40);
+          doc.text("Amount Due", labelX + 140, yPosition + 40);
+
+          doc.setFont("helvetica", "normal");
+          doc.text(
+            formattedCurrency.format(data.amount),
+            valueX,
+            yPosition + 40 + lineHeight
+          );
+          doc.text(
+            formattedCurrency.format(data.amountPaid),
+            valueX + 70,
+            yPosition + 40 + lineHeight
+          );
+          doc.text(
+            formattedCurrency.format(data.amountDue),
+            valueX + 140,
+            yPosition + 40 + lineHeight
+          );
         },
         pageWidth - 20,
-        40
+        60
       );
 
       // Product Details card
@@ -133,6 +157,7 @@ export const createInvoicePDF = (data: Invoice): Promise<Uint8Array> => {
               "Product",
               "Base Price ($)",
               "Quantity",
+              "Discount (%)",
               "Price ($)",
             ];
             const tableRows = data.products.map((product, index) => [
@@ -140,7 +165,12 @@ export const createInvoicePDF = (data: Invoice): Promise<Uint8Array> => {
               product.name,
               product.basePrice.toFixed(2),
               product.quantity,
-              (product.basePrice * product.quantity).toFixed(2),
+              product.discount,
+              (
+                product.basePrice *
+                product.quantity *
+                (1 - product.discount / 100)
+              ).toFixed(2),
             ]);
 
             // (doc as unknown as keyof typeof jsPDF).autoTable({
@@ -180,7 +210,11 @@ export const createInvoicePDF = (data: Invoice): Promise<Uint8Array> => {
         () => {
           const subtotal = data.products
             ? data.products.reduce(
-                (sum, product) => sum + product.basePrice * product.quantity,
+                (sum, product) =>
+                  sum +
+                  product.basePrice *
+                    product.quantity *
+                    (1 - product.discount / 100),
                 0
               )
             : 0;
@@ -204,7 +238,7 @@ export const createInvoicePDF = (data: Invoice): Promise<Uint8Array> => {
 
           addSummaryRow("Subtotal:", `$${subtotal.toFixed(2)}`, yPosition + 25);
           addSummaryRow(
-            "Discount:",
+            "Discount(on subtotal):",
             `$${discountAmount.toFixed(2)}`,
             yPosition + 32
           );
