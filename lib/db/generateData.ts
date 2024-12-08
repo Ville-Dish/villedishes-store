@@ -5,6 +5,7 @@ import {
   generateInvoiceNumber,
   generateOrderNumber,
 } from "../helper-generateFunction";
+import { min } from "date-fns";
 
 type MenuItem = {
   id: string;
@@ -80,6 +81,8 @@ const generateInvoiceData = async (length: number, products: Product[]) => {
           amount: 0,
           amountPaid: 0,
           amountDue: 0,
+          taxRate: faker.number.int({ min: 0, max: 5 }),
+          shippingFee: faker.number.int({ min: 0, max: 5 }),
           discountPercentage: faker.number.float({
             multipleOf: 0.5,
             min: 0,
@@ -109,30 +112,40 @@ const generateInvoiceData = async (length: number, products: Product[]) => {
       });
 
       // Add related invoice data
-      let totalAmount = 0 + invoice.discountPercentage;
+      let totalAmount =
+        0 +
+        invoice.discountPercentage +
+        (1 - invoice.taxRate / 100) +
+        invoice.shippingFee;
       const invoiceProducts = Array.from({ length: getRandomNumber() }).map(
         () => {
           const product = faker.helpers.arrayElement(products); //Randomly select  from products
           const quantity = faker.number.int({ min: 1, max: 5 });
-          const discount = faker.number.float({
-            multipleOf: 0.05,
-            min: 10,
+          const discount = faker.number.int({
+            min: 1,
             max: 100,
           });
-          const price = product.price * quantity * discount;
+          const price = product.price * quantity * (1 - discount / 100);
           totalAmount += price;
 
           return {
             basePrice: product.price,
             quantity,
             price,
+            discount,
             invoiceId: invoice.id,
-            productId: product.id,
+            Product: {
+              connect: { id: product.product.id },
+            },
           };
         }
       );
 
-      await prisma.invoiceProducts.createMany({ data: invoiceProducts });
+      for (const invoiceProduct of invoiceProducts) {
+        await prisma.invoiceProducts.create({
+          data: invoiceProduct,
+        });
+      }
 
       const amountsPaid = faker.number.float({
         multipleOf: 0.05,
