@@ -54,9 +54,6 @@ export const InvoiceDetails = ({
     invoice.discountPercentage || 0
   );
   console.log({ invoice });
-  const [addedProductDiscount, setAddedProductDiscount] = useState<
-    number | null
-  >(null);
   const [productDiscount, setProductDiscount] = useState<number[]>(
     invoice?.products?.map((p) => p.discount) || []
   );
@@ -207,9 +204,7 @@ export const InvoiceDetails = ({
           basePrice: selectedProduct.basePrice,
           quantity: newProduct.quantity,
           price:
-            selectedProduct.basePrice *
-            newProduct.quantity *
-            (1 - (addedProductDiscount || 0) / 100),
+            selectedProduct.basePrice * newProduct.quantity * (1 - 0 / 100),
           discount: 0,
         });
       }
@@ -628,26 +623,6 @@ export const InvoiceDetails = ({
                     }
                     className="col-span-3"
                     min="1"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="discount" className="text-right">
-                    Discount (%)
-                  </Label>
-                  <Input
-                    id="discount"
-                    type="number"
-                    value={newProduct.discount}
-                    onChange={(e) => {
-                      setNewProduct((prev) => ({
-                        ...prev,
-                        discount: parseFloat(e.target.value),
-                      }));
-                      setAddedProductDiscount(Number(e.target.value));
-                    }}
-                    className="col-span-3"
-                    min="0"
-                    max="100"
                   />
                 </div>
               </div>
