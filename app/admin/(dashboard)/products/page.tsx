@@ -32,9 +32,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { toast } from "sonner";
-// import { allProduct } from "@/lib/constantData";
-
-// const initialMenuItems: MenuItem[] = allProduct;
+import ImageUpload from "@/components/custom/imageUpload/ImageUpload";
 
 export default function AdminProductsPage() {
   //   const [menuItems, setMenuItems] = useState<MenuItem[]>(initialMenuItems);
@@ -188,15 +186,20 @@ export default function AdminProductsPage() {
           <Button>
             <Search className="mr-2 h-4 w-4" /> Search
           </Button>
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen} modal={false}>
             <DialogTrigger asChild>
               <Button onClick={() => setDialogOpen(true)}>
                 <Plus className="mr-2 h-4 w-4" /> Add Product
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent
+              onInteractOutside={(event) => event.preventDefault()}
+            >
               <DialogHeader>
                 <DialogTitle>Add Product</DialogTitle>
+                <DialogDescription className="sr-only">
+                  Add New Product
+                </DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4">
                 <div className="grid grid-cols-4 items-center gap-4">
@@ -259,13 +262,14 @@ export default function AdminProductsPage() {
                   <Label htmlFor="image" className="text-right">
                     Image URL
                   </Label>
-                  <Input
-                    id="image"
+                  {/* <Input
+                    type="file"
+                    onClick={() => setAddProductUpload(true)}
+                  /> */}
+                  <ImageUpload
                     value={newItem.image}
-                    onChange={(e) =>
-                      setNewItem({ ...newItem, image: e.target.value })
-                    }
-                    className="col-span-3"
+                    onChange={(url) => setNewItem({ ...newItem, image: url })}
+                    onRemove={() => setNewItem({ ...newItem, image: "" })}
                   />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
@@ -370,9 +374,6 @@ export default function AdminProductsPage() {
                           <p>
                             <strong>Price:</strong> ${item.price.toFixed(2)}
                           </p>
-                          {/* <p>
-                            <strong>Stock:</strong> {item.stock ?? "N/A"}
-                          </p> */}
                           <p>
                             <strong>Rating:</strong>{" "}
                             {item.rating
@@ -410,8 +411,12 @@ export default function AdminProductsPage() {
         </TableBody>
       </Table>
       {editingItem && (
-        <Dialog open={!!editingItem} onOpenChange={() => setEditingItem(null)}>
-          <DialogContent>
+        <Dialog
+          open={!!editingItem}
+          onOpenChange={() => setEditingItem(null)}
+          modal={false}
+        >
+          <DialogContent onInteractOutside={(event) => event.preventDefault()}>
             <DialogHeader>
               <DialogTitle>Edit Menu Item</DialogTitle>
               <DialogDescription className="sr-only">
@@ -482,13 +487,13 @@ export default function AdminProductsPage() {
                 <Label htmlFor="edit-image" className="text-right">
                   Image URL
                 </Label>
-                <Input
-                  id="edit-image"
+
+                <ImageUpload
                   value={editingItem.image}
-                  onChange={(e) =>
-                    setEditingItem({ ...editingItem, image: e.target.value })
+                  onChange={(url) =>
+                    setEditingItem({ ...editingItem, image: url })
                   }
-                  className="col-span-3"
+                  onRemove={() => setEditingItem({ ...editingItem, image: "" })}
                 />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
