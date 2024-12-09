@@ -187,3 +187,10 @@ type ReportData = {
 type AdminReportProps = {
   data: ReportData[];
 };
+
+type ImageUploadProps = {
+  value: string;
+  onChange: (value: string) => void;
+  onRemove: (value: string) => void;
+  onRemoveError?: (value: string) => void;
+};
