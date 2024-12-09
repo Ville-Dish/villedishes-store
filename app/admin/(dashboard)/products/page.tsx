@@ -301,6 +301,7 @@ export default function AdminProductsPage() {
       <Table>
         <TableHeader>
           <TableRow>
+            <TableHead>S/N</TableHead>
             <TableHead>Name</TableHead>
             <TableHead>Price</TableHead>
             <TableHead>Category</TableHead>
@@ -310,9 +311,10 @@ export default function AdminProductsPage() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {menuItems.map((item) => (
+          {menuItems.map((item, index) => (
             <React.Fragment key={item.id}>
               <TableRow>
+                <TableCell>{index + 1}</TableCell>
                 <TableCell>{item.name}</TableCell>
                 <TableCell>${item.price.toFixed(2)}</TableCell>
                 <TableCell>{item.category}</TableCell>
