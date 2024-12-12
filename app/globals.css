@@ -70,3 +70,19 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+.half-star {
+  position: relative;
+  overflow: hidden;
+}
+
+.half-star::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 50%;
+  height: 100%;
+  background-color: #f6e05e;
+  z-index: 1;
+}
