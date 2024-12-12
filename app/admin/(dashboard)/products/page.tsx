@@ -11,8 +11,6 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
@@ -21,23 +19,12 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  ChevronDown,
-  ChevronUp,
-  Edit,
-  Plus,
-  Search,
-  Star,
-  Trash,
-} from "lucide-react";
-import Image from "next/image";
+import { Edit, Plus, Search, Trash } from "lucide-react";
 import { toast } from "sonner";
-import ImageUpload from "@/components/custom/imageUpload/ImageUpload";
+import { ProductForm } from "@/components/custom/product-form";
 
 export default function AdminProductsPage() {
-  //   const [menuItems, setMenuItems] = useState<MenuItem[]>(initialMenuItems);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
-  const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
   const [newItem, setNewItem] = useState<Omit<MenuItem, "id">>({
     name: "",
@@ -45,12 +32,12 @@ export default function AdminProductsPage() {
     price: 0,
     category: "",
     image: "",
-    stock: 0,
     rating: 0,
   });
 
   const [loading, setLoading] = useState<boolean>(true);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Fetch products from the API
   useEffect(() => {
@@ -74,21 +61,21 @@ export default function AdminProductsPage() {
     fetchProducts();
   }, []);
 
-  const toggleItemDetails = (itemId: string) => {
-    setExpandedItemId(expandedItemId === itemId ? null : itemId);
-  };
-
   const handleEditItem = (item: MenuItem) => {
     setEditingItem(item);
   };
 
-  const handleUpdateItem = async () => {
-    if (!editingItem) return;
+  const handleUpdateItem = async (updatedItem: Omit<MenuItem, "id">) => {
+    setIsLoading(true);
     try {
+      if (!editingItem) {
+        throw new Error("No item selected for editing");
+      }
+      const itemToUpdate = { ...updatedItem, id: editingItem.id };
       const response = await fetch(`/api/products`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...editingItem }),
+        body: JSON.stringify(itemToUpdate),
       });
 
       const data = await response.json();
@@ -106,11 +93,8 @@ export default function AdminProductsPage() {
     } catch (error) {
       console.error("Error updating product:", error);
       toast.error("An error occurred while updating the product.");
-    }
-    if (editingItem) {
-      setEditingItem(null);
-      // Close the dialog
-      setDialogOpen(false);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -137,12 +121,13 @@ export default function AdminProductsPage() {
     }
   };
 
-  const handleAddItem = async () => {
+  const handleAddItem = async (newItemData: Omit<MenuItem, "id">) => {
+    setIsLoading(true);
     try {
       const response = await fetch("/api/products", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newItem),
+        body: JSON.stringify(newItemData),
       });
 
       const data = await response.json();
@@ -155,7 +140,6 @@ export default function AdminProductsPage() {
           price: 0,
           category: "",
           image: "",
-          stock: 0,
           rating: 0,
         });
         // Close the dialog
@@ -170,6 +154,8 @@ export default function AdminProductsPage() {
     } catch (error) {
       console.error("Error adding product:", error);
       toast.error("An error occurred. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -201,99 +187,12 @@ export default function AdminProductsPage() {
                   Add New Product
                 </DialogDescription>
               </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="name" className="text-right">
-                    Name
-                  </Label>
-                  <Input
-                    id="name"
-                    value={newItem.name}
-                    onChange={(e) =>
-                      setNewItem({ ...newItem, name: e.target.value })
-                    }
-                    className="col-span-3"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="description" className="text-right">
-                    Description
-                  </Label>
-                  <Textarea
-                    id="description"
-                    value={newItem.description}
-                    onChange={(e) =>
-                      setNewItem({ ...newItem, description: e.target.value })
-                    }
-                    className="col-span-3"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="price" className="text-right">
-                    Price
-                  </Label>
-                  <Input
-                    id="price"
-                    type="number"
-                    value={newItem.price}
-                    onChange={(e) =>
-                      setNewItem({
-                        ...newItem,
-                        price: parseFloat(e.target.value),
-                      })
-                    }
-                    className="col-span-3"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="category" className="text-right">
-                    Category
-                  </Label>
-                  <Input
-                    id="category"
-                    value={newItem.category}
-                    onChange={(e) =>
-                      setNewItem({ ...newItem, category: e.target.value })
-                    }
-                    className="col-span-3"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="image" className="text-right">
-                    Image URL
-                  </Label>
-                  {/* <Input
-                    type="file"
-                    onClick={() => setAddProductUpload(true)}
-                  /> */}
-                  <ImageUpload
-                    value={newItem.image}
-                    onChange={(url) => setNewItem({ ...newItem, image: url })}
-                    onRemove={() => setNewItem({ ...newItem, image: "" })}
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="rating" className="text-right">
-                    Rating
-                  </Label>
-                  <Input
-                    id="rating"
-                    type="number"
-                    step="0.1"
-                    min="0"
-                    max="5"
-                    value={newItem.rating}
-                    onChange={(e) =>
-                      setNewItem({
-                        ...newItem,
-                        rating: parseFloat(e.target.value),
-                      })
-                    }
-                    className="col-span-3"
-                  />
-                </div>
-              </div>
-              <Button onClick={handleAddItem}>Add Menu Item</Button>
+              <ProductForm
+                product={newItem}
+                onSubmit={handleAddItem}
+                onCancel={() => setDialogOpen(false)}
+                isLoading={isLoading}
+              />
             </DialogContent>
           </Dialog>
         </div>
@@ -307,7 +206,6 @@ export default function AdminProductsPage() {
             <TableHead>Category</TableHead>
             <TableHead>Rating</TableHead>
             <TableHead>Actions</TableHead>
-            <TableHead>Details</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -337,77 +235,7 @@ export default function AdminProductsPage() {
                     <Trash className="h-4 w-4" />
                   </Button>
                 </TableCell>
-                <TableCell>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => toggleItemDetails(item.id)}
-                  >
-                    {expandedItemId === item.id ? (
-                      <ChevronUp />
-                    ) : (
-                      <ChevronDown />
-                    )}
-                  </Button>
-                </TableCell>
               </TableRow>
-              {expandedItemId === item.id && (
-                <TableRow>
-                  <TableCell colSpan={7}>
-                    <div className="bg-gray-50 p-4 rounded-md">
-                      <h3 className="font-semibold mb-2">Products Details</h3>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <Image
-                            src={item.image}
-                            alt={item.name}
-                            className="w-full h-auto rounded-md"
-                            width={100}
-                            height={100}
-                          />
-                        </div>
-                        <div>
-                          <p>
-                            <strong>Description:</strong> {item.description}
-                          </p>
-                          <p>
-                            <strong>Category:</strong> {item.category}
-                          </p>
-                          <p>
-                            <strong>Price:</strong> ${item.price.toFixed(2)}
-                          </p>
-                          <p>
-                            <strong>Rating:</strong>{" "}
-                            {item.rating
-                              ? `${item.rating.toFixed(1)} / 5`
-                              : 0.0}
-                          </p>
-                        </div>
-                      </div>
-                      {item.reviews && item.reviews.length > 0 && (
-                        <div className="mt-4">
-                          <h4 className="font-semibold mb-2">Reviews</h4>
-                          {item.reviews.map((review) => (
-                            <div
-                              key={review.id}
-                              className="mb-2 p-2 bg-white rounded-md"
-                            >
-                              <div className="flex items-center">
-                                <Star className="h-4 w-4 text-yellow-400 mr-1" />
-                                <span>{review.rating} / 5</span>
-                              </div>
-                              <p className="text-sm">{review.comment}</p>
-                              <p className="text-xs text-gray-500">
-                                - {review.author}
-                              </p>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </TableCell>
-                </TableRow>
-              )}
             </React.Fragment>
           ))}
         </TableBody>
@@ -415,7 +243,7 @@ export default function AdminProductsPage() {
       {editingItem && (
         <Dialog
           open={!!editingItem}
-          onOpenChange={() => setEditingItem(null)}
+          onOpenChange={(open) => !open && setEditingItem(null)}
           modal={false}
         >
           <DialogContent onInteractOutside={(event) => event.preventDefault()}>
@@ -425,101 +253,12 @@ export default function AdminProductsPage() {
                 Edit menu item {editingItem.name}
               </DialogDescription>
             </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-name" className="text-right">
-                  Name
-                </Label>
-                <Input
-                  id="edit-name"
-                  value={editingItem.name}
-                  onChange={(e) =>
-                    setEditingItem({ ...editingItem, name: e.target.value })
-                  }
-                  className="col-span-3"
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-description" className="text-right">
-                  Description
-                </Label>
-                <Textarea
-                  id="edit-description"
-                  value={editingItem.description}
-                  onChange={(e) =>
-                    setEditingItem({
-                      ...editingItem,
-                      description: e.target.value,
-                    })
-                  }
-                  className="col-span-3"
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-price" className="text-right">
-                  Price
-                </Label>
-                <Input
-                  id="edit-price"
-                  type="number"
-                  value={editingItem.price}
-                  onChange={(e) =>
-                    setEditingItem({
-                      ...editingItem,
-                      price: parseFloat(e.target.value),
-                    })
-                  }
-                  className="col-span-3"
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-category" className="text-right">
-                  Category
-                </Label>
-                <Input
-                  id="edit-category"
-                  value={editingItem.category}
-                  onChange={(e) =>
-                    setEditingItem({ ...editingItem, category: e.target.value })
-                  }
-                  className="col-span-3"
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-image" className="text-right">
-                  Image URL
-                </Label>
-
-                <ImageUpload
-                  value={editingItem.image}
-                  onChange={(url) =>
-                    setEditingItem({ ...editingItem, image: url })
-                  }
-                  onRemove={() => setEditingItem({ ...editingItem, image: "" })}
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-rating" className="text-right">
-                  Rating
-                </Label>
-                <Input
-                  id="edit-rating"
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  max="5"
-                  value={editingItem.rating}
-                  onChange={(e) =>
-                    setEditingItem({
-                      ...editingItem,
-                      rating: parseFloat(e.target.value),
-                    })
-                  }
-                  className="col-span-3"
-                />
-              </div>
-            </div>
-            <Button onClick={handleUpdateItem}>Update Menu Item</Button>
+            <ProductForm
+              product={editingItem}
+              onSubmit={handleUpdateItem}
+              onCancel={() => setEditingItem(null)}
+              isLoading={isLoading}
+            />
           </DialogContent>
         </Dialog>
       )}
