@@ -24,7 +24,6 @@ export default function LoginPage() {
         password
       );
       const token = await userCredential.user.getIdToken();
-      // document.cookie = `token=${token}; path=/;`;
 
       // Send the token to the server-side route
       const response = await fetch("/api/set-token", {
