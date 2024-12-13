@@ -19,25 +19,15 @@ export const Header = ({ show }: { show: boolean }) => {
           />
         </Link>
       </div>
-      <div className="flex-grow flex justify-center">
-        {show ? <NavbarMenu /> : <AdminNavbarMenu />}
-      </div>
+      <div className="flex items-center flex-row-reverse md:flex-1 md:flex-row">
+        <div className="flex-grow flex justify-center">
+          {show ? <NavbarMenu /> : <AdminNavbarMenu />}
+        </div>
 
-      <div className="flex-shrink-0">
-        {show ? <ShoppingCart /> : <AdminAvatar />}
+        <div className="flex-shrink-0">
+          {show ? <ShoppingCart /> : <AdminAvatar />}
+        </div>
       </div>
-      {/* {show ? (
-        <div className="md:flex-[40%] flex flex-row-reverse md:flex-row items-center md:justify-between">
-          <NavbarMenu />
-          <ShoppingCart />
-        </div>
-      ) : (
-        <div className="md:flex-[40%] flex flex-row-reverse md:flex-row items-center md:justify-between">
-          <AdminNavbarMenu />
-          <AdminAvatar />
-          <div />
-        </div>
-      )} */}
     </div>
   );
 };
