@@ -8,16 +8,24 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useAuthStore } from "@/stores/useAuthStore";
-import { auth } from "@/config/firebase";
-import { signOut } from "firebase/auth";
+import { useAuth } from "@/context/AuthContext";
+import { useRouter } from "next/navigation";
 
 export default function AdminAvatar() {
+  const router = useRouter();
   const [sheetOpen, setSheetOpen] = useState(false);
-  // const logout = useAuthStore((state) => state.logout);
+  const { logOut, user } = useAuth();
 
-  const logout = async () => {
-    await signOut(auth);
+  const avatarFallback = user?.displayName?.charAt(0) || user?.email?.charAt(0);
+
+  const handleLogout = async () => {
+    try {
+      await logOut();
+      setSheetOpen(false);
+      router.push("/login"); // Redirect to login page after logout
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
   };
 
   const handleSettings = () => {
@@ -36,14 +44,14 @@ export default function AdminAvatar() {
               src="https://github.com/shadcn.png"
               alt="Admin Avatar"
             />
-            <AvatarFallback>VD</AvatarFallback>
+            <AvatarFallback>{avatarFallback?.toUpperCase()}</AvatarFallback>
           </Avatar>
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-56">
         <div className="flex flex-col gap-4">
           <p className="text-sm font-medium">Admin Options</p>
-          <Button size="sm" onClick={logout} className="bg-[#da281c]">
+          <Button size="sm" onClick={handleLogout} className="bg-[#da281c]">
             Logout
           </Button>
 
