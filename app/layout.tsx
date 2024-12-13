@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   title: "VilleDishes",
   description: "Nigerian meal at your finger tips",
   icons: {
-    icon: "/assets/ville.svg",
+    icon: "/assets/ville-logo.svg",
   },
 };
 

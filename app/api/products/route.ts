@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma/client";
+import { verifyToken } from "@/lib/helper";
 
 // POST method to create a new product
 export async function POST(req: Request) {
