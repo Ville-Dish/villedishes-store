@@ -57,9 +57,9 @@ export const AdminNavbarMenu = () => {
     <header className="flex items-center justify-between">
       {!isLargeScreen ? (
         <Sheet open={isOpen} onOpenChange={setIsOpen}>
-          <SheetTrigger asChild>
+          <SheetTrigger asChild className="md:hidden">
             <Button variant="ghost" size="icon" className="bg-transparent">
-              <Menu className="h-6 w-6" />
+              <Menu className="h-8 w-8" />
               <span className="sr-only">Toggle menu</span>
             </Button>
           </SheetTrigger>
@@ -80,7 +80,7 @@ export const AdminNavbarMenu = () => {
           </SheetContent>
         </Sheet>
       ) : (
-        <nav className="flex gap-4 sm:gap-6">
+        <nav className="hidden md:flex gap-4 sm:gap-6">
           {menuItems.map((item) => (
             <NavLink key={item.href} {...item} />
           ))}
