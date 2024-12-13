@@ -1,4 +1,5 @@
 import { Header } from "@/components/custom/header";
+import { AuthProvider } from "@/context/AuthContext";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -13,9 +14,11 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen">
-      <Header show={false} />
-      {children}
-    </div>
+    <AuthProvider>
+      <div className="min-h-screen">
+        <Header show={false} />
+        {children}
+      </div>
+    </AuthProvider>
   );
 }
