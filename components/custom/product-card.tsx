@@ -23,6 +23,7 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "../ui/carousel";
+import RatingReview from "./rating-review";
 
 type ProductTabsProps = {
   categories: string[];
@@ -173,9 +174,12 @@ export const ProductCard = ({
                 <p className="text-sm text-gray-600 line-clamp-2">
                   {item.description}
                 </p>
-                {/* <div className="mt-1">
-                          <RatingsReviews itemId={item.id} initialRating={item.rating} initialReviews={item.reviews} />
-                        </div> */}
+                <div className="mt-1">
+                  <RatingReview
+                    rating={item.rating || 0}
+                    reviewCount={item.reviews?.length || 0}
+                  />
+                </div>
               </CardContent>
               <CardFooter className="p-2 flex justify-between items-center">
                 <span className="font-bold">${item.price.toFixed(2)}</span>

@@ -3,7 +3,6 @@ import "jspdf-autotable";
 import { logoImageData } from "./imageData";
 import { formattedCurrency } from "./helper";
 
-// export const createInvoicePDF:Promise<Buffer> = (data: Invoice) => {}
 export const createInvoicePDF = (data: Invoice): Promise<Uint8Array> => {
   return new Promise((resolve, reject) => {
     try {
@@ -94,7 +93,7 @@ export const createInvoicePDF = (data: Invoice): Promise<Uint8Array> => {
       addBoldText("Customer Name:", 25 + cardWidth, yPosition + 25);
       doc.text(data.customerName, 65 + cardWidth, yPosition + 25);
       addBoldText("Customer Email:", 25 + cardWidth, yPosition + 35);
-      doc.text(data.customerEmail, 65 + cardWidth, yPosition + 35);
+      doc.text(data.customerEmail, 55 + cardWidth, yPosition + 35);
       addBoldText("Customer Phone:", 25 + cardWidth, yPosition + 45);
       doc.text(data.customerPhone, 65 + cardWidth, yPosition + 45);
 
@@ -107,7 +106,7 @@ export const createInvoicePDF = (data: Invoice): Promise<Uint8Array> => {
           const labelX = 15;
           const valueX = 15;
           const lineHeight = 7;
-          const columnWidth = (pageWidth - 30) / 4;
+          // const columnWidth = (pageWidth - 30) / 4;
 
           doc.setFont("helvetica", "bold");
           doc.text("Invoice Number", labelX, yPosition + 20);
@@ -152,12 +151,15 @@ export const createInvoicePDF = (data: Invoice): Promise<Uint8Array> => {
         "Invoice Product Details",
         () => {
           if (data.products && data.products.length > 0) {
+            const allDiscountsZero = data.products.every(
+              (product) => product.discount === 0
+            );
             const tableColumn = [
               "S/N",
               "Product",
               "Base Price ($)",
               "Quantity",
-              "Discount (%)",
+              ...(allDiscountsZero ? [] : ["Discount (%)"]),
               "Price ($)",
             ];
             const tableRows = data.products.map((product, index) => [
@@ -165,7 +167,7 @@ export const createInvoicePDF = (data: Invoice): Promise<Uint8Array> => {
               product.name,
               product.basePrice.toFixed(2),
               product.quantity,
-              product.discount,
+              ...(allDiscountsZero ? [] : [product.discount]),
               (
                 product.basePrice *
                 product.quantity *
