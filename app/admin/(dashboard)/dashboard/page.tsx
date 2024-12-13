@@ -38,8 +38,6 @@ import { Button } from "@/components/ui/button";
 import { useCallback, useEffect, useState } from "react";
 import { DateRange } from "react-day-picker";
 import { subDays } from "date-fns";
-import { useRouter } from "next/navigation";
-import { useAuthStore } from "@/stores/useAuthStore";
 
 const StatCard: React.FC<{
   title: string;
@@ -58,9 +56,6 @@ const StatCard: React.FC<{
 );
 
 export default function AdminDashboard() {
-  const user = useAuthStore((state) => state.user);
-  const router = useRouter();
-
   const [activeTab, setActiveTab] = useState("overview");
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: subDays(new Date(), 30),
@@ -143,11 +138,6 @@ export default function AdminDashboard() {
         return null;
     }
   };
-
-  if (!user) {
-    router.push("/login");
-    return <p>Redirecting to login...</p>;
-  }
 
   return (
     <div className="flex-1 space-y-4 p-8 pt-6">
