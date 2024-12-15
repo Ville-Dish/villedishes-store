@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -19,12 +20,14 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Edit, Plus, Search, Trash } from "lucide-react";
+import { Eye, Plus, Trash } from "lucide-react";
 import { toast } from "sonner";
 import { ProductForm } from "@/components/custom/product-form";
 
 export default function AdminProductsPage() {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [filteredProducts, setFilteredProducts] = useState<MenuItem[]>([]);
+  const [searchTerm, setSearchTerm] = useState<string>("");
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
   const [newItem, setNewItem] = useState<Omit<MenuItem, "id">>({
     name: "",
@@ -47,7 +50,8 @@ export default function AdminProductsPage() {
         const data = await response.json();
 
         if (response.ok) {
-          setMenuItems(data.data);
+          setMenuItems(data.data || []);
+          setFilteredProducts(data.data || []);
         } else {
           console.error("Error fetching products:", data.message);
         }
@@ -83,6 +87,9 @@ export default function AdminProductsPage() {
         setMenuItems((items) =>
           items.map((item) => (item.id === editingItem.id ? editingItem : item))
         );
+        setFilteredProducts((items) =>
+          items.map((item) => (item.id === editingItem.id ? editingItem : item))
+        );
         toast.success(`Product updated successfully`);
         setEditingItem(null);
         setDialogOpen(false);
@@ -108,6 +115,9 @@ export default function AdminProductsPage() {
 
       if (response.ok) {
         setMenuItems((items) => items.filter((item) => item.id !== itemId));
+        setFilteredProducts((items) =>
+          items.filter((item) => item.id !== itemId)
+        );
         toast.success(`Product deleted successfully`);
       } else {
         const data = await response.json();
@@ -134,6 +144,7 @@ export default function AdminProductsPage() {
 
       if (response.ok) {
         setMenuItems((items) => [...items, data.data]);
+        setFilteredProducts((items) => [...items, data.data]);
         setNewItem({
           name: "",
           description: "",
@@ -159,6 +170,24 @@ export default function AdminProductsPage() {
     }
   };
 
+  // search function
+  const handleSearch = (searchTerm: string) => {
+    setSearchTerm(searchTerm);
+    if (searchTerm.trim() === "") {
+      setFilteredProducts(menuItems);
+    } else {
+      const filtered = menuItems.filter((menuItem) =>
+        Object.entries(menuItem).some(([key, value]) => {
+          if (typeof value === "string") {
+            return value.toLowerCase().includes(searchTerm.toLowerCase());
+          }
+          return String(value).toLowerCase().includes(searchTerm.toLowerCase());
+        })
+      );
+      setFilteredProducts(filtered);
+    }
+  };
+
   if (loading) {
     return <div>Loading products...</div>;
   }
@@ -168,10 +197,15 @@ export default function AdminProductsPage() {
       <div className="flex items-center justify-between space-y-2">
         <h2 className="text-3xl font-bold tracking-tight">Products</h2>
         <div className="flex items-center space-x-2">
-          <Input placeholder="Search products..." className="max-w-sm" />
-          <Button>
+          <Input
+            placeholder="Search products..."
+            className="max-w-sm"
+            value={searchTerm}
+            onChange={(e) => handleSearch(e.target.value)}
+          />
+          {/* <Button>
             <Search className="mr-2 h-4 w-4" /> Search
-          </Button>
+          </Button> */}
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen} modal={false}>
             <DialogTrigger asChild>
               <Button onClick={() => setDialogOpen(true)}>
@@ -197,49 +231,66 @@ export default function AdminProductsPage() {
           </Dialog>
         </div>
       </div>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>S/N</TableHead>
-            <TableHead>Name</TableHead>
-            <TableHead>Price</TableHead>
-            <TableHead>Category</TableHead>
-            <TableHead>Rating</TableHead>
-            <TableHead>Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {menuItems.map((item, index) => (
-            <React.Fragment key={item.id}>
+      <div className="border rounded-lg overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>S/N</TableHead>
+              <TableHead>Name</TableHead>
+              <TableHead>Price</TableHead>
+              <TableHead>Category</TableHead>
+              <TableHead>Rating</TableHead>
+              <TableHead>Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          {filteredProducts.length === 0 ? (
+            <TableBody>
               <TableRow>
-                <TableCell>{index + 1}</TableCell>
-                <TableCell>{item.name}</TableCell>
-                <TableCell>${item.price.toFixed(2)}</TableCell>
-                <TableCell>{item.category}</TableCell>
-                <TableCell>
-                  {item.rating ? `${item.rating.toFixed(1)} / 5` : "0.0/5"}
-                </TableCell>
-                <TableCell>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleEditItem(item)}
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleDeleteItem(item.id)}
-                  >
-                    <Trash className="h-4 w-4" />
-                  </Button>
+                <TableCell colSpan={8} className="h-24 text-center">
+                  <p className="text-lg text-muted-foreground">
+                    {searchTerm
+                      ? "No matching products found"
+                      : "There are no products yet"}
+                  </p>
                 </TableCell>
               </TableRow>
-            </React.Fragment>
-          ))}
-        </TableBody>
-      </Table>
+            </TableBody>
+          ) : (
+            <TableBody>
+              {filteredProducts.map((item, index) => (
+                <React.Fragment key={item.id}>
+                  <TableRow>
+                    <TableCell>{index + 1}</TableCell>
+                    <TableCell>{item.name}</TableCell>
+                    <TableCell>${item.price.toFixed(2)}</TableCell>
+                    <TableCell>{item.category}</TableCell>
+                    <TableCell>
+                      {item.rating ? `${item.rating.toFixed(1)} / 5` : "0.0/5"}
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleEditItem(item)}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteItem(item.id)}
+                      >
+                        <Trash className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                </React.Fragment>
+              ))}
+            </TableBody>
+          )}
+        </Table>
+      </div>
+
       {editingItem && (
         <Dialog
           open={!!editingItem}
