@@ -17,17 +17,28 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, ChevronUp, Search } from "lucide-react";
+// import { ChevronDown, ChevronUp, Eye, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import {
+  Dialog,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogContent,
+} from "@/components/ui/dialog";
+import { Eye } from "lucide-react";
 
 type OrderStatus = "UNVERIFIED" | "PENDING" | "CANCELLED" | "FULFILLED";
 
 export default function AdminOrdersPage() {
   const [orders, setOrder] = useState<OrderDetails[]>([]);
+  const [filteredOrders, setFilteredOrders] = useState<OrderDetails[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
-  const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [selectedOrder, setSelectedOrder] = useState<OrderDetails | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const updateOrderStatus = async (orderId: string, newStatus: OrderStatus) => {
     try {
@@ -59,13 +70,13 @@ export default function AdminOrdersPage() {
     setUpdatingOrderId(orderId);
     try {
       const updatedOrder = await updateOrderStatus(orderId, newStatus);
-      setOrder(
-        orders.map((order) =>
-          order.orderId === orderId
-            ? { ...order, status: updatedOrder.status }
-            : order
-        )
+      const updatedOrders = orders.map((order) =>
+        order.orderId === orderId
+          ? { ...order, status: updatedOrder.status }
+          : order
       );
+      setOrder(updatedOrders);
+      setFilteredOrders(updatedOrders);
       console.log(`Order ${orderId} status updated to ${newStatus}`);
       toast.success(`Order ${orderId} status updated to ${newStatus}`);
     } catch (error) {
@@ -76,10 +87,6 @@ export default function AdminOrdersPage() {
     }
   };
 
-  const toggleOrderDetails = (orderId: string) => {
-    setExpandedOrderId(expandedOrderId === orderId ? null : orderId);
-  };
-
   useEffect(() => {
     const fetchOrders = async () => {
       try {
@@ -87,8 +94,8 @@ export default function AdminOrdersPage() {
         const response = await fetch("/api/orders", { method: "GET" });
         const data = await response.json();
         if (response.ok) {
-          console.log("DATA", data.data);
           setOrder(data.data || []);
+          setFilteredOrders(data.data || []);
         } else {
           console.error("Failed to fetch orders:", data.message);
         }
@@ -101,8 +108,36 @@ export default function AdminOrdersPage() {
     fetchOrders();
   }, []);
 
+  // search function
+  const handleSearch = (searchTerm: string) => {
+    setSearchTerm(searchTerm);
+    if (searchTerm.trim() === "") {
+      setFilteredOrders(orders);
+    } else {
+      const filtered = orders.filter((order) =>
+        Object.entries(order).some(([key, value]) => {
+          if (key === "shippingInfo") {
+            const { firstName, lastName } = value as {
+              firstName: string;
+              lastName: string;
+            };
+            const fullName = `${firstName} ${lastName}`.toLowerCase();
+            return fullName.includes(searchTerm.toLowerCase());
+          }
+          return String(value).toLowerCase().includes(searchTerm.toLowerCase());
+        })
+      );
+      setFilteredOrders(filtered);
+    }
+  };
+  // view function
+  const handleViewDetails = (order: OrderDetails) => {
+    setSelectedOrder(order);
+    setIsDialogOpen(true);
+  };
+
   if (loading) {
-    return <p>Loading invoices...</p>;
+    return <p>Loading orders...</p>;
   }
 
   return (
@@ -110,42 +145,49 @@ export default function AdminOrdersPage() {
       <div className="flex items-center justify-between space-y-2">
         <h2 className="text-3xl font-bold tracking-tight">Orders</h2>
         <div className="flex items-center space-x-2">
-          <Input placeholder="Search orders..." className="max-w-sm" />
-          <Button>
+          <Input
+            placeholder="Search orders..."
+            className="max-w-sm"
+            value={searchTerm}
+            onChange={(e) => handleSearch(e.target.value)}
+          />
+          {/* <Button>
             <Search className="mr-2 h-4 w-4" /> Search
-          </Button>
+          </Button> */}
         </div>
       </div>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Order ID</TableHead>
-            <TableHead>Order No.</TableHead>
-            <TableHead>Order Date</TableHead>
-            <TableHead>Customer</TableHead>
-            <TableHead>Total</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Action</TableHead>
-            <TableHead>Details</TableHead>
-          </TableRow>
-        </TableHeader>
-
-        {orders.length === 0 ? (
-          <TableBody>
+      <div className="border rounded-lg overflow-hidden">
+        <Table>
+          <TableHeader>
             <TableRow>
-              <TableCell colSpan={8} className="h-24 text-center">
-                <p className="text-lg text-muted-foreground">
-                  There is no order yet
-                </p>
-              </TableCell>
+              <TableHead>S/N</TableHead>
+              <TableHead>Order No.</TableHead>
+              <TableHead>Order Date</TableHead>
+              <TableHead>Customer</TableHead>
+              <TableHead>Total</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Action</TableHead>
+              <TableHead>Details</TableHead>
             </TableRow>
-          </TableBody>
-        ) : (
-          <TableBody>
-            {orders.map((order) => (
-              <React.Fragment key={order.orderId}>
-                <TableRow>
-                  <TableCell>{order.orderId}</TableCell>
+          </TableHeader>
+
+          {filteredOrders.length === 0 ? (
+            <TableBody>
+              <TableRow>
+                <TableCell colSpan={8} className="h-24 text-center">
+                  <p className="text-lg text-muted-foreground">
+                    {searchTerm
+                      ? "No matching orders found"
+                      : "There is no order yet"}
+                  </p>
+                </TableCell>
+              </TableRow>
+            </TableBody>
+          ) : (
+            <TableBody>
+              {filteredOrders.map((order, index) => (
+                <TableRow key={order.orderId}>
+                  <TableCell>{index + 1}</TableCell>
                   <TableCell>{order.orderNumber}</TableCell>
                   <TableCell>{order.orderDate}</TableCell>
                   <TableCell>
@@ -168,96 +210,98 @@ export default function AdminOrdersPage() {
                         <SelectValue placeholder="Change status" />
                       </SelectTrigger>
                       <SelectContent>
+                        <SelectItem value="UNVERIFIED">UNVERIFIED</SelectItem>
                         <SelectItem value="PENDING">PENDING</SelectItem>
                         <SelectItem value="FULFILLED">FULFILLED</SelectItem>
                         <SelectItem value="CANCELLED">CANCELLED</SelectItem>
                       </SelectContent>
                     </Select>
                   </TableCell>
+
                   <TableCell>
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() =>
-                        toggleOrderDetails(order.orderId as string)
-                      }
+                      onClick={() => handleViewDetails(order)}
                     >
-                      {expandedOrderId === order.id ? (
-                        <ChevronUp />
-                      ) : (
-                        <ChevronDown />
-                      )}
+                      <Eye />
+                      <span className="sr-only">View Details</span>
                     </Button>
                   </TableCell>
                 </TableRow>
-                {expandedOrderId === order.orderId && (
-                  <TableRow>
-                    <TableCell colSpan={8}>
-                      <div className="bg-gray-50 p-4 rounded-md">
-                        <h3 className="font-semibold mb-2">Order Details</h3>
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <h4 className="font-medium">
-                              Shipping Information
-                            </h4>
-                            <p>
-                              {order.shippingInfo.firstName}{" "}
-                              {order.shippingInfo.lastName}
-                            </p>
-                            <p>{order.shippingInfo.address}</p>
-                            <p>
-                              {order.shippingInfo.city},{" "}
-                              {order.shippingInfo.postalCode}
-                            </p>
-                            <p>Email: {order.shippingInfo.email}</p>
-                            <p>Phone: {order.shippingInfo.phoneNumber}</p>
-                          </div>
-                          <div>
-                            <h4 className="font-medium">Order Summary</h4>
-                            <p>Subtotal: ${order.subtotal.toFixed(2)}</p>
-                            <p>Tax: ${order.tax.toFixed(2)}</p>
-                            <p>Shipping: ${order.shippingFee.toFixed(2)}</p>
-                            <p className="font-semibold">
-                              Total: ${order.total.toFixed(2)}
-                            </p>
-                          </div>
-                        </div>
-                        <h4 className="font-medium mt-4 mb-2">Products</h4>
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead>Product</TableHead>
-                              <TableHead>Quantity</TableHead>
-                              <TableHead>Price</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {order.products.map((product) => (
-                              <TableRow key={product.id}>
-                                <TableCell>{product.product.name}</TableCell>
-                                <TableCell>{product.quantity}</TableCell>
-                                <TableCell>
-                                  ${product.product.price.toFixed(2)}
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                        {order.shippingInfo.orderNotes && (
-                          <div className="mt-4">
-                            <h4 className="font-medium">Order Notes</h4>
-                            <p>{order.shippingInfo.orderNotes}</p>
-                          </div>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                )}
-              </React.Fragment>
-            ))}
-          </TableBody>
-        )}
-      </Table>
+              ))}
+            </TableBody>
+          )}
+        </Table>
+      </div>
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Order Details</DialogTitle>
+            <DialogDescription className="sr-only">
+              Order Details
+            </DialogDescription>
+          </DialogHeader>
+          {selectedOrder && (
+            <div className="mt-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h4 className="font-bold mb-2">Shipping Information</h4>
+                  <p>
+                    {selectedOrder.shippingInfo.firstName}{" "}
+                    {selectedOrder.shippingInfo.lastName}
+                  </p>
+                  <p>{selectedOrder.shippingInfo.address}</p>
+                  <p>
+                    {selectedOrder.shippingInfo.city},{" "}
+                    {selectedOrder.shippingInfo.postalCode}
+                  </p>
+                  <p>Email: {selectedOrder.shippingInfo.email}</p>
+                  <p>Phone: {selectedOrder.shippingInfo.phoneNumber}</p>
+                </div>
+                <div>
+                  <h4 className="font-bold mb-2">Order Summary</h4>
+                  <p>Subtotal: ${selectedOrder.subtotal.toFixed(2)}</p>
+                  <p>Tax: ${selectedOrder.tax.toFixed(2)}</p>
+                  <p>Shipping: ${selectedOrder.shippingFee.toFixed(2)}</p>
+                  <p className="font-semibold">
+                    Total: ${selectedOrder.total.toFixed(2)}
+                  </p>
+                </div>
+              </div>
+              <h4 className="font-medium mt-4 mb-2">Products</h4>
+              <div className="border rounded-lg overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Product</TableHead>
+                      <TableHead>Quantity</TableHead>
+                      <TableHead>Price</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {selectedOrder.products.map((product) => (
+                      <TableRow key={product.id}>
+                        <TableCell>{product.product.name}</TableCell>
+                        <TableCell>{product.quantity}</TableCell>
+                        <TableCell>
+                          ${product.product.price.toFixed(2)}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+              {selectedOrder.shippingInfo.orderNotes && (
+                <div className="mt-4">
+                  <h4 className="font-medium">Order Notes</h4>
+                  <p>{selectedOrder.shippingInfo.orderNotes}</p>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

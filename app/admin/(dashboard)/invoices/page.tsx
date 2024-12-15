@@ -38,7 +38,7 @@ import { createInvoicePDF } from "@/lib/invoicePdfGenerate";
 
 export default function AdminInvoicesPage() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
-
+  const [filteredInvoices, setFilteredInvoices] = useState<Invoice[]>([]);
   const [newInvoice, setNewInvoice] = useState<
     Omit<Invoice, "id" | "invoiceNumber" | "dateCreated">
   >({
@@ -60,6 +60,7 @@ export default function AdminInvoicesPage() {
   const [availableProducts, setAvailableProducts] = useState<
     Array<{ id: string; name: string; basePrice: number }>
   >([]);
+  const [searchTerm, setSearchTerm] = useState<string>("");
 
   // Fetch invoices from the API
   useEffect(() => {
@@ -70,6 +71,7 @@ export default function AdminInvoicesPage() {
         const data = await response.json();
         if (response.ok) {
           setInvoices(data.data || []);
+          setFilteredInvoices(data.data || []);
         } else {
           console.error("Failed to fetch invoices:", data.message);
         }
@@ -136,6 +138,7 @@ export default function AdminInvoicesPage() {
 
       if (response.ok) {
         setInvoices((prev) => [...prev, result.data]);
+        setFilteredInvoices((prev) => [...prev, result.data]);
         setNewInvoice({
           customerName: "",
           customerEmail: "",
@@ -182,6 +185,11 @@ export default function AdminInvoicesPage() {
           inv.id === updatedInvoice.id ? result.data : inv
         )
       );
+      setFilteredInvoices(
+        invoices.map((inv) =>
+          inv.id === updatedInvoice.id ? result.data : inv
+        )
+      );
       setSelectedInvoice(null);
       toast.success("Invoice updated successfully");
     } catch (error) {
@@ -216,6 +224,23 @@ export default function AdminInvoicesPage() {
     }
   };
 
+  const handleSearch = (searchTerm: string) => {
+    setSearchTerm(searchTerm);
+    if (searchTerm.trim() === "") {
+      setFilteredInvoices(invoices);
+    } else {
+      const filtered = invoices.filter((invoice) =>
+        Object.entries(invoice).some(([key, value]) => {
+          if (typeof value === "string") {
+            return value.toLowerCase().includes(searchTerm.toLowerCase());
+          }
+          return String(value).toLowerCase().includes(searchTerm.toLowerCase());
+        })
+      );
+      setFilteredInvoices(filtered);
+    }
+  };
+
   if (loading) {
     return <p>Loading invoices...</p>;
   }
@@ -225,7 +250,12 @@ export default function AdminInvoicesPage() {
       <div className="flex flex-col sm:flex-row items-center justify-between space-y-2 sm:space-y-0">
         <h2 className="text-3xl font-bold tracking-tight">Invoices</h2>
         <div className="flex items-center space-x-2">
-          <Input placeholder="Search invoices..." className="max-w-[200px]" />
+          <Input
+            placeholder="Search invoices..."
+            className="max-w-[200px]"
+            value={searchTerm}
+            onChange={(e) => handleSearch(e.target.value)}
+          />
           <Button>
             <Search className="mr-2 h-4 w-4" /> Search
           </Button>
@@ -326,10 +356,12 @@ export default function AdminInvoicesPage() {
           </Dialog>
         </div>
       </div>
+
       <div className="border rounded-lg overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead>S/N</TableHead>
               <TableHead>Invoice Number</TableHead>
               <TableHead>Customer</TableHead>
               <TableHead>Amount</TableHead>
@@ -339,89 +371,102 @@ export default function AdminInvoicesPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {invoices.map((invoice) => (
-              <TableRow key={invoice.id}>
-                <TableCell>{invoice.invoiceNumber}</TableCell>
-                <TableCell>{invoice.customerName}</TableCell>
-                <TableCell>${invoice.amount.toFixed(2)}</TableCell>
-                <TableCell>{invoice.dueDate}</TableCell>
-                <TableCell>{invoice.status}</TableCell>
-                <TableCell>
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleViewInvoice(invoice)}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>View</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDownloadInvoice(invoice)}
-                        >
-                          <Download className="h-4 w-4" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Download</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() =>
-                            handleUpdateInvoice({
-                              ...invoice,
-                              status:
-                                invoice.status === "PAID" ? "UNPAID" : "PAID",
-                              amountPaid:
-                                invoice.status === "PAID"
-                                  ? invoice.amount
-                                  : invoice.amountPaid,
-                              amountDue:
-                                invoice.status === "PAID"
-                                  ? 0
-                                  : invoice.amountDue,
-                            })
-                          }
-                        >
-                          {invoice.status === "PAID" ? (
-                            <CircleX className="h-4 w-4" />
-                          ) : (
-                            <CheckCheck className="h-4 w-4" />
-                          )}
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>
-                          {invoice.status === "PAID"
-                            ? "Mark as Unpaid"
-                            : "Mark as Paid"}
-                        </p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+            {filteredInvoices.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={7} className="h-24 text-center">
+                  <p className="text-lg text-muted-foreground">
+                    {searchTerm
+                      ? "No matching invoices found"
+                      : "There are no invoices yet"}
+                  </p>
                 </TableCell>
               </TableRow>
-            ))}
+            ) : (
+              filteredInvoices.map((invoice, index) => (
+                <TableRow key={invoice.id}>
+                  <TableCell>{index + 1}</TableCell>
+                  <TableCell>{invoice.invoiceNumber}</TableCell>
+                  <TableCell>{invoice.customerName}</TableCell>
+                  <TableCell>${invoice.amount.toFixed(2)}</TableCell>
+                  <TableCell>{invoice.dueDate}</TableCell>
+                  <TableCell>{invoice.status}</TableCell>
+                  <TableCell>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleViewInvoice(invoice)}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>View</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDownloadInvoice(invoice)}
+                          >
+                            <Download className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Download</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() =>
+                              handleUpdateInvoice({
+                                ...invoice,
+                                status:
+                                  invoice.status === "PAID" ? "UNPAID" : "PAID",
+                                amountPaid:
+                                  invoice.status === "PAID"
+                                    ? invoice.amount
+                                    : invoice.amountPaid,
+                                amountDue:
+                                  invoice.status === "PAID"
+                                    ? 0
+                                    : invoice.amountDue,
+                              })
+                            }
+                          >
+                            {invoice.status === "PAID" ? (
+                              <CircleX className="h-4 w-4" />
+                            ) : (
+                              <CheckCheck className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>
+                            {invoice.status === "PAID"
+                              ? "Mark as Unpaid"
+                              : "Mark as Paid"}
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       </div>
