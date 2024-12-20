@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   Table,
   TableBody,
@@ -23,6 +23,14 @@ import {
 import { Eye, Plus, Trash } from "lucide-react";
 import { toast } from "sonner";
 import { ProductForm } from "@/components/custom/product-form";
+import { Slider } from "@/components/ui/slider";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export default function AdminProductsPage() {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
@@ -41,6 +49,12 @@ export default function AdminProductsPage() {
   const [loading, setLoading] = useState<boolean>(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  //Filter state
+  const [categoryFilter, setCategoryFilter] = useState<string>("");
+  const [ratingFilter, setRatingFilter] = useState<number>(0);
+  const [priceFilter, setPriceFilter] = useState<[number, number]>([0, 1000]);
+  const [categories, setCategories] = useState<string[]>([]);
 
   // Fetch products from the API
   useEffect(() => {
@@ -65,6 +79,13 @@ export default function AdminProductsPage() {
     fetchProducts();
   }, []);
 
+  useEffect(() => {
+    const uniqueCategories = Array.from(
+      new Set(menuItems.map((item) => item.category))
+    );
+    setCategories(uniqueCategories);
+  }, [menuItems]);
+
   const handleEditItem = (item: MenuItem) => {
     setEditingItem(item);
   };
@@ -87,9 +108,7 @@ export default function AdminProductsPage() {
         setMenuItems((items) =>
           items.map((item) => (item.id === editingItem.id ? editingItem : item))
         );
-        setFilteredProducts((items) =>
-          items.map((item) => (item.id === editingItem.id ? editingItem : item))
-        );
+        applyFiltersAndSearch();
         toast.success(`Product updated successfully`);
         setEditingItem(null);
         setDialogOpen(false);
@@ -115,9 +134,7 @@ export default function AdminProductsPage() {
 
       if (response.ok) {
         setMenuItems((items) => items.filter((item) => item.id !== itemId));
-        setFilteredProducts((items) =>
-          items.filter((item) => item.id !== itemId)
-        );
+        applyFiltersAndSearch();
         toast.success(`Product deleted successfully`);
       } else {
         const data = await response.json();
@@ -144,7 +161,8 @@ export default function AdminProductsPage() {
 
       if (response.ok) {
         setMenuItems((items) => [...items, data.data]);
-        setFilteredProducts((items) => [...items, data.data]);
+        // setFilteredProducts((items) => [...items, data.data]);
+        applyFiltersAndSearch();
         setNewItem({
           name: "",
           description: "",
@@ -170,23 +188,47 @@ export default function AdminProductsPage() {
     }
   };
 
-  // search function
-  const handleSearch = (searchTerm: string) => {
-    setSearchTerm(searchTerm);
-    if (searchTerm.trim() === "") {
-      setFilteredProducts(menuItems);
-    } else {
-      const filtered = menuItems.filter((menuItem) =>
-        Object.entries(menuItem).some(([key, value]) => {
-          if (typeof value === "string") {
-            return value.toLowerCase().includes(searchTerm.toLowerCase());
-          }
-          return String(value).toLowerCase().includes(searchTerm.toLowerCase());
-        })
+  // filter and search function
+  const applyFiltersAndSearch = useCallback(() => {
+    let filtered = menuItems;
+
+    // Apply search
+    if (searchTerm.trim() !== "") {
+      filtered = filtered.filter((item) =>
+        Object.values(item).some((value) =>
+          String(value).toLowerCase().includes(searchTerm.toLowerCase())
+        )
       );
-      setFilteredProducts(filtered);
     }
-  };
+
+    // Apply category filter
+    if (categoryFilter && categoryFilter !== "all") {
+      filtered = filtered.filter((item) => item.category === categoryFilter);
+    }
+
+    // Apply rating filter
+    if (ratingFilter > 0) {
+      filtered = filtered.filter((item) => (item.rating || 0) >= ratingFilter);
+    }
+
+    // Apply price filter
+    filtered = filtered.filter(
+      (item) => item.price >= priceFilter[0] && item.price <= priceFilter[1]
+    );
+
+    setFilteredProducts(filtered);
+  }, [searchTerm, categoryFilter, ratingFilter, priceFilter, menuItems]);
+
+  useEffect(() => {
+    applyFiltersAndSearch();
+  }, [
+    searchTerm,
+    categoryFilter,
+    ratingFilter,
+    priceFilter,
+    menuItems,
+    applyFiltersAndSearch,
+  ]);
 
   if (loading) {
     return <div>Loading products...</div>;
@@ -201,11 +243,8 @@ export default function AdminProductsPage() {
             placeholder="Search products..."
             className="max-w-sm"
             value={searchTerm}
-            onChange={(e) => handleSearch(e.target.value)}
+            onChange={(e) => setSearchTerm(e.target.value)}
           />
-          {/* <Button>
-            <Search className="mr-2 h-4 w-4" /> Search
-          </Button> */}
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen} modal={false}>
             <DialogTrigger asChild>
               <Button onClick={() => setDialogOpen(true)}>
@@ -231,6 +270,52 @@ export default function AdminProductsPage() {
           </Dialog>
         </div>
       </div>
+
+      <div className="flex space-x-4 mb-4">
+        <Select onValueChange={(value) => setCategoryFilter(value)}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Filter by Category" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Categories</SelectItem>
+            {categories.map((category) => (
+              <SelectItem key={category} value={category}>
+                {category}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select onValueChange={(value) => setRatingFilter(Number(value))}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Filter by Rating" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="0">All Ratings</SelectItem>
+            <SelectItem value="1">1+ Star</SelectItem>
+            <SelectItem value="2">2+ Stars</SelectItem>
+            <SelectItem value="3">3+ Stars</SelectItem>
+            <SelectItem value="4">4+ Stars</SelectItem>
+            <SelectItem value="5">5 Stars</SelectItem>
+          </SelectContent>
+        </Select>
+        <div className="flex items-center space-x-2">
+          <span>Price Range:</span>
+          <Slider
+            min={0}
+            max={1000}
+            step={10}
+            value={priceFilter}
+            onValueChange={(value: number[]) =>
+              setPriceFilter(value as [number, number])
+            }
+            className="w-[200px]"
+          />
+          <span>
+            ${priceFilter[0]} - ${priceFilter[1]}
+          </span>
+        </div>
+      </div>
+
       <div className="border rounded-lg overflow-hidden">
         <Table>
           <TableHeader>

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   Table,
   TableBody,
@@ -17,7 +17,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-// import { ChevronDown, ChevronUp, Eye, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import {
@@ -28,6 +27,7 @@ import {
   DialogContent,
 } from "@/components/ui/dialog";
 import { Eye } from "lucide-react";
+import { DatePickerWithRange } from "@/components/custom/date-range-picker";
 
 type OrderStatus = "UNVERIFIED" | "PENDING" | "CANCELLED" | "FULFILLED";
 
@@ -39,6 +39,16 @@ export default function AdminOrdersPage() {
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [selectedOrder, setSelectedOrder] = useState<OrderDetails | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  // Filter state
+  const [statusFilter, setStatusFilter] = useState<OrderStatus | "all">("all");
+  const [dateRange, setDateRange] = useState<{
+    from: Date | undefined;
+    to: Date | undefined;
+  }>({
+    from: undefined,
+    to: undefined,
+  });
 
   const updateOrderStatus = async (orderId: string, newStatus: OrderStatus) => {
     try {
@@ -76,7 +86,7 @@ export default function AdminOrdersPage() {
           : order
       );
       setOrder(updatedOrders);
-      setFilteredOrders(updatedOrders);
+      applyFiltersAndSearch();
       console.log(`Order ${orderId} status updated to ${newStatus}`);
       toast.success(`Order ${orderId} status updated to ${newStatus}`);
     } catch (error) {
@@ -108,13 +118,12 @@ export default function AdminOrdersPage() {
     fetchOrders();
   }, []);
 
-  // search function
-  const handleSearch = (searchTerm: string) => {
-    setSearchTerm(searchTerm);
-    if (searchTerm.trim() === "") {
-      setFilteredOrders(orders);
-    } else {
-      const filtered = orders.filter((order) =>
+  const applyFiltersAndSearch = useCallback(() => {
+    let filtered = orders;
+
+    // Apply search
+    if (searchTerm.trim() !== "") {
+      filtered = filtered.filter((order) =>
         Object.entries(order).some(([key, value]) => {
           if (key === "shippingInfo") {
             const { firstName, lastName } = value as {
@@ -127,9 +136,32 @@ export default function AdminOrdersPage() {
           return String(value).toLowerCase().includes(searchTerm.toLowerCase());
         })
       );
-      setFilteredOrders(filtered);
     }
-  };
+
+    // Apply status filter
+    if (statusFilter && statusFilter !== "all") {
+      filtered = filtered.filter((order) => order.status === statusFilter);
+    }
+
+    // Apply date range filter
+    if (dateRange.from && dateRange.to) {
+      filtered = filtered.filter((order) => {
+        const orderDate = order.orderDate ? new Date(order.orderDate) : null;
+        return (
+          orderDate &&
+          orderDate >= dateRange.from! &&
+          orderDate <= dateRange.to!
+        );
+      });
+    }
+
+    setFilteredOrders(filtered);
+  }, [searchTerm, statusFilter, dateRange, orders]);
+
+  useEffect(() => {
+    applyFiltersAndSearch();
+  }, [searchTerm, statusFilter, dateRange, orders, applyFiltersAndSearch]);
+
   // view function
   const handleViewDetails = (order: OrderDetails) => {
     setSelectedOrder(order);
@@ -149,13 +181,42 @@ export default function AdminOrdersPage() {
             placeholder="Search orders..."
             className="max-w-sm"
             value={searchTerm}
-            onChange={(e) => handleSearch(e.target.value)}
+            onChange={(e) => setSearchTerm(e.target.value)}
           />
-          {/* <Button>
-            <Search className="mr-2 h-4 w-4" /> Search
-          </Button> */}
         </div>
       </div>
+
+      <div className="flex space-x-4 mb-4">
+        <Select
+          onValueChange={(value) =>
+            setStatusFilter(value as OrderStatus | "all")
+          }
+        >
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Filter by Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Statuses</SelectItem>
+            <SelectItem value="UNVERIFIED">Unverified</SelectItem>
+            <SelectItem value="PENDING">Pending</SelectItem>
+            <SelectItem value="CANCELLED">Cancelled</SelectItem>
+            <SelectItem value="FULFILLED">Fulfilled</SelectItem>
+          </SelectContent>
+        </Select>
+        <DatePickerWithRange
+          date={{
+            from: dateRange.from,
+            to: dateRange.to,
+          }}
+          setDate={(newDateRange) => {
+            setDateRange({
+              from: newDateRange?.from || undefined,
+              to: newDateRange?.to || undefined,
+            });
+          }}
+        />
+      </div>
+
       <div className="border rounded-lg overflow-hidden">
         <Table>
           <TableHeader>

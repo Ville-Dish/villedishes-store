@@ -1,7 +1,5 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   Table,
   TableBody,
@@ -22,7 +20,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { CheckCheck, CircleX, Download, Eye, Search, Plus } from "lucide-react";
+import { CheckCheck, CircleX, Download, Eye, Plus } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -35,6 +33,22 @@ import { InvoiceDetails } from "@/components/custom/invoice-details";
 import { saveAs } from "file-saver";
 import "jspdf-autotable";
 import { createInvoicePDF } from "@/lib/invoicePdfGenerate";
+
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { DatePickerWithRange } from "@/components/custom/date-range-picker";
+import { Slider } from "@/components/ui/slider";
+
+type InvoiceProduct = {
+  id: string;
+  name: string;
+  basePrice: number;
+};
 
 export default function AdminInvoicesPage() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
@@ -57,10 +71,22 @@ export default function AdminInvoicesPage() {
 
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
 
-  const [availableProducts, setAvailableProducts] = useState<
-    Array<{ id: string; name: string; basePrice: number }>
-  >([]);
+  const [availableProducts, setAvailableProducts] = useState<InvoiceProduct[]>(
+    []
+  );
   const [searchTerm, setSearchTerm] = useState<string>("");
+
+  //Filter state
+  const [statusFilter, setStatusFilter] = useState<string>("");
+  const [dateRange, setDateRange] = useState<{
+    from: Date | undefined;
+    to: Date | undefined;
+  }>({
+    from: undefined,
+    to: undefined,
+  });
+  const [amountRange, setAmountRange] = useState<[number, number]>([0, 10000]);
+  const [maxAmount, setMaxAmount] = useState<number>(10000);
 
   // Fetch invoices from the API
   useEffect(() => {
@@ -72,6 +98,14 @@ export default function AdminInvoicesPage() {
         if (response.ok) {
           setInvoices(data.data || []);
           setFilteredInvoices(data.data || []);
+
+          // Calculate the maximum amount for the slider
+          const maxInvoiceAmount = Math.max(
+            ...data.data.map((invoice: Invoice) => invoice.amount)
+          );
+          const roundedMaxAmount = Math.ceil(maxInvoiceAmount / 1000) * 1000; // Round up to the nearest thousand
+          setMaxAmount(roundedMaxAmount);
+          setAmountRange([0, roundedMaxAmount]);
         } else {
           console.error("Failed to fetch invoices:", data.message);
         }
@@ -92,11 +126,13 @@ export default function AdminInvoicesPage() {
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
-        const products = (await response.json()).data.map((product: any) => ({
-          id: product.id,
-          name: product.name,
-          basePrice: product.price, // Assuming 'price' is the field in the database
-        }));
+        const products = (await response.json()).data.map(
+          (product: MenuItem) => ({
+            id: product.id,
+            name: product.name,
+            basePrice: product.price, // Assuming 'price' is the field in the database
+          })
+        );
         setAvailableProducts(products);
       } catch (error) {
         console.error("Error fetching products:", error);
@@ -106,9 +142,46 @@ export default function AdminInvoicesPage() {
     fetchAvailableProducts();
   }, []);
 
+  const applyFiltersAndSearch = useCallback(() => {
+    let filtered = invoices;
+
+    // Apply search
+    if (searchTerm.trim() !== "") {
+      filtered = filtered.filter((invoice) =>
+        Object.values(invoice).some((value) =>
+          String(value).toLowerCase().includes(searchTerm.toLowerCase())
+        )
+      );
+    }
+
+    // Apply status filter
+    if (statusFilter && statusFilter !== "all") {
+      filtered = filtered.filter((invoice) => invoice.status === statusFilter);
+    }
+
+    // Apply date range filter
+    if (dateRange.from && dateRange.to) {
+      filtered = filtered.filter((invoice) => {
+        const invoiceDate = new Date(invoice.dateCreated);
+        return invoiceDate >= dateRange.from! && invoiceDate <= dateRange.to!;
+      });
+    }
+
+    // Apply amount range filter
+    filtered = filtered.filter(
+      (invoice) =>
+        invoice.amount >= amountRange[0] && invoice.amount <= amountRange[1]
+    );
+
+    setFilteredInvoices(filtered);
+  }, [searchTerm, statusFilter, dateRange, amountRange, invoices]);
+
+  useEffect(() => {
+    applyFiltersAndSearch();
+  }, [applyFiltersAndSearch]);
+
   const handleCreateInvoice = async () => {
-    const { customerName, customerEmail, customerPhone, dueDate, status } =
-      newInvoice;
+    const { customerName, customerEmail, customerPhone, dueDate } = newInvoice;
 
     // Client-side validation
     if (
@@ -138,7 +211,7 @@ export default function AdminInvoicesPage() {
 
       if (response.ok) {
         setInvoices((prev) => [...prev, result.data]);
-        setFilteredInvoices((prev) => [...prev, result.data]);
+        applyFiltersAndSearch();
         setNewInvoice({
           customerName: "",
           customerEmail: "",
@@ -180,16 +253,11 @@ export default function AdminInvoicesPage() {
       }
 
       const result = await response.json();
-      setInvoices(
-        invoices.map((inv) =>
-          inv.id === updatedInvoice.id ? result.data : inv
-        )
+      const updatedInvoices = invoices.map((inv) =>
+        inv.id === updatedInvoice.id ? result.data : inv
       );
-      setFilteredInvoices(
-        invoices.map((inv) =>
-          inv.id === updatedInvoice.id ? result.data : inv
-        )
-      );
+      setInvoices(updatedInvoices);
+      applyFiltersAndSearch();
       setSelectedInvoice(null);
       toast.success("Invoice updated successfully");
     } catch (error) {
@@ -199,10 +267,6 @@ export default function AdminInvoicesPage() {
   };
 
   const handleViewInvoice = (invoice: Invoice) => {
-    setSelectedInvoice(invoice);
-  };
-
-  const handleDeleteInvoice = (invoice: Invoice) => {
     setSelectedInvoice(invoice);
   };
 
@@ -224,23 +288,6 @@ export default function AdminInvoicesPage() {
     }
   };
 
-  const handleSearch = (searchTerm: string) => {
-    setSearchTerm(searchTerm);
-    if (searchTerm.trim() === "") {
-      setFilteredInvoices(invoices);
-    } else {
-      const filtered = invoices.filter((invoice) =>
-        Object.entries(invoice).some(([key, value]) => {
-          if (typeof value === "string") {
-            return value.toLowerCase().includes(searchTerm.toLowerCase());
-          }
-          return String(value).toLowerCase().includes(searchTerm.toLowerCase());
-        })
-      );
-      setFilteredInvoices(filtered);
-    }
-  };
-
   if (loading) {
     return <p>Loading invoices...</p>;
   }
@@ -254,11 +301,8 @@ export default function AdminInvoicesPage() {
             placeholder="Search invoices..."
             className="max-w-[200px]"
             value={searchTerm}
-            onChange={(e) => handleSearch(e.target.value)}
+            onChange={(e) => setSearchTerm(e.target.value)}
           />
-          <Button>
-            <Search className="mr-2 h-4 w-4" /> Search
-          </Button>
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
               <Button onClick={() => setDialogOpen(true)}>
@@ -354,6 +398,50 @@ export default function AdminInvoicesPage() {
               <Button onClick={handleCreateInvoice}>Create Invoice</Button>
             </DialogContent>
           </Dialog>
+        </div>
+      </div>
+
+      <div className="flex space-x-4 mb-4">
+        <Select onValueChange={(value) => setStatusFilter(value)}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Filter by Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Statuses</SelectItem>
+            <SelectItem value="PAID">Paid</SelectItem>
+            <SelectItem value="UNPAID">Unpaid</SelectItem>
+            <SelectItem value="OVERDUE">Overdue</SelectItem>
+          </SelectContent>
+        </Select>
+        <DatePickerWithRange
+          date={{
+            from: dateRange.from,
+            to: dateRange.to,
+          }}
+          setDate={(newDateRange) => {
+            setDateRange({
+              from: newDateRange?.from || undefined,
+              to: newDateRange?.to || undefined,
+            });
+          }}
+        />
+        <div className="w-full md:w-2/4">
+          <Label htmlFor="amount-range">Amount Range</Label>
+          <div className="flex items-center space-x-2">
+            <span className="text-sm font-medium">${amountRange[0]}</span>
+            <Slider
+              id="amount-range"
+              min={0}
+              max={maxAmount}
+              step={100}
+              value={amountRange}
+              onValueChange={(value: number[]) =>
+                setAmountRange(value as [number, number])
+              }
+              className="flex-1"
+            />
+            <span className="text-sm font-medium">${amountRange[1]}</span>
+          </div>
         </div>
       </div>
 
