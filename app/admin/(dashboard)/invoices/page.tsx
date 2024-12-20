@@ -433,12 +433,13 @@ export default function AdminInvoicesPage() {
               id="amount-range"
               min={0}
               max={maxAmount}
-              step={100}
+              step={20}
               value={amountRange}
               onValueChange={(value: number[]) =>
                 setAmountRange(value as [number, number])
               }
               className="flex-1"
+              variant="both"
             />
             <span className="text-sm font-medium">${amountRange[1]}</span>
           </div>
