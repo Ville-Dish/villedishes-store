@@ -30,6 +30,11 @@ export default function AdminAvatar() {
 
   const handleSettings = () => {
     console.log("Clicked Setting Button");
+    try {
+      router.push("/admin/settings");
+    } catch (error) {
+      console.error("Error:", error);
+    }
   };
   return (
     <Popover open={sheetOpen} onOpenChange={setSheetOpen}>
@@ -51,12 +56,12 @@ export default function AdminAvatar() {
       <PopoverContent className="w-56">
         <div className="flex flex-col gap-4">
           <p className="text-sm font-medium">Admin Options</p>
-          <Button size="sm" onClick={handleLogout} className="bg-[#da281c]">
-            Logout
-          </Button>
-
           <Button size="sm" onClick={handleSettings} className="bg-[#f5ad07]">
             Settings
+          </Button>
+
+          <Button size="sm" onClick={handleLogout} className="bg-[#da281c]">
+            Logout
           </Button>
         </div>
       </PopoverContent>
