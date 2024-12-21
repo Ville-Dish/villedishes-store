@@ -98,28 +98,6 @@ export const ProductCard = ({
           ))}
 
         {!isLargeScreen && (
-          // <div className="relative w-full overflow-hidden">
-          //   <Carousel className="w-full px-4">
-          //     <CarouselContent className="justify-evenly gap-2">
-          //       {categories.map((category) => (
-          //         <CarouselItem
-          //           key={category}
-          //           className="flex-none basis-1/4"
-          //         >
-          //           <TabsTrigger
-          //             value={category}
-          //             onClick={() => onCategoryChange(category)}
-          //             className="px-4 py-2 m-1 w-24 text-center"
-          //           >
-          //             {category}
-          //           </TabsTrigger>
-          //         </CarouselItem>
-          //       ))}
-          //     </CarouselContent>
-          //     <CarouselPrevious />
-          //     <CarouselNext />
-          //   </Carousel>
-          // </div>
           <div className="relative w-full overflow-hidden">
             <Carousel className="w-full overflow-x-scroll px-4">
               <CarouselContent className="flex justify-start gap-4">
