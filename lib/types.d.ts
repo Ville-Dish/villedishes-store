@@ -194,3 +194,59 @@ type ImageUploadProps = {
   onRemove: (value: string) => void;
   onRemoveError?: (value: string) => void;
 };
+
+interface MonthlyRevenue {
+  month: string;
+  projection: number;
+  actual: number;
+}
+
+interface YearlyRevenue {
+  year: number;
+  yearlyTarget: number;
+  monthlyProjections: MonthlyRevenue[];
+}
+
+interface Income {
+  name: string;
+  category: string;
+  amount: number;
+  date: string;
+}
+
+interface Expense {
+  name: string;
+  category: string;
+  amount: number;
+  date: string;
+}
+
+interface YearlyRevenueAccordionProps {
+  revenueProjections: YearlyRevenue[];
+  onUpdate: (
+    year: number,
+    updatedProjections: YearlyRevenue["monthlyProjections"]
+  ) => void;
+}
+
+interface MonthlyRevenueProjectionsProps {
+  year: number;
+  yearlyTarget: number;
+  monthlyProjections: MonthlyRevenue[];
+  onUpdate: (updatedProjections: MonthlyRevenue[]) => void;
+  currentYear: number;
+  currentMonth: number;
+}
+
+interface SettingsTableProps {
+  variant: "Revenue" | "Income" | "Expense";
+  data: Income[] | Expense[];
+}
+
+interface SettingsFormProps {
+  variant: "Revenue" | "Income" | "Expense";
+  onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
+  onClose: () => void;
+  isYearlyProjection?: boolean;
+  setIsYearlyProjection?: (value: boolean) => void;
+}
