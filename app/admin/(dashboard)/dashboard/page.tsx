@@ -457,7 +457,9 @@ export default function AdminDashboard() {
               </CardContent>
               <CardFooter className="flex justify-center">
                 <Link href="/admin/orders" passHref>
-                  <Button className="w-full sm:w-auto">View All Orders</Button>
+                  <Button className="w-full sm:w-auto bg-[#fd9e1d]">
+                    View All Orders
+                  </Button>
                 </Link>
               </CardFooter>
             </Card>
@@ -471,7 +473,6 @@ export default function AdminDashboard() {
                 <CardTitle>Order Overview</CardTitle>
               </CardHeader>
               <CardContent>
-                {/* <Overview data={filteredOverviewData} /> */}
                 <Overview data={adminDashboardAnalyticsData.overviewData} />
               </CardContent>
             </Card>
@@ -480,18 +481,16 @@ export default function AdminDashboard() {
                 <CardTitle>Revenue Growth</CardTitle>
               </CardHeader>
               <CardContent>
-                {/* <RevenueGrowth data={filteredRevenueData} /> */}
                 <RevenueGrowth
                   data={adminDashboardAnalyticsData.revenueGrowthData}
                 />
               </CardContent>
             </Card>
-            <Card className="col-span-3 md:col-span-1">
+            <Card className="col-span-3 md:col-span-2">
               <CardHeader>
                 <CardTitle>Product Performance</CardTitle>
               </CardHeader>
               <CardContent>
-                {/* <ProductPerformance data={filteredProductData} /> */}
                 <ProductPerformance
                   data={adminDashboardAnalyticsData.productPerformanceData}
                 />
