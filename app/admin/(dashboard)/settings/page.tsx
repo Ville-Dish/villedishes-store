@@ -17,76 +17,97 @@ import {
   ChevronLeft,
   ChevronRight,
   DollarSign,
-  PieChart,
   Settings,
   TrendingUp,
 } from "lucide-react";
 import React, { useCallback, useEffect, useState } from "react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Switch } from "@/components/ui/switch";
+import { SettingsTable } from "@/components/custom/settings/settings-table";
+import { SettingsForm } from "@/components/custom/settings/settings-form";
+import { YearlyRevenueAccordion } from "@/components/custom/settings/yearly-revenue-accordion";
 
 const settingsValue = [
   { name: "General Settings", icon: Settings },
   { name: "Revenue Projections", icon: TrendingUp },
   { name: "Expense", icon: DollarSign },
   { name: "Income", icon: Briefcase },
-  { name: "Budget", icon: PieChart },
 ];
 
-interface YearlyProjection {
-  type: "yearly";
-  year: number;
-  amount: number;
-}
-
-interface MonthlyProjection {
-  type: "monthly";
-  year: number;
-  month: string;
-  amount: number;
-}
-
-type RevenueProjection = YearlyProjection | MonthlyProjection;
-
 const AdminSetting = () => {
-  // const [activeTab, setActiveTab] = useState("General Settings");
   const [isLargeScreen, setIsLargeScreen] = useState(false);
 
-  const [revenueProjections, setRevenueProjections] = useState<
-    RevenueProjection[]
-  >([
-    { type: "monthly", year: 2023, month: "January", amount: 10000 },
-    { type: "monthly", year: 2023, month: "February", amount: 12000 },
-    { type: "yearly", year: 2023, amount: 150000 },
+  const [revenueProjections, setRevenueProjections] = useState<YearlyRevenue[]>(
+    [
+      {
+        year: 2023,
+        yearlyTarget: 1200000,
+        monthlyProjections: [
+          { month: "January", projection: 100000, actual: 95000 },
+          { month: "February", projection: 100000, actual: 98000 },
+          { month: "March", projection: 100000, actual: 105000 },
+          { month: "April", projection: 100000, actual: 97000 },
+          { month: "May", projection: 100000, actual: 102000 },
+          { month: "June", projection: 100000, actual: 99000 },
+          { month: "July", projection: 100000, actual: 103000 },
+          { month: "August", projection: 100000, actual: 101000 },
+          { month: "September", projection: 100000, actual: 98000 },
+          { month: "October", projection: 100000, actual: 104000 },
+          { month: "November", projection: 100000, actual: 106000 },
+          { month: "December", projection: 100000, actual: 110000 },
+        ],
+      },
+      {
+        year: 2024,
+        yearlyTarget: 1500000,
+        monthlyProjections: [
+          { month: "January", projection: 125000, actual: 125000 },
+          { month: "February", projection: 125000, actual: 120000 },
+          { month: "March", projection: 125000, actual: 115000 },
+          { month: "April", projection: 125000, actual: 11000 },
+          { month: "May", projection: 125000, actual: 25000 },
+          { month: "June", projection: 125000, actual: 15000 },
+          { month: "July", projection: 125000, actual: 15000 },
+          { month: "August", projection: 125000, actual: 12500 },
+          { month: "September", projection: 125000, actual: 1250 },
+          { month: "October", projection: 125000, actual: 12500 },
+          { month: "November", projection: 125000, actual: 125000 },
+          { month: "December", projection: 125000, actual: 125200 },
+        ],
+      },
+    ]
+  );
+
+  const [expenses, setExpenses] = useState<Expense[]>([
+    {
+      name: "Office Supplies",
+      category: "Operational",
+      amount: 500,
+      date: "2023-05-15",
+    },
+    {
+      name: "Utilities",
+      category: "Operational",
+      amount: 1000,
+      date: "2023-05-20",
+    },
   ]);
-  const [expenses, setExpenses] = useState([
-    { category: "Office Supplies", amount: 500 },
-    { category: "Utilities", amount: 1000 },
-  ]);
-  const [incomes, setIncomes] = useState([
-    { source: "Product Sales", amount: 15000 },
-    { source: "Consulting", amount: 5000 },
-  ]);
-  const [budgets, setBudgets] = useState([
-    { category: "Marketing", amount: 5000 },
-    { category: "R&D", amount: 10000 },
+  const [incomes, setIncomes] = useState<Income[]>([
+    {
+      name: "Product Sales",
+      category: "Sales",
+      amount: 15000,
+      date: "2023-05-10",
+    },
+    {
+      name: "Consulting",
+      category: "Services",
+      amount: 5000,
+      date: "2023-05-18",
+    },
   ]);
 
-  const [isYearlyProjection, setIsYearlyProjection] = useState(false);
+  const [showForm, setShowForm] = useState<
+    "Revenue" | "Income" | "Expense" | null
+  >(null);
 
   const handleResize = useCallback(() => {
     setIsLargeScreen(window.innerWidth > 768);
@@ -104,56 +125,81 @@ const AdminSetting = () => {
     event.preventDefault();
     const form = event.currentTarget;
     const formData = new FormData(form);
-    const newProjection: RevenueProjection = isYearlyProjection
-      ? {
-          type: "yearly",
-          year: parseInt(formData.get("year") as string),
-          amount: parseFloat(formData.get("amount") as string),
-        }
-      : {
-          type: "monthly",
-          year: parseInt(formData.get("year") as string),
-          month: formData.get("month") as string,
-          amount: parseFloat(formData.get("amount") as string),
-        };
+    const year = parseInt(formData.get("year") as string);
+    const yearlyTarget = parseFloat(formData.get("yearlyTarget") as string);
+
+    const monthlyTarget = yearlyTarget / 12;
+    const months = [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
+    ];
+
+    const newProjection: YearlyRevenue = {
+      year,
+      yearlyTarget,
+      monthlyProjections: months.map((month) => ({
+        month,
+        projection: monthlyTarget,
+        actual: 0,
+      })),
+    };
+
     setRevenueProjections([...revenueProjections, newProjection]);
     form.reset();
+    setShowForm(null);
+  };
+
+  const updateMonthlyProjections = (
+    year: number,
+    updatedProjections: YearlyRevenue["monthlyProjections"]
+  ) => {
+    setRevenueProjections((prevProjections) =>
+      prevProjections.map((proj) =>
+        proj.year === year
+          ? { ...proj, monthlyProjections: updatedProjections }
+          : proj
+      )
+    );
   };
 
   const addExpense = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const form = event.currentTarget;
     const formData = new FormData(form);
-    const newExpense = {
+    const newExpense: Expense = {
+      name: formData.get("name") as string,
       category: formData.get("category") as string,
       amount: parseFloat(formData.get("amount") as string),
+      date: formData.get("date") as string,
     };
     setExpenses([...expenses, newExpense]);
     form.reset();
+    setShowForm(null);
   };
 
   const addIncome = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const form = event.currentTarget;
     const formData = new FormData(form);
-    const newIncome = {
-      source: formData.get("source") as string,
+    const newIncome: Income = {
+      name: formData.get("name") as string,
+      category: formData.get("category") as string,
       amount: parseFloat(formData.get("amount") as string),
+      date: formData.get("date") as string,
     };
     setIncomes([...incomes, newIncome]);
     form.reset();
-  };
-
-  const addBudget = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const form = event.currentTarget;
-    const formData = new FormData(form);
-    const newBudget = {
-      category: formData.get("category") as string,
-      amount: parseFloat(formData.get("amount") as string),
-    };
-    setBudgets([...budgets, newBudget]);
-    form.reset();
+    setShowForm(null);
   };
 
   return (
@@ -161,11 +207,7 @@ const AdminSetting = () => {
       <h2 className="font-semibold text-2xl md:text-3xl text-center mb-6">
         Settings
       </h2>
-      <Tabs
-        defaultValue="General Settings"
-        className="space-y-4"
-        // onValueChange={setActiveTab}
-      >
+      <Tabs defaultValue="General Settings" className="space-y-4">
         <TabsList className="w-full mb-6">
           {isLargeScreen ? (
             <div className="flex justify-between w-full">
@@ -238,7 +280,9 @@ const AdminSetting = () => {
                   placeholder="Enter contact number"
                 />
               </div>
-              <Button>Save Changes</Button>
+              <div className="flex justify-end mt-2">
+                <Button className="bg-[#1cd396]">Save Changes</Button>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -246,94 +290,29 @@ const AdminSetting = () => {
         {/* Revenue Projections Tab View */}
         <TabsContent value="Revenue Projections" className="space-y-4">
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Revenue Projections</CardTitle>
+              <Button
+                onClick={() => setShowForm("Revenue")}
+                className="bg-[#df912b]"
+              >
+                Add New Year Projection
+              </Button>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Year</TableHead>
-                    <TableHead>Month</TableHead>
-                    <TableHead>Amount</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {revenueProjections.map((projection, index) => (
-                    <TableRow key={index}>
-                      <TableCell>{projection.year}</TableCell>
-                      <TableCell>
-                        {projection.type === "monthly"
-                          ? projection.month
-                          : "Yearly"}
-                      </TableCell>
-                      <TableCell>
-                        ${projection.amount.toLocaleString()}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-              <section>
-                <form
-                  onSubmit={addRevenueProjection}
-                  className="mt-4 space-y-4"
-                >
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      id="yearly-projection"
-                      checked={isYearlyProjection}
-                      onCheckedChange={setIsYearlyProjection}
-                    />
-                    <Label htmlFor="projection-type">
-                      {isYearlyProjection
-                        ? "Yearly Projection"
-                        : "Monthly Projection"}
-                    </Label>
-                  </div>
-                  <div className="flex space-x-4">
-                    <div className="flex-1">
-                      <Label htmlFor="year">Year</Label>
-                      <Input id="year" name="year" type="number" required />
-                    </div>
-                    {!isYearlyProjection && (
-                      <div className="flex-1">
-                        <Label htmlFor="month">Month</Label>
-                        <Select name="month" required>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select month" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {[
-                              "January",
-                              "February",
-                              "March",
-                              "April",
-                              "May",
-                              "June",
-                              "July",
-                              "August",
-                              "September",
-                              "October",
-                              "November",
-                              "December",
-                            ].map((month) => (
-                              <SelectItem key={month} value={month}>
-                                {month}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    )}
-                    <div className="flex-1">
-                      <Label htmlFor="amount">Amount</Label>
-                      <Input id="amount" name="amount" type="number" required />
-                    </div>
-                  </div>
-                  <Button type="submit">Add Projection</Button>
-                </form>
-              </section>
+              <div className="mb-4">
+                {showForm === "Revenue" && (
+                  <SettingsForm
+                    variant="Revenue"
+                    onSubmit={addRevenueProjection}
+                    onClose={() => setShowForm(null)}
+                  />
+                )}
+              </div>
+              <YearlyRevenueAccordion
+                revenueProjections={revenueProjections}
+                onUpdate={updateMonthlyProjections}
+              />
             </CardContent>
           </Card>
         </TabsContent>
@@ -341,48 +320,26 @@ const AdminSetting = () => {
         {/* Expense Tab View */}
         <TabsContent value="Expense" className="space-y-4">
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Expense Tracking</CardTitle>
+              <Button
+                onClick={() => setShowForm("Expense")}
+                className="bg-[#df912b]"
+              >
+                Add New Expense
+              </Button>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Category</TableHead>
-                    <TableHead>Amount</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {expenses.map((expense, index) => (
-                    <TableRow key={index}>
-                      <TableCell>{expense.category}</TableCell>
-                      <TableCell>${expense.amount.toLocaleString()}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-              <form onSubmit={addExpense} className="mt-4 space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="expense-category">Expense Category</Label>
-                  <Input
-                    id="expense-category"
-                    name="category"
-                    placeholder="Enter expense category"
-                    required
+              <div className="mb-2">
+                {showForm === "Expense" && (
+                  <SettingsForm
+                    variant="Expense"
+                    onSubmit={addExpense}
+                    onClose={() => setShowForm(null)}
                   />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="expense-amount">Amount</Label>
-                  <Input
-                    id="expense-amount"
-                    name="amount"
-                    type="number"
-                    placeholder="Enter amount"
-                    required
-                  />
-                </div>
-                <Button type="submit">Add Expense</Button>
-              </form>
+                )}
+              </div>
+              <SettingsTable variant="Expense" data={expenses} />
             </CardContent>
           </Card>
         </TabsContent>
@@ -390,97 +347,26 @@ const AdminSetting = () => {
         {/* Income Tab View */}
         <TabsContent value="Income" className="space-y-4">
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Income</CardTitle>
+              <Button
+                onClick={() => setShowForm("Income")}
+                className="bg-[#df912b]"
+              >
+                Add New Income
+              </Button>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Source</TableHead>
-                    <TableHead>Amount</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {incomes.map((income, index) => (
-                    <TableRow key={index}>
-                      <TableCell>{income.source}</TableCell>
-                      <TableCell>${income.amount.toLocaleString()}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-              <form onSubmit={addIncome} className="mt-4 space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="income-source">Income Source</Label>
-                  <Input
-                    id="income-source"
-                    name="source"
-                    placeholder="Enter income source"
-                    required
+              <div className="mb-2">
+                {showForm === "Income" && (
+                  <SettingsForm
+                    variant="Income"
+                    onSubmit={addIncome}
+                    onClose={() => setShowForm(null)}
                   />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="income-amount">Amount</Label>
-                  <Input
-                    id="income-amount"
-                    name="amount"
-                    type="number"
-                    placeholder="Enter amount"
-                    required
-                  />
-                </div>
-                <Button type="submit">Add Income</Button>
-              </form>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Budget Tab View */}
-        <TabsContent value="Budget" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Budget Overview</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Category</TableHead>
-                    <TableHead>Amount</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {budgets.map((budget, index) => (
-                    <TableRow key={index}>
-                      <TableCell>{budget.category}</TableCell>
-                      <TableCell>${budget.amount.toLocaleString()}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-              <form onSubmit={addBudget} className="mt-4 space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="budget-category">Budget Category</Label>
-                  <Input
-                    id="budget-category"
-                    name="category"
-                    placeholder="Enter budget category"
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="budget-amount">Amount</Label>
-                  <Input
-                    id="budget-amount"
-                    name="amount"
-                    type="number"
-                    placeholder="Enter amount"
-                    required
-                  />
-                </div>
-                <Button type="submit">Add Budget</Button>
-              </form>
+                )}
+              </div>
+              <SettingsTable variant="Income" data={incomes} />
             </CardContent>
           </Card>
         </TabsContent>
