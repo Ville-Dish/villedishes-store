@@ -99,3 +99,38 @@ model InvoiceProducts {
   invoice   Invoice?  @relation("InvoiceProducts", fields: [invoiceId], references: [id])
   Product   Product[]
 }
+
+// Schema for Income, Expense, and Revenue Projections.
+model Expense {
+  id       String @id @default(uuid())
+  name     String
+  category String
+  amount   Float
+  date     String
+}
+
+model Income {
+  id       String @id @default(uuid())
+  name     String
+  category String
+  amount   Float
+  date     String
+}
+
+model Revenue {
+  id                 String              @id @default(uuid())
+  year               Int
+  yearlyTarget       Float
+  monthlyProjections MonthlyProjection[]
+}
+
+model MonthlyProjection {
+  id         String  @id @default(uuid())
+  month      String
+  projection Float
+  actual     Float
+  revenue    Revenue @relation(fields: [revenueId], references: [id])
+  revenueId  String
+
+  @@unique([revenueId, month])
+}
