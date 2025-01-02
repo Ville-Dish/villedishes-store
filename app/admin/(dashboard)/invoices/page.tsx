@@ -43,6 +43,7 @@ import {
 } from "@/components/ui/select";
 import { DatePickerWithRange } from "@/components/custom/date-range-picker";
 import { Slider } from "@/components/ui/slider";
+import { cn } from "@/lib/utils";
 
 type InvoiceProduct = {
   id: string;
@@ -478,7 +479,25 @@ export default function AdminInvoicesPage() {
                   <TableCell>{invoice.customerName}</TableCell>
                   <TableCell>${invoice.amount.toFixed(2)}</TableCell>
                   <TableCell>{invoice.dueDate}</TableCell>
-                  <TableCell>{invoice.status}</TableCell>
+                  <TableCell>
+                    <span
+                      className={cn(
+                        "font-medium border rounded-md px-3 py-1 text-white text-center inline-block cursor-default transition-colors",
+                        {
+                          "bg-[#d57771] border-[#d57771] hover:bg-[#d3736d]":
+                            invoice.status === "UNPAID",
+                          "bg-green-500 border-green-500 hover:bg-green-600":
+                            invoice.status === "PAID",
+                          "bg-[#da281c] border-[#da281c] hover:bg-[#b4443c]":
+                            invoice.status === "DUE",
+                          "bg-[#fe9e1d] border-[#fe9e1d] hover:bg-[#c6893a]":
+                            invoice.status === "PENDING",
+                        }
+                      )}
+                    >
+                      {invoice.status}
+                    </span>
+                  </TableCell>
                   <TableCell>
                     <TooltipProvider>
                       <Tooltip>
@@ -488,7 +507,7 @@ export default function AdminInvoicesPage() {
                             size="sm"
                             onClick={() => handleViewInvoice(invoice)}
                           >
-                            <Eye className="h-4 w-4" />
+                            <Eye className="h-4 w-4" color="#fe9e1d" />
                           </Button>
                         </TooltipTrigger>
                         <TooltipContent>
@@ -505,7 +524,7 @@ export default function AdminInvoicesPage() {
                             size="sm"
                             onClick={() => handleDownloadInvoice(invoice)}
                           >
-                            <Download className="h-4 w-4" />
+                            <Download className="h-4 w-4" color="#c7c940" />
                           </Button>
                         </TooltipTrigger>
                         <TooltipContent>
@@ -537,9 +556,9 @@ export default function AdminInvoicesPage() {
                             }
                           >
                             {invoice.status === "PAID" ? (
-                              <CircleX className="h-4 w-4" />
+                              <CircleX className="h-4 w-4" color="#d57771" />
                             ) : (
-                              <CheckCheck className="h-4 w-4" />
+                              <CheckCheck className="h-4 w-4" color="#107a47" />
                             )}
                           </Button>
                         </TooltipTrigger>

@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/dialog";
 import { Eye } from "lucide-react";
 import { DatePickerWithRange } from "@/components/custom/date-range-picker";
+import { cn } from "@/lib/utils";
 
 type OrderStatus = "UNVERIFIED" | "PENDING" | "CANCELLED" | "FULFILLED";
 
@@ -255,7 +256,25 @@ export default function AdminOrdersPage() {
                     {order.shippingInfo.firstName} {order.shippingInfo.lastName}
                   </TableCell>
                   <TableCell>${order.total.toFixed(2)}</TableCell>
-                  <TableCell>{order.status}</TableCell>
+                  <TableCell>
+                    <span
+                      className={cn(
+                        "font-medium border rounded-md px-3 py-1 text-white text-center inline-block cursor-default transition-colors",
+                        {
+                          "bg-[#da281c] border-[#da281c] hover:bg-[#b4443c]":
+                            order.status === "CANCELLED",
+                          "bg-green-500 border-green-500 hover:bg-green-600":
+                            order.status === "FULFILLED",
+                          "bg-[#fe9e1d] border-[#fe9e1d] hover:bg-[#c6893a]":
+                            order.status === "UNVERIFIED",
+                          "bg-orange-500 border-orange-500 hover:bg-orange-600":
+                            order.status === "PENDING",
+                        }
+                      )}
+                    >
+                      {order.status}
+                    </span>
+                  </TableCell>
                   <TableCell>
                     <Select
                       onValueChange={(value) =>
@@ -285,7 +304,7 @@ export default function AdminOrdersPage() {
                       size="sm"
                       onClick={() => handleViewDetails(order)}
                     >
-                      <Eye />
+                      <Eye color="#fe9e1d" />
                       <span className="sr-only">View Details</span>
                     </Button>
                   </TableCell>

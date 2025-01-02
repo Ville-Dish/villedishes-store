@@ -247,7 +247,10 @@ export default function AdminProductsPage() {
           />
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen} modal={false}>
             <DialogTrigger asChild>
-              <Button onClick={() => setDialogOpen(true)}>
+              <Button
+                onClick={() => setDialogOpen(true)}
+                className="bg-[#fd9e1d]"
+              >
                 <Plus className="mr-2 h-4 w-4" /> Add Product
               </Button>
             </DialogTrigger>
@@ -358,14 +361,14 @@ export default function AdminProductsPage() {
                         size="sm"
                         onClick={() => handleEditItem(item)}
                       >
-                        <Eye className="h-4 w-4" />
+                        <Eye className="h-4 w-4" color="#fe9e1d" />
                       </Button>
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => handleDeleteItem(item.id)}
                       >
-                        <Trash className="h-4 w-4" />
+                        <Trash className="h-4 w-4" color="#da281c" />
                       </Button>
                     </TableCell>
                   </TableRow>
