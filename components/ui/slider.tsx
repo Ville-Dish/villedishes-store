@@ -18,7 +18,7 @@ const SliderThumb = React.forwardRef<
   <SliderPrimitive.Thumb
     ref={ref}
     className={cn(
-      "block h-4 w-4 rounded-full border border-primary/50 bg-background shadow transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50",
+      "block h-4 w-4 rounded-full border border-[#e3e72d] bg-[#fe9e1d] shadow transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50",
       className
     )}
     {...props}
@@ -39,7 +39,7 @@ const Slider = React.forwardRef<
     {...props}
   >
     <SliderPrimitive.Track className="relative h-1.5 w-full grow overflow-hidden rounded-full bg-primary/20">
-      <SliderPrimitive.Range className="absolute h-full bg-primary" />
+      <SliderPrimitive.Range className="absolute h-full bg-[#fe9e1d]" />
     </SliderPrimitive.Track>
     {(variant === "left" || variant === "both") && <SliderThumb />}
     {(variant === "right" || variant === "both") && <SliderThumb />}
