@@ -16,18 +16,16 @@ model Product {
   category        String?
   rating          Float?
   OrderProduct    OrderProduct[]
-  reviews         Review[]
   InvoiceProducts InvoiceProducts[]
   invoiceId       String?
 }
 
 model Review {
-  id        String   @id @unique @default(uuid())
+  id        String  @id @unique @default(uuid())
   rating    Int
   comment   String
   author    String
   productId String?
-  Product   Product? @relation(fields: [productId], references: [id])
 }
 
 model Order {
