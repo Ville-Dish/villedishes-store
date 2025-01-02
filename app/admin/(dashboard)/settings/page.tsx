@@ -292,12 +292,14 @@ const AdminSetting = () => {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Revenue Projections</CardTitle>
-              <Button
-                onClick={() => setShowForm("Revenue")}
-                className="bg-[#df912b]"
-              >
-                Add New Year Projection
-              </Button>
+              {!showForm && (
+                <Button
+                  onClick={() => setShowForm("Revenue")}
+                  className="bg-[#df912b]"
+                >
+                  Add New Year Projection
+                </Button>
+              )}
             </CardHeader>
             <CardContent>
               <div className="mb-4">
@@ -322,12 +324,14 @@ const AdminSetting = () => {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Expense Tracking</CardTitle>
-              <Button
-                onClick={() => setShowForm("Expense")}
-                className="bg-[#df912b]"
-              >
-                Add New Expense
-              </Button>
+              {!showForm && (
+                <Button
+                  onClick={() => setShowForm("Expense")}
+                  className="bg-[#df912b]"
+                >
+                  Add New Expense
+                </Button>
+              )}
             </CardHeader>
             <CardContent>
               <div className="mb-2">
@@ -349,12 +353,14 @@ const AdminSetting = () => {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Income</CardTitle>
-              <Button
-                onClick={() => setShowForm("Income")}
-                className="bg-[#df912b]"
-              >
-                Add New Income
-              </Button>
+              {!showForm && (
+                <Button
+                  onClick={() => setShowForm("Income")}
+                  className="bg-[#df912b]"
+                >
+                  Add New Income
+                </Button>
+              )}
             </CardHeader>
             <CardContent>
               <div className="mb-2">
