@@ -71,7 +71,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
           return (
             <Button
               type="button"
-              className="bg-gray-500 text-white"
+              className="bg-[#e7a7a3] text-white"
               onClick={() => {
                 try {
                   open();

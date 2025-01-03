@@ -11,7 +11,7 @@ export async function POST(req: Request) {
       customerEmail,
       customerPhone,
       dueDate,
-      status,
+      status = "PENDING",
       amount = 0,
       discountPercentage = 0,
     } = await req.json();

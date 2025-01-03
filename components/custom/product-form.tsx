@@ -116,10 +116,14 @@ export const ProductForm: React.FC<ProductFormProps> = ({
         </div>
       </div>
       <div className="flex justify-end space-x-4">
-        <Button type="button" variant="outline" onClick={onCancel}>
+        <Button type="button" variant="cancel" onClick={onCancel}>
           Cancel
         </Button>
-        <Button type="submit" disabled={isLoading}>
+        <Button
+          type="submit"
+          disabled={isLoading}
+          variant={product.id ? "submit" : "create"}
+        >
           {isLoading
             ? "Saving..."
             : product.id

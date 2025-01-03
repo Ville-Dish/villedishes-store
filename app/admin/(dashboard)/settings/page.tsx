@@ -293,10 +293,7 @@ const AdminSetting = () => {
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Revenue Projections</CardTitle>
               {!showForm && (
-                <Button
-                  onClick={() => setShowForm("Revenue")}
-                  className="bg-[#df912b]"
-                >
+                <Button onClick={() => setShowForm("Revenue")} variant="create">
                   Add New Year Projection
                 </Button>
               )}
@@ -325,10 +322,7 @@ const AdminSetting = () => {
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Expense Tracking</CardTitle>
               {!showForm && (
-                <Button
-                  onClick={() => setShowForm("Expense")}
-                  className="bg-[#df912b]"
-                >
+                <Button onClick={() => setShowForm("Expense")} variant="create">
                   Add New Expense
                 </Button>
               )}
@@ -354,10 +348,7 @@ const AdminSetting = () => {
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Income</CardTitle>
               {!showForm && (
-                <Button
-                  onClick={() => setShowForm("Income")}
-                  className="bg-[#df912b]"
-                >
+                <Button onClick={() => setShowForm("Income")} variant="create">
                   Add New Income
                 </Button>
               )}

@@ -96,7 +96,7 @@ export const SettingsForm: React.FC<SettingsFormProps> = ({
         )}
 
         <div className="flex justify-end mt-4">
-          <Button type="submit" className="bg-[#1cd396]">
+          <Button type="submit" variant="submit">
             Add {variant}
           </Button>
         </div>

@@ -247,10 +247,7 @@ export default function AdminProductsPage() {
           />
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen} modal={false}>
             <DialogTrigger asChild>
-              <Button
-                onClick={() => setDialogOpen(true)}
-                className="bg-[#fd9e1d]"
-              >
+              <Button onClick={() => setDialogOpen(true)} variant="create">
                 <Plus className="mr-2 h-4 w-4" /> Add Product
               </Button>
             </DialogTrigger>

@@ -32,6 +32,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { adminEmail } from "@/lib/constantData";
 import { formattedCurrency } from "@/lib/helper";
+import { InvoiceStatus, isValidInvoiceStatus } from "@/lib/invoiceUtils";
 
 export const InvoiceDetails = ({
   invoice,
@@ -105,32 +106,41 @@ export const InvoiceDetails = ({
     setShippingFee(isNaN(value) ? 0 : value);
   };
 
-  const handleStatusChange = (value: Invoice["status"]) => {
-    setUpdatedInvoice((prev) => {
-      const newStatus = value;
-      let newAmountPaid = prev.amountPaid;
-      let newAmountDue = prev.amountDue;
+  // const handleStatusChange = (value: Invoice["status"]) => {
+  //   setUpdatedInvoice((prev) => {
+  //     const newStatus = value;
+  //     let newAmountPaid = prev.amountPaid;
+  //     let newAmountDue = prev.amountDue;
 
-      if (newStatus === "PAID") {
-        newAmountPaid = prev.amount;
-        newAmountDue = 0;
-      } else if (
-        prev.status === "PAID" &&
-        (newStatus === "UNPAID" ||
-          newStatus === "DUE" ||
-          newStatus === "PENDING")
-      ) {
-        newAmountPaid = 0;
-        newAmountDue = prev.amount;
-      }
+  //     if (newStatus === "PAID") {
+  //       newAmountPaid = prev.amount;
+  //       newAmountDue = 0;
+  //     } else if (
+  //       prev.status === "PAID" &&
+  //       (newStatus === "UNPAID" ||
+  //         newStatus === "DUE" ||
+  //         newStatus === "PENDING")
+  //     ) {
+  //       newAmountPaid = 0;
+  //       newAmountDue = prev.amount;
+  //     }
 
-      return {
+  //     return {
+  //       ...prev,
+  //       status: newStatus,
+  //       amountPaid: newAmountPaid,
+  //       amountDue: newAmountDue,
+  //     };
+  //   });
+  // };
+
+  const handleStatusChange = (value: string) => {
+    if (isValidInvoiceStatus(value)) {
+      setUpdatedInvoice((prev) => ({
         ...prev,
-        status: newStatus,
-        amountPaid: newAmountPaid,
-        amountDue: newAmountDue,
-      };
-    });
+        status: value as InvoiceStatus,
+      }));
+    }
   };
 
   const handleProductChange = (
@@ -176,7 +186,6 @@ export const InvoiceDetails = ({
 
   const resetProductDialog = () => {
     setNewProduct({ id: "", quantity: 1, discount: 0 });
-    // setProductDiscount(0);
     setEditingProductIndex(null);
     setIsAddProductDialogOpen(false);
   };
@@ -282,9 +291,8 @@ export const InvoiceDetails = ({
         discountPercentage,
         taxRate,
         shippingFee,
+        products: updatedInvoice.products,
       };
-
-      console.log({ updatedInvoiceData });
 
       onUpdate(updatedInvoiceData);
     } catch (error) {
@@ -337,6 +345,7 @@ export const InvoiceDetails = ({
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Seller Data */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
@@ -369,6 +378,7 @@ export const InvoiceDetails = ({
           </CardContent>
         </Card>
 
+        {/* Customer Data */}
         <Card>
           <CardHeader>
             <CardTitle>Bill To</CardTitle>
@@ -407,6 +417,7 @@ export const InvoiceDetails = ({
         </Card>
       </div>
 
+      {/* Invoice Overview */}
       <Card>
         <CardHeader>
           <CardTitle>Invoice Overview</CardTitle>
@@ -441,10 +452,10 @@ export const InvoiceDetails = ({
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="UNPAID">Unpaid</SelectItem>
-                  <SelectItem value="DUE">Due</SelectItem>
-                  <SelectItem value="PAID">Paid</SelectItem>
-                  <SelectItem value="PENDING">Pending</SelectItem>
+                  <SelectItem value={InvoiceStatus.PENDING}>Pending</SelectItem>
+                  <SelectItem value={InvoiceStatus.UNPAID}>Unpaid</SelectItem>
+                  <SelectItem value={InvoiceStatus.OVERDUE}>Due</SelectItem>
+                  <SelectItem value={InvoiceStatus.PAID}>Paid</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -489,6 +500,7 @@ export const InvoiceDetails = ({
         </CardContent>
       </Card>
 
+      {/* Invoice Product Details */}
       <Card>
         <CardHeader>
           <CardTitle>Invoice Product Details</CardTitle>
@@ -566,7 +578,11 @@ export const InvoiceDetails = ({
             onOpenChange={setIsAddProductDialogOpen}
           >
             <DialogTrigger asChild>
-              <Button onClick={resetProductDialog} className="mt-4">
+              <Button
+                onClick={resetProductDialog}
+                className="mt-4"
+                variant="create"
+              >
                 Add Product
               </Button>
             </DialogTrigger>
@@ -630,6 +646,7 @@ export const InvoiceDetails = ({
                 onClick={
                   editingProductIndex !== null ? saveEditedProduct : addProduct
                 }
+                variant={editingProductIndex !== null ? "submit" : "create"}
               >
                 {editingProductIndex !== null
                   ? "Save Changes"
@@ -640,6 +657,7 @@ export const InvoiceDetails = ({
         </CardContent>
       </Card>
 
+      {/* Invoice Summary */}
       <Card>
         <CardHeader>
           <CardTitle>Invoice Summary</CardTitle>
@@ -711,6 +729,7 @@ export const InvoiceDetails = ({
       <div className="flex flex-col sm:flex-row gap-4 justify-between">
         <Button
           className="w-full sm:w-auto"
+          variant="submit"
           onClick={handleUpdateInvoice}
           disabled={updating || sending}
         >
@@ -719,6 +738,7 @@ export const InvoiceDetails = ({
         </Button>
         <Button
           className="w-full sm:w-auto"
+          variant="send"
           onClick={handleSendInvoiceEmail}
           disabled={sending || updating}
         >

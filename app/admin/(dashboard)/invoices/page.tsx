@@ -221,7 +221,7 @@ export default function AdminInvoicesPage() {
           amountPaid: 0,
           amountDue: 0,
           dueDate: "",
-          status: "UNPAID",
+          status: "PENDING",
         });
         // Close the dialog
         setDialogOpen(false);
@@ -306,7 +306,7 @@ export default function AdminInvoicesPage() {
           />
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
-              <Button onClick={() => setDialogOpen(true)}>
+              <Button onClick={() => setDialogOpen(true)} variant="create">
                 <Plus className="mr-2 h-4 w-4" /> Create New Invoice
               </Button>
             </DialogTrigger>
@@ -396,7 +396,9 @@ export default function AdminInvoicesPage() {
                   />
                 </div>
               </div>
-              <Button onClick={handleCreateInvoice}>Create Invoice</Button>
+              <Button onClick={handleCreateInvoice} variant="submit">
+                Create Invoice
+              </Button>
             </DialogContent>
           </Dialog>
         </div>
