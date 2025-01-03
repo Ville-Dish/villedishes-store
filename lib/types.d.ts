@@ -202,6 +202,7 @@ interface MonthlyRevenue {
 }
 
 interface YearlyRevenue {
+  id?: string;
   year: number;
   yearlyTarget: number;
   monthlyProjections: MonthlyRevenue[];
