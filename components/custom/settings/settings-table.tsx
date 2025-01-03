@@ -7,6 +7,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { Eye, Trash } from "lucide-react";
 
 export const SettingsTable: React.FC<SettingsTableProps> = ({
   variant,
@@ -16,7 +18,7 @@ export const SettingsTable: React.FC<SettingsTableProps> = ({
     switch (variant) {
       case "Income":
       case "Expense":
-        return ["Name", "Category", "Amount", "Date"];
+        return ["Name", "Category", "Amount", "Date", "Actions"];
       default:
         return [];
     }
@@ -33,6 +35,14 @@ export const SettingsTable: React.FC<SettingsTableProps> = ({
             <TableCell>{transaction.category}</TableCell>
             <TableCell>${transaction.amount.toLocaleString()}</TableCell>
             <TableCell>{transaction.date}</TableCell>
+            <TableCell className="flex mx-auto">
+              <Button variant="ghost">
+                <Eye className="h-4 w-4 text-[#fe9e1d]" />
+              </Button>
+              <Button variant="ghost">
+                <Trash className="h-4 w-4 text-[#da281c]" />
+              </Button>
+            </TableCell>
           </TableRow>
         );
       default:
