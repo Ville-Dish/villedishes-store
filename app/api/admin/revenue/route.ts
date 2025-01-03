@@ -87,7 +87,7 @@ export async function POST(request: Request) {
     const validMonthlyProjections = monthlyProjections.map((mp) => ({
       month: mp.month,
       projection: mp.projection,
-      actual: mp.actual || 0, // Default to 0 if not provided
+      actual: mp.actual !== undefined ? mp.actual : 0, // Use provided actual or default to 0
     }));
 
     const revenue = await prisma.revenue.create({
