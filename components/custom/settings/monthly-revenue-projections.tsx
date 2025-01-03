@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -33,6 +33,11 @@ export const MonthlyRevenueProjections: React.FC<
 }) => {
   const [editingMonth, setEditingMonth] = useState<string | null>(null);
   const [editValue, setEditValue] = useState<string>("");
+  const [localProjections, setLocalProjections] = useState(monthlyProjections);
+
+  useEffect(() => {
+    setLocalProjections(monthlyProjections);
+  }, [monthlyProjections]);
 
   const handleEdit = (month: string, projection: number) => {
     setEditingMonth(month);
@@ -41,20 +46,18 @@ export const MonthlyRevenueProjections: React.FC<
 
   const handleSave = () => {
     if (editingMonth) {
-      const updatedProjections = monthlyProjections.map((mp) =>
+      const updatedProjections = localProjections.map((mp) =>
         mp.month === editingMonth
           ? { ...mp, projection: parseFloat(editValue) }
           : mp
       );
+      setLocalProjections(updatedProjections);
       onUpdate(updatedProjections);
       setEditingMonth(null);
     }
   };
 
-  const totalActual = monthlyProjections.reduce(
-    (sum, mp) => sum + mp.actual,
-    0
-  );
+  const totalActual = localProjections.reduce((sum, mp) => sum + mp.actual, 0);
   const yearProgress = (totalActual / yearlyTarget) * 100;
 
   const monthOrder = [
@@ -100,7 +103,7 @@ export const MonthlyRevenueProjections: React.FC<
             </TableRow>
           </TableHeader>
           <TableBody>
-            {monthlyProjections
+            {localProjections
               .sort(
                 (a, b) =>
                   monthOrder.indexOf(a.month) - monthOrder.indexOf(b.month)
