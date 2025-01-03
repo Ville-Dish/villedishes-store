@@ -36,74 +36,11 @@ const AdminSetting = () => {
   const [isLargeScreen, setIsLargeScreen] = useState(false);
 
   const [revenueProjections, setRevenueProjections] = useState<YearlyRevenue[]>(
-    [
-      {
-        year: 2023,
-        yearlyTarget: 1200000,
-        monthlyProjections: [
-          { month: "January", projection: 100000, actual: 95000 },
-          { month: "February", projection: 100000, actual: 98000 },
-          { month: "March", projection: 100000, actual: 105000 },
-          { month: "April", projection: 100000, actual: 97000 },
-          { month: "May", projection: 100000, actual: 102000 },
-          { month: "June", projection: 100000, actual: 99000 },
-          { month: "July", projection: 100000, actual: 103000 },
-          { month: "August", projection: 100000, actual: 101000 },
-          { month: "September", projection: 100000, actual: 98000 },
-          { month: "October", projection: 100000, actual: 104000 },
-          { month: "November", projection: 100000, actual: 106000 },
-          { month: "December", projection: 100000, actual: 110000 },
-        ],
-      },
-      {
-        year: 2024,
-        yearlyTarget: 1500000,
-        monthlyProjections: [
-          { month: "January", projection: 125000, actual: 125000 },
-          { month: "February", projection: 125000, actual: 120000 },
-          { month: "March", projection: 125000, actual: 115000 },
-          { month: "April", projection: 125000, actual: 11000 },
-          { month: "May", projection: 125000, actual: 25000 },
-          { month: "June", projection: 125000, actual: 15000 },
-          { month: "July", projection: 125000, actual: 15000 },
-          { month: "August", projection: 125000, actual: 12500 },
-          { month: "September", projection: 125000, actual: 1250 },
-          { month: "October", projection: 125000, actual: 12500 },
-          { month: "November", projection: 125000, actual: 125000 },
-          { month: "December", projection: 125000, actual: 125200 },
-        ],
-      },
-    ]
+    []
   );
 
-  const [expenses, setExpenses] = useState<Expense[]>([
-    {
-      name: "Office Supplies",
-      category: "Operational",
-      amount: 500,
-      date: "2023-05-15",
-    },
-    {
-      name: "Utilities",
-      category: "Operational",
-      amount: 1000,
-      date: "2023-05-20",
-    },
-  ]);
-  const [incomes, setIncomes] = useState<Income[]>([
-    {
-      name: "Product Sales",
-      category: "Sales",
-      amount: 15000,
-      date: "2023-05-10",
-    },
-    {
-      name: "Consulting",
-      category: "Services",
-      amount: 5000,
-      date: "2023-05-18",
-    },
-  ]);
+  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [incomes, setIncomes] = useState<Income[]>([]);
 
   const [showForm, setShowForm] = useState<
     "Revenue" | "Income" | "Expense" | null
@@ -121,7 +58,37 @@ const AdminSetting = () => {
     }
   }, [handleResize]);
 
-  const addRevenueProjection = (event: React.FormEvent<HTMLFormElement>) => {
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [revenueResponse, expenseResponse, incomesResponse] =
+          await Promise.all([
+            fetch("/api/admin/revenue"),
+            fetch("/api/admin/expense"),
+            fetch("/api/admin/income"),
+          ]);
+
+        const [revenueData, expenseData, incomeData] = await Promise.all([
+          revenueResponse.json(),
+          expenseResponse.json(),
+          incomesResponse.json(),
+        ]);
+
+        setRevenueProjections(revenueData);
+        setExpenses(expenseData);
+        setIncomes(incomeData);
+      } catch (error) {
+        console.error("Failed to fetch data", error);
+      }
+    };
+
+    fetchData();
+  });
+
+  //Database functions
+  const addRevenueProjection = async (
+    event: React.FormEvent<HTMLFormElement>
+  ) => {
     event.preventDefault();
     const form = event.currentTarget;
     const formData = new FormData(form);
@@ -154,25 +121,67 @@ const AdminSetting = () => {
       })),
     };
 
-    setRevenueProjections([...revenueProjections, newProjection]);
-    form.reset();
-    setShowForm(null);
+    try {
+      const response = await fetch("/api/revenue", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(newProjection),
+      });
+
+      if (response.ok) {
+        const createdRevenue = await response.json();
+        setRevenueProjections([...revenueProjections, createdRevenue]);
+        form.reset();
+        setShowForm(null);
+      } else {
+        console.error("Failed to create revenue projection");
+      }
+    } catch (error) {
+      console.error("Error creating revenue projection:", error);
+    }
   };
 
-  const updateMonthlyProjections = (
+  const updateMonthlyProjections = async (
     year: number,
     updatedProjections: YearlyRevenue["monthlyProjections"]
   ) => {
-    setRevenueProjections((prevProjections) =>
-      prevProjections.map((proj) =>
-        proj.year === year
-          ? { ...proj, monthlyProjections: updatedProjections }
-          : proj
-      )
+    const revenueToUpdate = revenueProjections.find(
+      (proj) => proj.year === year
     );
+    if (!revenueToUpdate) return;
+
+    try {
+      const response = await fetch("/api/revenue", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id: revenueToUpdate.id,
+          year: revenueToUpdate.year,
+          yearlyTarget: revenueToUpdate.yearlyTarget,
+          monthlyProjections: updatedProjections,
+        }),
+      });
+
+      if (response.ok) {
+        const updatedRevenue = await response.json();
+        setRevenueProjections((prevProjections) =>
+          prevProjections.map((proj) =>
+            proj.year === year ? updatedRevenue : proj
+          )
+        );
+      } else {
+        console.error("Failed to update revenue projection");
+      }
+    } catch (error) {
+      console.error("Error updating revenue projection:", error);
+    }
   };
 
-  const addExpense = (event: React.FormEvent<HTMLFormElement>) => {
+  const addExpense = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const form = event.currentTarget;
     const formData = new FormData(form);
@@ -182,12 +191,30 @@ const AdminSetting = () => {
       amount: parseFloat(formData.get("amount") as string),
       date: formData.get("date") as string,
     };
-    setExpenses([...expenses, newExpense]);
-    form.reset();
-    setShowForm(null);
+
+    try {
+      const response = await fetch("/api/expense", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(newExpense),
+      });
+
+      if (response.ok) {
+        const createdExpense = await response.json();
+        setExpenses([...expenses, createdExpense]);
+        form.reset();
+        setShowForm(null);
+      } else {
+        console.error("Failed to create expense");
+      }
+    } catch (error) {
+      console.error("Error creating expense:", error);
+    }
   };
 
-  const addIncome = (event: React.FormEvent<HTMLFormElement>) => {
+  const addIncome = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const form = event.currentTarget;
     const formData = new FormData(form);
@@ -197,9 +224,27 @@ const AdminSetting = () => {
       amount: parseFloat(formData.get("amount") as string),
       date: formData.get("date") as string,
     };
-    setIncomes([...incomes, newIncome]);
-    form.reset();
-    setShowForm(null);
+
+    try {
+      const response = await fetch("/api/income", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(newIncome),
+      });
+
+      if (response.ok) {
+        const createdIncome = await response.json();
+        setIncomes([...incomes, createdIncome]);
+        form.reset();
+        setShowForm(null);
+      } else {
+        console.error("Failed to create income");
+      }
+    } catch (error) {
+      console.error("Error creating income:", error);
+    }
   };
 
   return (
