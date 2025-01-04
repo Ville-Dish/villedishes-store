@@ -1,7 +1,6 @@
 import React from "react";
 import { Button } from "../ui/button";
 import Link from "next/link";
-import Image from "next/image";
 
 type Props = {
   title: string;
@@ -35,7 +34,7 @@ export const Banner = ({
           </div>
           <Link href={ctaLink}>
             <Button
-              className="bg-yellow-500 text-black hover:bg-yellow-600"
+              className="bg-[#fd9d1c] text-black hover:bg-[#fd9e1d]"
               size="lg"
             >
               {ctaText}

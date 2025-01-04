@@ -1,41 +1,24 @@
 import type { Metadata } from "next";
-import localFont from "next/font/local";
-import "../globals.css";
-import { Toaster } from "@/components/ui/sonner";
-import { Header } from "@/components/custom/header";
 import { Footer } from "@/components/custom/footer";
-
-const geistSans = localFont({
-  src: "../fonts/GeistVF.woff",
-  variable: "--font-geist-sans",
-  weight: "100 900",
-});
-const geistMono = localFont({
-  src: "../fonts/GeistMonoVF.woff",
-  variable: "--font-geist-mono",
-  weight: "100 900",
-});
+import { Header } from "@/components/custom/header";
 
 export const metadata: Metadata = {
   title: "VilleDishes",
   description: "Nigerian meal at your finger tips",
 };
 
-export default function RootLayout({
+export default function HomeLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        <Header />
-        <div className="min-h-screen">{children}</div>
-        <Toaster />
+    <>
+      <div className="min-h-screen">
+        <Header show />
+        {children}
         <Footer />
-      </body>
-    </html>
+      </div>
+    </>
   );
 }

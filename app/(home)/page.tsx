@@ -1,17 +1,15 @@
 "use client";
+
 import { Banner } from "@/components/custom/banner";
 import { Button } from "@/components/ui/button";
 import { ChefHat, Clock, Truck } from "lucide-react";
 import Link from "next/link";
-import Image from "next/image";
-import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { popularProducts, testimonials } from "@/lib/constantData";
 import { useState } from "react";
 import { ProductCard } from "@/components/custom/product-card";
 
 const productItems: MenuItem[] = popularProducts;
-
 const categories = [
   "All",
   ...new Set(productItems.map((item) => item.category)),
@@ -36,9 +34,8 @@ export default function Home() {
           backgroundImage="/assets/banner-bg.png"
         />
         <section className="w-full py-12 md:py-24 lg:py-32 bg-gray-100">
-          {/* <div className="container px-4 md:px-6"> */}
-          <div className="grid grid-cols-1 gap-6 lg:grid-rows-3 lg:gap-12 px-4 md:px-6">
-            <Card className="">
+          <div className="container mx-auto grid grid-cols-1 gap-6 lg:grid-cols-3 lg:gap-12 px-4 md:px-6">
+            <Card>
               <CardHeader>
                 <ChefHat className="h-10 w-10 mb-2 text-yellow-500" />
                 <CardTitle>Authentic Recipes</CardTitle>
@@ -75,21 +72,18 @@ export default function Home() {
               </CardContent>
             </Card>
           </div>
-          {/* </div> */}
         </section>
         <section id="menu" className="w-full py-12 md:py-24 lg:py-32">
-          <div className="w-full px-4 md:px-6">
+          <div className="container mx-auto px-4 md:px-6">
             <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl text-center mb-12">
               Our Popular Menu
             </h2>
-            <div className="grid gap-6 lg:grid-cols-3 lg:gap-12">
-              <ProductCard
-                categories={categories}
-                items={filteredItems}
-                activeCategory={activeCategory}
-                onCategoryChange={setActiveCategory}
-              />
-            </div>
+            <ProductCard
+              categories={categories}
+              items={filteredItems}
+              activeCategory={activeCategory}
+              onCategoryChange={setActiveCategory}
+            />
             <div className="text-center mt-12">
               <Button asChild>
                 <Link href="/products">View Full Menu</Link>
@@ -98,7 +92,7 @@ export default function Home() {
           </div>
         </section>
         <section className="w-full py-12 md:py-24 lg:py-32 bg-gray-100">
-          <div className="px-4 md:px-6">
+          <div className="container mx-auto px-4 md:px-6">
             <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl text-center mb-12">
               What Our Customers Say
             </h2>
@@ -106,7 +100,9 @@ export default function Home() {
               {testimonials.map((testimonial) => (
                 <Card key={testimonial.name}>
                   <CardContent className="pt-6">
-                    <p className="mb-4 italic">"{testimonial.quote}"</p>
+                    <p className="mb-4 italic">
+                      &quot;{testimonial.quote}&quot;
+                    </p>
                     <p className="font-bold">- {testimonial.name}</p>
                   </CardContent>
                 </Card>

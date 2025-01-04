@@ -40,3 +40,10 @@ yarn-error.log*
 next-env.d.ts
 
 .early.coverage
+
+
+# text
+*.txt
+
+# Json
+ville-dishes-firebase-adminsdk-srwmr-d4e93b106b.json

@@ -1,0 +1,134 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Product {
+  id              String            @id @unique @default(uuid())
+  name            String            @unique
+  description     String
+  price           Float
+  image           String
+  category        String?
+  rating          Float?
+  OrderProduct    OrderProduct[]
+  InvoiceProducts InvoiceProducts[]
+  invoiceId       String?
+}
+
+model Review {
+  id        String  @id @unique @default(uuid())
+  rating    Int
+  comment   String
+  author    String
+  productId String?
+}
+
+model Order {
+  id               String         @id @unique @default(uuid())
+  orderId          String         @unique
+  subtotal         Float
+  tax              Float
+  shippingFee      Float
+  total            Float
+  referenceNumber  String?
+  paymentDate      String?
+  verificationCode String?
+  orderNumber      String?
+  orderDate        String?
+  shippingInfoId   String
+  status           String
+  shippingInfo     ShippingInfo   @relation(fields: [shippingInfoId], references: [id])
+  products         OrderProduct[]
+}
+
+model ShippingInfo {
+  id          String  @id @unique @default(uuid())
+  firstName   String
+  lastName    String
+  email       String
+  phoneNumber String
+  address     String
+  city        String
+  postalCode  String
+  orderNotes  String?
+  Order       Order[]
+}
+
+model OrderProduct {
+  id        String  @id @unique @default(uuid())
+  quantity  Int
+  productId String
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id])
+  product   Product @relation(fields: [productId], references: [id])
+}
+
+model Invoice {
+  id                 String            @id @unique @default(uuid())
+  invoiceNumber      String            @unique
+  customerName       String
+  customerEmail      String
+  customerPhone      String
+  amount             Float
+  amountPaid         Float             @default(0)
+  amountDue          Float             @default(0)
+  discountPercentage Int               @default(0)
+  taxRate            Int               @default(0)
+  shippingFee        Int               @default(0)
+  dateCreated        String
+  dueDate            String
+  status             String
+  InvoiceProducts    InvoiceProducts[] @relation("InvoiceProducts")
+}
+
+// Relation to Invoice
+model InvoiceProducts {
+  id        String    @id @unique @default(uuid())
+  basePrice Float
+  quantity  Int
+  price     Float
+  discount  Float     @default(0)
+  invoiceId String?
+  invoice   Invoice?  @relation("InvoiceProducts", fields: [invoiceId], references: [id])
+  Product   Product[]
+}
+
+// Schema for Income, Expense, and Revenue Projections.
+model Expense {
+  id       String @id @default(uuid())
+  name     String
+  category String
+  amount   Float
+  date     String
+}
+
+model Income {
+  id       String @id @default(uuid())
+  name     String
+  category String
+  amount   Float
+  date     String
+}
+
+model Revenue {
+  id                 String              @id @default(uuid())
+  year               Int
+  yearlyTarget       Float
+  monthlyProjections MonthlyProjection[]
+}
+
+model MonthlyProjection {
+  id         String  @id @default(uuid())
+  month      String
+  projection Float
+  actual     Float
+  revenue    Revenue @relation(fields: [revenueId], references: [id])
+  revenueId  String
+
+  @@unique([revenueId, month])
+}

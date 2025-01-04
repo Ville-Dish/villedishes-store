@@ -19,7 +19,7 @@ const About = () => {
                 bring the rich, diverse flavors of Nigeria to your table.
               </p>
               <p className="text-gray-700 dark:text-gray-300">
-                We're committed to using the freshest ingredients and
+                We&apos;re committed to using the freshest ingredients and
                 traditional cooking methods to deliver an unforgettable dining
                 experience. Our team of skilled chefs brings years of expertise
                 in Nigerian cuisine, ensuring that every dish is prepared with
@@ -27,10 +27,10 @@ const About = () => {
               </p>
               <p className="text-gray-700 dark:text-gray-300">
                 At Villedishes, we believe that food is more than just
-                sustenance - it's a way to connect with culture, create
-                memories, and bring people together. We're proud to serve our
-                community and introduce the vibrant flavors of Nigeria to food
-                lovers everywhere.
+                sustenance - it&apos;s a way to connect with culture, create
+                memories, and bring people together. We&apos;re proud to serve
+                our community and introduce the vibrant flavors of Nigeria to
+                food lovers everywhere.
               </p>
             </div>
           </div>
