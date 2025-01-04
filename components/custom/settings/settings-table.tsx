@@ -13,6 +13,8 @@ import { Eye, Trash } from "lucide-react";
 export const SettingsTable: React.FC<SettingsTableProps> = ({
   variant,
   data,
+  onEdit,
+  onDelete,
 }) => {
   const getHeaders = () => {
     switch (variant) {
@@ -36,10 +38,10 @@ export const SettingsTable: React.FC<SettingsTableProps> = ({
             <TableCell>${transaction.amount.toLocaleString()}</TableCell>
             <TableCell>{transaction.date}</TableCell>
             <TableCell className="flex mx-auto">
-              <Button variant="ghost">
+              <Button variant="ghost" onClick={() => onEdit(item)}>
                 <Eye className="h-4 w-4 text-[#fe9e1d]" />
               </Button>
-              <Button variant="ghost">
+              <Button variant="ghost" onClick={() => onDelete(item.id || "")}>
                 <Trash className="h-4 w-4 text-[#da281c]" />
               </Button>
             </TableCell>
