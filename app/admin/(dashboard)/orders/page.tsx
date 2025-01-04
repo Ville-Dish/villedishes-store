@@ -29,6 +29,7 @@ import {
 import { Eye } from "lucide-react";
 import { DatePickerWithRange } from "@/components/custom/date-range-picker";
 import { cn } from "@/lib/utils";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 type OrderStatus = "UNVERIFIED" | "PENDING" | "CANCELLED" | "FULFILLED";
 
@@ -317,69 +318,113 @@ export default function AdminOrdersPage() {
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="max-w-3xl">
           <DialogHeader>
-            <DialogTitle>Order Details</DialogTitle>
+            <DialogTitle className="text-center">Order Details</DialogTitle>
             <DialogDescription className="sr-only">
               Order Details
             </DialogDescription>
           </DialogHeader>
-          {selectedOrder && (
-            <div className="mt-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <h4 className="font-bold mb-2">Shipping Information</h4>
-                  <p>
-                    {selectedOrder.shippingInfo.firstName}{" "}
-                    {selectedOrder.shippingInfo.lastName}
+          <ScrollArea className="max-h-[calc(90vh-100px)] pr-4">
+            {selectedOrder && (
+              <div className="mt-4 bg-white p-6 rounded-lg shadow-md">
+                <div className="text-center mb-6">
+                  <h2 className="text-xl font-bold">Order Receipt</h2>
+                  <p className="text-gray-600">
+                    Order #{selectedOrder.orderNumber}
                   </p>
-                  <p>{selectedOrder.shippingInfo.address}</p>
-                  <p>
-                    {selectedOrder.shippingInfo.city},{" "}
-                    {selectedOrder.shippingInfo.postalCode}
-                  </p>
-                  <p>Email: {selectedOrder.shippingInfo.email}</p>
-                  <p>Phone: {selectedOrder.shippingInfo.phoneNumber}</p>
+                  <p className="text-gray-600">{selectedOrder.orderDate}</p>
                 </div>
-                <div>
-                  <h4 className="font-bold mb-2">Order Summary</h4>
-                  <p>Subtotal: ${selectedOrder.subtotal.toFixed(2)}</p>
-                  <p>Tax: ${selectedOrder.tax.toFixed(2)}</p>
-                  <p>Shipping: ${selectedOrder.shippingFee.toFixed(2)}</p>
-                  <p className="font-semibold">
-                    Total: ${selectedOrder.total.toFixed(2)}
-                  </p>
+
+                <div className="grid grid-cols-2 gap-6 mb-6">
+                  <div>
+                    <h4 className="font-bold mb-2">Bill To:</h4>
+                    <p>
+                      {selectedOrder.shippingInfo.firstName}{" "}
+                      {selectedOrder.shippingInfo.lastName}
+                    </p>
+                    <p>{selectedOrder.shippingInfo.address}</p>
+                    <p>
+                      {selectedOrder.shippingInfo.city},{" "}
+                      {selectedOrder.shippingInfo.postalCode}
+                    </p>
+                    <p>Email: {selectedOrder.shippingInfo.email}</p>
+                    <p>Phone: {selectedOrder.shippingInfo.phoneNumber}</p>
+                  </div>
+                  <div>
+                    <h4 className="font-bold mb-2">Ship To:</h4>
+                    <p>
+                      {selectedOrder.shippingInfo.firstName}{" "}
+                      {selectedOrder.shippingInfo.lastName}
+                    </p>
+                    <p>{selectedOrder.shippingInfo.address}</p>
+                    <p>
+                      {selectedOrder.shippingInfo.city},{" "}
+                      {selectedOrder.shippingInfo.postalCode}
+                    </p>
+                  </div>
                 </div>
-              </div>
-              <h4 className="font-medium mt-4 mb-2">Products</h4>
-              <div className="border rounded-lg overflow-hidden">
+
+                <h4 className="font-medium mt-4 mb-2">Products</h4>
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>Product</TableHead>
-                      <TableHead>Quantity</TableHead>
-                      <TableHead>Price</TableHead>
+                      <TableHead className="text-right">Quantity</TableHead>
+                      <TableHead className="text-right">Price</TableHead>
+                      <TableHead className="text-right">Total</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {selectedOrder.products.map((product) => (
                       <TableRow key={product.id}>
                         <TableCell>{product.product.name}</TableCell>
-                        <TableCell>{product.quantity}</TableCell>
-                        <TableCell>
+                        <TableCell className="text-right">
+                          {product.quantity}
+                        </TableCell>
+                        <TableCell className="text-right">
                           ${product.product.price.toFixed(2)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          ${product.quantity * product.product.price}
                         </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
                 </Table>
-              </div>
-              {selectedOrder.shippingInfo.orderNotes && (
-                <div className="mt-4">
-                  <h4 className="font-medium">Order Notes</h4>
-                  <p>{selectedOrder.shippingInfo.orderNotes}</p>
+
+                <div className="mt-6 flex justify-end">
+                  <div className="w-1/2">
+                    <div className="flex justify-between mb-2">
+                      <span>Subtotal:</span>
+                      <span>${selectedOrder.subtotal.toFixed(2)}</span>
+                    </div>
+
+                    <div className="flex justify-between mb-2">
+                      <span>Tax:</span>
+                      <span>${selectedOrder.tax.toFixed(2)}</span>
+                    </div>
+
+                    <div className="flex justify-between mb-2">
+                      <span>Shipping:</span>
+                      <span>${selectedOrder.shippingFee.toFixed(2)}</span>
+                    </div>
+
+                    <div className="flex justify-between mb-2">
+                      <span>Total:</span>
+                      <span>${selectedOrder.total.toFixed(2)}</span>
+                    </div>
+                  </div>
                 </div>
-              )}
-            </div>
-          )}
+                {selectedOrder.shippingInfo.orderNotes && (
+                  <div className="mt-6">
+                    <h4 className="font-bold mb-2">Order Notes:</h4>
+                    <p className="text-gray-700">
+                      {selectedOrder.shippingInfo.orderNotes}
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+          </ScrollArea>
         </DialogContent>
       </Dialog>
     </div>
