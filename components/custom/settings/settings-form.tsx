@@ -8,12 +8,16 @@ interface SettingsFormProps {
   variant: "Revenue" | "Income" | "Expense";
   onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
   onClose: () => void;
+  initialData?: Income | Expense | null;
+  isEditing: boolean;
 }
 
 export const SettingsForm: React.FC<SettingsFormProps> = ({
   variant,
   onSubmit,
   onClose,
+  initialData,
+  isEditing,
 }) => {
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     onSubmit(event);
@@ -24,11 +28,15 @@ export const SettingsForm: React.FC<SettingsFormProps> = ({
     <section className="border rounded-md border-[#fff1e2]">
       <form onSubmit={handleSubmit} className="space-y-4 mx-6 my-2">
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-semibold">Add {variant}</h3>
-          <Button variant="ghost" size="icon" onClick={onClose}>
-            <X className="h-4 w-4 text-[#da281c]" />
-            <span className="sr-only">Close</span>
-          </Button>
+          <h3 className="text-lg font-semibold">
+            {isEditing ? `Edit ${variant}` : `Add ${variant}`}
+          </h3>
+          {!isEditing && (
+            <Button variant="ghost" size="icon" onClick={onClose}>
+              <X className="h-4 w-4 text-[#da281c]" />
+              <span className="sr-only">Close</span>
+            </Button>
+          )}
         </div>
 
         {variant === "Revenue" && (
@@ -60,6 +68,7 @@ export const SettingsForm: React.FC<SettingsFormProps> = ({
                 name="name"
                 placeholder={`Enter ${variant.toLowerCase()} name`}
                 required
+                defaultValue={initialData?.name}
               />
             </div>
             <div className="space-y-2">
@@ -71,6 +80,7 @@ export const SettingsForm: React.FC<SettingsFormProps> = ({
                 name="category"
                 placeholder={`Enter ${variant.toLowerCase()} category`}
                 required
+                defaultValue={initialData?.category}
               />
             </div>
             <div className="space-y-2">
@@ -81,6 +91,7 @@ export const SettingsForm: React.FC<SettingsFormProps> = ({
                 type="number"
                 placeholder="Enter amount"
                 required
+                defaultValue={initialData?.amount}
               />
             </div>
             <div className="space-y-2">
@@ -90,6 +101,7 @@ export const SettingsForm: React.FC<SettingsFormProps> = ({
                 name="date"
                 type="date"
                 required
+                defaultValue={initialData?.date}
               />
             </div>
           </>
@@ -97,7 +109,7 @@ export const SettingsForm: React.FC<SettingsFormProps> = ({
 
         <div className="flex justify-end mt-4">
           <Button type="submit" variant="submit">
-            Add {variant}
+            {isEditing ? `Update ${variant}` : `Add ${variant}`}
           </Button>
         </div>
       </form>
