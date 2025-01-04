@@ -24,6 +24,8 @@ import React, { useCallback, useEffect, useState } from "react";
 import { SettingsTable } from "@/components/custom/settings/settings-table";
 import { SettingsForm } from "@/components/custom/settings/settings-form";
 import { YearlyRevenueAccordion } from "@/components/custom/settings/yearly-revenue-accordion";
+import { toast } from "sonner";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 
 const settingsValue = [
   { name: "General Settings", icon: Settings },
@@ -38,13 +40,22 @@ const AdminSetting = () => {
   const [revenueProjections, setRevenueProjections] = useState<YearlyRevenue[]>(
     []
   );
-
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [incomes, setIncomes] = useState<Income[]>([]);
 
   const [showForm, setShowForm] = useState<
     "Revenue" | "Income" | "Expense" | null
   >(null);
+
+  const [editItem, setEditItem] = useState<
+    ((Income | Expense) & { type?: "Income" | "Expense" }) | null
+  >(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [generalSettings, setGeneralSettings] = useState({
+    companyName: "VilleDishes",
+    email: "villedishes@gmail.com",
+    phone: "012-345-6789",
+  });
 
   const handleResize = useCallback(() => {
     setIsLargeScreen(window.innerWidth > 768);
@@ -83,7 +94,7 @@ const AdminSetting = () => {
     };
 
     fetchData();
-  });
+  }, []);
 
   //Database functions
   const addRevenueProjection = async (
@@ -181,70 +192,125 @@ const AdminSetting = () => {
     }
   };
 
-  const addExpense = async (event: React.FormEvent<HTMLFormElement>) => {
+  const addOrUpdateItem = async (
+    event: React.FormEvent<HTMLFormElement>,
+    type: "Income" | "Expense"
+  ) => {
     event.preventDefault();
     const form = event.currentTarget;
     const formData = new FormData(form);
-    const newExpense: Expense = {
+    const newItem = {
+      id: editItem?.id,
       name: formData.get("name") as string,
       category: formData.get("category") as string,
       amount: parseFloat(formData.get("amount") as string),
       date: formData.get("date") as string,
     };
 
+    const url = `/api/admin/${type.toLowerCase()}`;
+    const method = editItem ? "PUT" : "POST";
+
     try {
-      const response = await fetch("/api/expense", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(newExpense),
+      const response = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newItem),
       });
 
       if (response.ok) {
-        const createdExpense = await response.json();
-        setExpenses([...expenses, createdExpense]);
+        const result = await response.json();
+        if (type === "Income") {
+          setIncomes(
+            editItem
+              ? incomes.map((item) => (item.id === result.id ? result : item))
+              : [...incomes, result]
+          );
+        } else {
+          setExpenses(
+            editItem
+              ? expenses.map((item) => (item.id === result.id ? result : item))
+              : [...expenses, result]
+          );
+        }
         form.reset();
         setShowForm(null);
+        setEditItem(null);
+        setIsDialogOpen(false);
       } else {
-        console.error("Failed to create expense");
+        console.error(
+          `Failed to ${editItem ? "update" : "create"} ${type.toLowerCase()}`
+        );
       }
     } catch (error) {
-      console.error("Error creating expense:", error);
+      console.error(
+        `Error ${editItem ? "updating" : "creating"} ${type.toLowerCase()}:`,
+        error
+      );
     }
   };
 
-  const addIncome = async (event: React.FormEvent<HTMLFormElement>) => {
+  const deleteItem = async (id: string, type: "Income" | "Expense") => {
+    try {
+      console.log(type);
+      console.log(id);
+      const response = await fetch(`/api/admin/${type.toLowerCase()}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: id }),
+      });
+      console.log("After Delete method invocation", response);
+
+      if (response.ok) {
+        if (type === "Income") {
+          setIncomes(incomes.filter((item) => item.id !== id));
+        } else {
+          setExpenses(expenses.filter((item) => item.id !== id));
+        }
+      } else {
+        console.error(`Failed to delete ${type.toLowerCase()}`);
+      }
+    } catch (error) {
+      console.error(`Error deleting ${type.toLowerCase()}:`, error);
+    }
+  };
+
+  const handleEdit = (item: Income | Expense, type: "Income" | "Expense") => {
+    setEditItem({ ...item, type });
+    setIsDialogOpen(true);
+  };
+
+  const updateGeneralSettings = async (
+    event: React.FormEvent<HTMLFormElement>
+  ) => {
     event.preventDefault();
     const form = event.currentTarget;
     const formData = new FormData(form);
-    const newIncome: Income = {
-      name: formData.get("name") as string,
-      category: formData.get("category") as string,
-      amount: parseFloat(formData.get("amount") as string),
-      date: formData.get("date") as string,
+    const updatedSettings = {
+      companyName: formData.get("company-name") as string,
+      email: formData.get("email") as string,
+      phone: formData.get("phone") as string,
     };
 
-    try {
-      const response = await fetch("/api/income", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(newIncome),
-      });
+    setGeneralSettings(updatedSettings);
 
-      if (response.ok) {
-        const createdIncome = await response.json();
-        setIncomes([...incomes, createdIncome]);
-        form.reset();
-        setShowForm(null);
-      } else {
-        console.error("Failed to create income");
-      }
-    } catch (error) {
-      console.error("Error creating income:", error);
-    }
+    console.log({ generalSettings });
+    toast.success("General Settings updated successfully");
+
+    // try {
+    //   const response = await fetch("/api/admin/settings", {
+    //     method: "PUT",
+    //     headers: { "Content-Type": "application/json" },
+    //     body: JSON.stringify(updatedSettings),
+    //   });
+
+    //   if (response.ok) {
+    //     setGeneralSettings(updatedSettings);
+    //   } else {
+    //     console.error("Failed to update general settings");
+    //   }
+    // } catch (error) {
+    //   console.error("Error updating general settings:", error);
+    // }
   };
 
   return (
@@ -305,29 +371,42 @@ const AdminSetting = () => {
               <CardTitle>General Settings</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="company-name">Company Name</Label>
-                <Input id="company-name" placeholder="Enter company name" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="email">Contact Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="Enter contact email"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="phone">Customer Service Number</Label>
-                <Input
-                  id="phone"
-                  type="phone"
-                  placeholder="Enter contact number"
-                />
-              </div>
-              <div className="flex justify-end mt-2">
-                <Button className="bg-[#1cd396]">Save Changes</Button>
-              </div>
+              <form onSubmit={updateGeneralSettings}>
+                <div className="space-y-2">
+                  <Label htmlFor="company-name">Company Name</Label>
+                  <Input
+                    id="company-name"
+                    name="company-name"
+                    defaultValue={generalSettings.companyName}
+                    placeholder="Enter company name"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email">Contact Email</Label>
+                  <Input
+                    id="email"
+                    name="email"
+                    type="email"
+                    defaultValue={generalSettings.email}
+                    placeholder="Enter contact email"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Customer Service Number</Label>
+                  <Input
+                    id="phone"
+                    name="phone"
+                    type="tel"
+                    defaultValue={generalSettings.phone}
+                    placeholder="Enter contact number"
+                  />
+                </div>
+                <div className="flex justify-end mt-2">
+                  <Button type="submit" variant="submit">
+                    Save Changes
+                  </Button>
+                </div>
+              </form>
             </CardContent>
           </Card>
         </TabsContent>
@@ -350,6 +429,7 @@ const AdminSetting = () => {
                     variant="Revenue"
                     onSubmit={addRevenueProjection}
                     onClose={() => setShowForm(null)}
+                    isEditing={false}
                   />
                 )}
               </div>
@@ -377,12 +457,19 @@ const AdminSetting = () => {
                 {showForm === "Expense" && (
                   <SettingsForm
                     variant="Expense"
-                    onSubmit={addExpense}
+                    onSubmit={(e) => addOrUpdateItem(e, "Expense")}
                     onClose={() => setShowForm(null)}
+                    initialData={null}
+                    isEditing={false}
                   />
                 )}
               </div>
-              <SettingsTable variant="Expense" data={expenses} />
+              <SettingsTable
+                variant="Expense"
+                data={expenses}
+                onEdit={(item) => handleEdit(item, "Expense")}
+                onDelete={(id) => deleteItem(id, "Expense")}
+              />
             </CardContent>
           </Card>
         </TabsContent>
@@ -403,16 +490,40 @@ const AdminSetting = () => {
                 {showForm === "Income" && (
                   <SettingsForm
                     variant="Income"
-                    onSubmit={addIncome}
+                    onSubmit={(e) => addOrUpdateItem(e, "Income")}
                     onClose={() => setShowForm(null)}
+                    initialData={null}
+                    isEditing={false}
                   />
                 )}
               </div>
-              <SettingsTable variant="Income" data={incomes} />
+              <SettingsTable
+                variant="Income"
+                data={incomes}
+                onEdit={(item) => handleEdit(item, "Income")}
+                onDelete={(id) => deleteItem(id, "Income")}
+              />
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent>
+          <DialogTitle className="sr-only">
+            {editItem ? `Edit ${editItem.type}` : "Add Item"}
+          </DialogTitle>
+          <SettingsForm
+            variant={editItem?.type || "Income"}
+            onSubmit={(e) => addOrUpdateItem(e, editItem?.type || "Income")}
+            onClose={() => {
+              setIsDialogOpen(false);
+              setEditItem(null);
+            }}
+            initialData={editItem}
+            isEditing={!!editItem}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
