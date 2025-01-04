@@ -209,6 +209,7 @@ interface YearlyRevenue {
 }
 
 interface Income {
+  id?: string;
   name: string;
   category: string;
   amount: number;
@@ -216,6 +217,7 @@ interface Income {
 }
 
 interface Expense {
+  id?: string;
   name: string;
   category: string;
   amount: number;
@@ -240,8 +242,10 @@ interface MonthlyRevenueProjectionsProps {
 }
 
 interface SettingsTableProps {
-  variant: "Revenue" | "Income" | "Expense";
+  variant: "Income" | "Expense";
   data: Income[] | Expense[];
+  onEdit: (item: Income | Expense) => void;
+  onDelete: (id: string) => void;
 }
 
 interface SettingsFormProps {
