@@ -58,6 +58,8 @@ interface Invoice {
   discountPercentage?: number;
   taxRate?: number;
   shippingFee?: number;
+  serviceCharge?: number;
+  miscellaneous?: number;
   amount: number;
   amountPaid: number;
   amountDue: number;
