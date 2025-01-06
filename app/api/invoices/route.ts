@@ -6,6 +6,7 @@ import { generateInvoiceNumber } from "@/lib/invoiceHelperFunction";
 // POST method to create a new invoice
 export async function POST(req: Request) {
   try {
+    const body = await req.json();
     const {
       customerName,
       customerEmail,
@@ -14,7 +15,7 @@ export async function POST(req: Request) {
       status = "PENDING",
       amount = 0,
       discountPercentage = 0,
-    } = await req.json();
+    } = body;
 
     const invoiceNumber = await generateInvoiceNumber();
 
@@ -96,7 +97,7 @@ export async function POST(req: Request) {
       status: 201,
     });
   } catch (error) {
-    console.log("Error Adding Invoice", error);
+    console.error("Error Adding Invoice", error);
     return NextResponse.json(
       { message: "Error adding invoice", error },
       { status: 500 }
@@ -121,6 +122,8 @@ export async function PATCH(req: Request) {
       discountPercentage,
       taxRate,
       shippingFee,
+      serviceCharge,
+      miscellaneous,
     } = await req.json();
 
     if (!id) {
@@ -143,21 +146,36 @@ export async function PATCH(req: Request) {
     if (shippingFee !== undefined) updateData.shippingFee = shippingFee;
     if (discountPercentage !== undefined)
       updateData.discountPercentage = discountPercentage;
+    if (serviceCharge !== undefined) updateData.serviceCharge = serviceCharge;
+    if (miscellaneous !== undefined) updateData.miscellaneous = miscellaneous;
 
-    // Determine the status based on products and due date
     const currentDate = new Date();
     const invoiceDueDate = new Date(dueDate);
 
     if (products && products.length > 0) {
-      updateData.status =
-        currentDate > invoiceDueDate
-          ? InvoiceStatus.OVERDUE
-          : InvoiceStatus.UNPAID;
+      updateData.status = InvoiceStatus.UNPAID;
     } else {
       updateData.status = InvoiceStatus.PENDING;
     }
 
-    // If status is provided and valid, use it (allows manual override)
+    if (
+      currentDate > invoiceDueDate &&
+      updateData.status !== InvoiceStatus.PAID
+    ) {
+      updateData.status = InvoiceStatus.OVERDUE;
+    }
+
+    if (updateData.status === InvoiceStatus.PAID) {
+      updateData.amountPaid = updateData.amount;
+      updateData.amountDue = 0;
+    }
+
+    if (updateData.status !== InvoiceStatus.PAID) {
+      updateData.amountDue = updateData.amount;
+      updateData.amountPaid = 0;
+    }
+
+    // If status is provided and valid, allow manual override
     if (status && isValidInvoiceStatus(status)) {
       updateData.status = status;
     }
@@ -165,7 +183,7 @@ export async function PATCH(req: Request) {
     // Start a transaction
     const updatedInvoice = await prisma.$transaction(async (prisma) => {
       // Update the invoice
-      const invoice = await prisma.invoice.update({
+      await prisma.invoice.update({
         where: { id },
         data: updateData,
       });
@@ -194,6 +212,50 @@ export async function PATCH(req: Request) {
         }
       }
 
+      // Recompute status after product updates
+      const currentDate = new Date();
+      const invoiceDueDate = new Date(dueDate);
+
+      if (products && products.length > 0) {
+        updateData.status = InvoiceStatus.UNPAID;
+      } else {
+        updateData.status = InvoiceStatus.PENDING;
+      }
+
+      if (
+        currentDate > invoiceDueDate &&
+        updateData.status !== InvoiceStatus.PAID
+      ) {
+        updateData.status = InvoiceStatus.OVERDUE;
+      }
+
+      // If status is provided and valid, allow manual override
+      if (status && isValidInvoiceStatus(status)) {
+        updateData.status = status;
+        if (status === InvoiceStatus.PAID) {
+          updateData.amountPaid = amount;
+          updateData.amountDue = 0;
+        } else {
+          updateData.amountPaid = 0;
+          updateData.amountDue = amount;
+        }
+      }
+
+      // Type assertion for status
+      const updatedStatus = updateData.status as string;
+      const updatedAmountPaid = updateData.amountPaid as number;
+      const updatedAmountDue = updateData.amountDue as number;
+
+      // Update the invoice with the recomputed status
+      const invoice = await prisma.invoice.update({
+        where: { id },
+        data: {
+          status: updatedStatus,
+          amountPaid: updatedAmountPaid,
+          amountDue: updatedAmountDue,
+        },
+      });
+
       return invoice;
     });
 
@@ -210,7 +272,7 @@ export async function PATCH(req: Request) {
       status: 200,
     });
   } catch (error) {
-    console.log("ERROR: ", error);
+    console.error("ERROR: ", error);
     return NextResponse.json(
       { message: "Error updating invoice", error },
       { status: 500 }
@@ -238,6 +300,8 @@ export async function GET() {
     const transformedInvoices = await Promise.all(
       invoices.map(async (invoice) => {
         let status = invoice.status;
+        let amountDue = invoice.amountDue;
+        let amountPaid = invoice.amountPaid;
         const dueDate = new Date(invoice.dueDate);
 
         //Check if the invoice is overdue and not already marked as PAID
@@ -248,6 +312,25 @@ export async function GET() {
           await prisma.invoice.update({
             where: { id: invoice.id },
             data: { status },
+          });
+        } else if (
+          invoice.status === InvoiceStatus.PENDING &&
+          invoice.InvoiceProducts &&
+          invoice.InvoiceProducts.length > 0
+        ) {
+          status = InvoiceStatus.UNPAID;
+
+          //Update the status in the database
+          await prisma.invoice.update({
+            where: { id: invoice.id },
+            data: { status },
+          });
+        } else if (invoice.status === InvoiceStatus.PAID) {
+          amountPaid = invoice.amount;
+          amountDue = 0;
+          await prisma.invoice.update({
+            where: { id: invoice.id },
+            data: { amountPaid, amountDue },
           });
         }
 
