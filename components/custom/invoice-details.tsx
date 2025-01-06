@@ -54,7 +54,6 @@ export const InvoiceDetails = ({
   const [discountPercentage, setDiscountPercentage] = useState(
     invoice.discountPercentage || 0
   );
-  console.log({ invoice });
   const [productDiscount, setProductDiscount] = useState<number[]>(
     invoice?.products?.map((p) => p.discount) || []
   );
@@ -69,6 +68,13 @@ export const InvoiceDetails = ({
   );
   const [filteredProducts, setFilteredProducts] = useState(availableProducts);
   const [searchTerm, setSearchTerm] = useState("");
+
+  const [serviceCharge, setServiceCharge] = useState(
+    invoice.serviceCharge || 0
+  );
+  const [miscellaneous, setMiscellaneous] = useState(
+    invoice.miscellaneous || 0
+  );
 
   useEffect(() => {
     setUpdatedInvoice(invoice);
@@ -106,40 +112,42 @@ export const InvoiceDetails = ({
     setShippingFee(isNaN(value) ? 0 : value);
   };
 
-  // const handleStatusChange = (value: Invoice["status"]) => {
-  //   setUpdatedInvoice((prev) => {
-  //     const newStatus = value;
-  //     let newAmountPaid = prev.amountPaid;
-  //     let newAmountDue = prev.amountDue;
+  const handleServiceChargeChange = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const value = parseFloat(e.target.value);
+    setServiceCharge(isNaN(value) ? 0 : value);
+  };
 
-  //     if (newStatus === "PAID") {
-  //       newAmountPaid = prev.amount;
-  //       newAmountDue = 0;
-  //     } else if (
-  //       prev.status === "PAID" &&
-  //       (newStatus === "UNPAID" ||
-  //         newStatus === "DUE" ||
-  //         newStatus === "PENDING")
-  //     ) {
-  //       newAmountPaid = 0;
-  //       newAmountDue = prev.amount;
-  //     }
-
-  //     return {
-  //       ...prev,
-  //       status: newStatus,
-  //       amountPaid: newAmountPaid,
-  //       amountDue: newAmountDue,
-  //     };
-  //   });
-  // };
+  const handleMiscellaneousChange = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const value = parseFloat(e.target.value);
+    setMiscellaneous(isNaN(value) ? 0 : value);
+  };
 
   const handleStatusChange = (value: string) => {
     if (isValidInvoiceStatus(value)) {
-      setUpdatedInvoice((prev) => ({
-        ...prev,
-        status: value as InvoiceStatus,
-      }));
+      setUpdatedInvoice((prev) => {
+        const newStatus = value as InvoiceStatus;
+        let newAmountPaid = prev.amountPaid;
+        let newAmountDue = prev.amountDue;
+
+        if (newStatus === "PAID") {
+          newAmountPaid = prev.amount;
+          newAmountDue = 0;
+        } else {
+          newAmountPaid = 0;
+          newAmountDue = prev.amount;
+        }
+
+        return {
+          ...prev,
+          status: newStatus,
+          amountPaid: newAmountPaid,
+          amountDue: newAmountDue,
+        };
+      });
     }
   };
 
@@ -291,6 +299,8 @@ export const InvoiceDetails = ({
         discountPercentage,
         taxRate,
         shippingFee,
+        serviceCharge,
+        miscellaneous,
         products: updatedInvoice.products,
       };
 
@@ -339,8 +349,6 @@ export const InvoiceDetails = ({
   };
 
   const subTotal = calculateSubtotal() || 0;
-
-  console.log({ productDiscount });
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
@@ -716,6 +724,36 @@ export const InvoiceDetails = ({
                   onChange={handleShippingChange}
                 />
                 <span>{formattedCurrency.format(shippingFee)}</span>
+              </div>
+            </div>
+            <div className="flex justify-between">
+              <span>Service Charge:</span>
+              <div className="flex items-center">
+                <Input
+                  id="serviceCharge"
+                  type="number"
+                  value={serviceCharge}
+                  className="w-20 mr-2"
+                  min="0"
+                  step={0.05}
+                  onChange={handleServiceChargeChange}
+                />
+                <span>{formattedCurrency.format(serviceCharge)}</span>
+              </div>
+            </div>
+            <div className="flex justify-between">
+              <span>Miscellaneous:</span>
+              <div className="flex items-center">
+                <Input
+                  id="miscellaneous"
+                  type="number"
+                  value={miscellaneous}
+                  className="w-20 mr-2"
+                  min="0"
+                  step={0.05}
+                  onChange={handleMiscellaneousChange}
+                />
+                <span>{formattedCurrency.format(miscellaneous)}</span>
               </div>
             </div>
             <div className="flex justify-between text-lg font-bold">
