@@ -257,3 +257,13 @@ interface SettingsFormProps {
   isYearlyProjection?: boolean;
   setIsYearlyProjection?: (value: boolean) => void;
 }
+
+interface RevenueData {
+  projected: number;
+  actual: number;
+}
+
+interface CategoryData {
+  category: string;
+  value: number | string;
+}
