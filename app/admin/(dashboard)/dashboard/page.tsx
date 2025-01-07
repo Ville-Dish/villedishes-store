@@ -14,7 +14,6 @@ import {
 import { RevenueGrowth } from "@/components/custom/dashboard/revenue-growth";
 import { ProductPerformance } from "@/components/custom/dashboard/product-performance";
 import { RecentOrders } from "@/components/custom/dashboard/recent-orders";
-import { Overview } from "@/components/custom/dashboard/overview";
 import { ReportsSection } from "@/components/custom/dashboard/report-accordion";
 import { DatePickerWithRange } from "@/components/custom/date-range-picker";
 import { YearPicker } from "@/components/custom/dashboard/year-picker";
@@ -32,11 +31,8 @@ import { Button } from "@/components/ui/button";
 import { useCallback, useEffect, useState } from "react";
 import { DateRange } from "react-day-picker";
 import { subDays, format, parse, isBefore, isSameMonth } from "date-fns";
-
-type overview = {
-  month: string;
-  total: string;
-};
+import { SettingsProgress } from "@/components/custom/settings/progress";
+import { AnalyticsPieChart } from "@/components/custom/dashboard/pie-chart";
 
 type revenue = {
   month: string;
@@ -113,12 +109,18 @@ export default function AdminDashboard() {
     recentOrders: [],
   });
 
-  const [adminDashboardAnalyticsData, setAdminDashboardAnalyticsData] =
+  const [adminDashboardPerformanceData, setAdminDashboardPerformanceData] =
     useState({
-      overviewData: [],
       revenueGrowthData: [],
       productPerformanceData: [],
     });
+
+  // const [adminDashboardAnalyticsData, setAdminDashboardAnalyticsData] =
+  // useState({
+  //   overviewData: [],
+  //   revenueGrowthData: [],
+  //   productPerformanceData: [],
+  // });
 
   const [adminDashboardReportData, setAdminDashboardReportData] = useState<
     ReportData[]
@@ -136,14 +138,18 @@ export default function AdminDashboard() {
     const toDate = format(dateRange.to, "yyyy-MM-dd");
 
     try {
-      const [ordersResponse, invoicesResponse] = await Promise.all([
-        fetch(
-          `/api/dashboard/orders?limit=5&startDate=${fromDate}&endDate=${toDate}`
-        ),
-        fetch(
-          `/api/dashboard/invoices?startDate=${fromDate}&endDate=${toDate}`
-        ),
-      ]);
+      const [ordersResponse, invoicesResponse, incomeResponse] =
+        await Promise.all([
+          fetch(
+            `/api/dashboard/orders?limit=5&startDate=${fromDate}&endDate=${toDate}`
+          ),
+          fetch(
+            `/api/dashboard/invoices?startDate=${fromDate}&endDate=${toDate}`
+          ),
+          fetch(
+            `/api/dashboard/income?startDate=${fromDate}&endDate=${toDate}`
+          ),
+        ]);
 
       if (!ordersResponse.ok || !invoicesResponse.ok) {
         throw new Error("Failed to fetch overview data");
@@ -151,14 +157,13 @@ export default function AdminDashboard() {
 
       const ordersData = await ordersResponse.json();
       const invoicesData = await invoicesResponse.json();
-
-      console.log({ ordersData });
-      console.log({ invoicesData });
+      const incomeData = await incomeResponse.json();
 
       setAdminDashboardOverviewData({
         totalRevenue:
           (ordersData.totalOrderRevenue || 0) +
-          (invoicesData.totalInvoiceRevenue || 0),
+          (invoicesData.totalInvoiceRevenue || 0) +
+          (incomeData.totalIncomeAmount || 0),
         totalOrders: ordersData.totalOrders || 0,
         unverifiedOrders: ordersData.unverifiedOrders || 0,
         pendingOrders: ordersData.pendingOrders || 0,
@@ -172,7 +177,35 @@ export default function AdminDashboard() {
     }
   }, [dateRange]);
 
-  const fetchAnalyticsData = useCallback(async () => {
+  const fetchPerformanceData = useCallback(async () => {
+    try {
+      const response = await fetch(
+        `/api/dashboard/overview?year=${selectedYear}`
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch dashboard data");
+      }
+
+      const data = await response.json();
+
+      const transformedRevenueGrowthData = (data.revenueGrowthData || []).map(
+        (item: revenue) => ({
+          name: monthNames[parseInt(item.month) - 1],
+          revenue: item.revenue,
+        })
+      );
+
+      setAdminDashboardPerformanceData({
+        revenueGrowthData: transformedRevenueGrowthData,
+        productPerformanceData: data.productPerformanceData || [],
+      });
+    } catch (error) {
+      console.error("Error fetching analytics data: ", error);
+    }
+  }, [selectedYear]);
+
+  /* const fetchAnalyticsData = useCallback(async () => {
     try {
       const response = await fetch(
         `/api/dashboard/overview?year=${selectedYear}`
@@ -206,7 +239,7 @@ export default function AdminDashboard() {
     } catch (error) {
       console.error("Error fetching analytics data: ", error);
     }
-  }, [selectedYear]);
+  }, [selectedYear]); */
 
   const fetchReportData = useCallback(async () => {
     try {
@@ -321,17 +354,42 @@ export default function AdminDashboard() {
     }
   }, [selectedMonth, selectedReportYear]);
 
+  //mock data
+  const revenueData: RevenueData = {
+    projected: 100000,
+    actual: 75000,
+  };
+  const profitData: RevenueData = {
+    projected: 10000,
+    actual: 7500,
+  };
+
+  const incomeData: CategoryData[] = [
+    { category: "Sales", value: 50000 },
+    { category: "Services", value: 30000 },
+    { category: "Investments", value: 15000 },
+    { category: "Other", value: 5000 },
+  ];
+
+  const expenseData: CategoryData[] = [
+    { category: "Salaries", value: 40000 },
+    { category: "Marketing", value: 20000 },
+    { category: "Operations", value: 25000 },
+    { category: "Miscellaneous", value: 10000 },
+  ];
+
   //fetching data from db
   useEffect(() => {
     if (activeTab === "overview") {
       fetchOverviewData();
-    } else if (activeTab === "analytics") {
-      fetchAnalyticsData();
+    } else if (activeTab === "performance") {
+      fetchPerformanceData();
     } else if (activeTab === "reports") {
       fetchReportData();
     }
-  }, [activeTab, fetchOverviewData, fetchAnalyticsData, fetchReportData]);
+  }, [activeTab, fetchOverviewData, fetchPerformanceData, fetchReportData]);
 
+  //Figure out why data is slow to display when YearPicker value changes
   const renderDatePicker = () => {
     switch (activeTab) {
       case "overview":
@@ -346,13 +404,26 @@ export default function AdminDashboard() {
             }}
           />
         );
-      case "analytics":
+      case "performance":
         return (
           <YearPicker
             selectedYear={selectedYear}
             onYearChange={(newYear) => {
               setSelectedYear(newYear);
-              fetchAnalyticsData();
+              fetchPerformanceData();
+            }}
+          />
+        );
+      case "analytics":
+        return (
+          <MonthYearPicker
+            selectedMonth={selectedMonth}
+            selectedYear={selectedReportYear}
+            onMonthChange={(newMonth) => {
+              setSelectedMonth(newMonth);
+            }}
+            onYearChange={(newYear) => {
+              setSelectedReportYear(newYear);
             }}
           />
         );
@@ -380,10 +451,7 @@ export default function AdminDashboard() {
     <div className="flex-1 space-y-4 p-8 pt-6">
       <div className="flex flex-col sm:flex-row items-center justify-between space-y-2 sm:space-y-0">
         <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
-        <div className="flex items-center space-x-2">
-          {renderDatePicker()}
-          {/* <Button onClick={filterData}>Filter</Button> */}
-        </div>
+        <div className="flex items-center space-x-2">{renderDatePicker()}</div>
       </div>
       <Tabs
         defaultValue="overview"
@@ -392,6 +460,7 @@ export default function AdminDashboard() {
       >
         <TabsList className="w-full">
           <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="performance">Performance</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
           <TabsTrigger value="reports">Reports</TabsTrigger>
         </TabsList>
@@ -465,24 +534,16 @@ export default function AdminDashboard() {
             </Card>
           </div>
         </TabsContent>
-        {/* Analytics Tab View */}
-        <TabsContent value="analytics" className="space-y-4">
+        {/* Performance Tab View: Fix issue with Revenue Growth tab, current data writes the month name while previous uses number */}
+        <TabsContent value="performance" className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            <Card className="col-span-3">
-              <CardHeader>
-                <CardTitle>Order Overview</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Overview data={adminDashboardAnalyticsData.overviewData} />
-              </CardContent>
-            </Card>
             <Card className="col-span-3 md:col-span-2">
               <CardHeader>
                 <CardTitle>Revenue Growth</CardTitle>
               </CardHeader>
               <CardContent>
                 <RevenueGrowth
-                  data={adminDashboardAnalyticsData.revenueGrowthData}
+                  data={adminDashboardPerformanceData.revenueGrowthData}
                 />
               </CardContent>
             </Card>
@@ -492,8 +553,60 @@ export default function AdminDashboard() {
               </CardHeader>
               <CardContent>
                 <ProductPerformance
-                  data={adminDashboardAnalyticsData.productPerformanceData}
+                  data={adminDashboardPerformanceData.productPerformanceData}
                 />
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+        {/* Analytics Tab View */}
+        <TabsContent value="analytics" className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <Card className="col-span-3">
+              <CardHeader>
+                <CardTitle>Year Revenue Progress</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <SettingsProgress value={50} />
+                <p className="text-sm text-gray-500">
+                  50% of yearly target ($100 / $200)
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="col-span-3 md:col-span-2">
+              <CardHeader>
+                <CardTitle>Month Revenue Performance</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <AnalyticsPieChart variant="Revenue" data={revenueData} />
+              </CardContent>
+            </Card>
+
+            <Card className="col-span-3 md:col-span-2">
+              <CardHeader>
+                <CardTitle>Expense Chart</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <AnalyticsPieChart variant="Expense" data={expenseData} />
+              </CardContent>
+            </Card>
+
+            <Card className="col-span-3 md:col-span-2">
+              <CardHeader>
+                <CardTitle>Income Chart</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <AnalyticsPieChart variant="Income" data={incomeData} />
+              </CardContent>
+            </Card>
+
+            <Card className="col-span-3 md:col-span-2">
+              <CardHeader>
+                <CardTitle>Profit Chart</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <AnalyticsPieChart variant="Revenue" data={profitData} />
               </CardContent>
             </Card>
           </div>
