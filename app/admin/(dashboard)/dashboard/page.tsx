@@ -53,6 +53,11 @@ type quarterlyPerformance = {
   customerSatisfaction: number;
 };
 
+type category = {
+  category: string;
+  amount: number;
+};
+
 const StatCard: React.FC<{
   title: string;
   value: string;
@@ -96,6 +101,12 @@ export default function AdminDashboard() {
   const [selectedReportYear, setSelectedReportYear] = useState(
     new Date().getFullYear()
   );
+  const [selectedAnalyticsMonth, setSelectedAnalyticsMonth] = useState(
+    new Date().getMonth() + 1
+  );
+  const [selectedAnalyticsYear, setSelectedAnalyticsYear] = useState(
+    new Date().getFullYear()
+  );
 
   //Setting useStates for database data
   const [adminDashboardOverviewData, setAdminDashboardOverviewData] = useState({
@@ -115,12 +126,14 @@ export default function AdminDashboard() {
       productPerformanceData: [],
     });
 
-  // const [adminDashboardAnalyticsData, setAdminDashboardAnalyticsData] =
-  // useState({
-  //   overviewData: [],
-  //   revenueGrowthData: [],
-  //   productPerformanceData: [],
-  // });
+  const [adminDashboardAnalyticsData, setAdminDashboardAnalyticsData] =
+    useState({
+      yearlyRevenueData: { projected: 0, actual: 0 },
+      monthlyRevenueData: { projected: 0, actual: 0 },
+      profitData: { totalRevenue: 0, profit: 0 },
+      incomeData: [],
+      expenseData: [],
+    });
 
   const [adminDashboardReportData, setAdminDashboardReportData] = useState<
     ReportData[]
@@ -188,10 +201,11 @@ export default function AdminDashboard() {
       }
 
       const data = await response.json();
+      console.log({ data });
 
       const transformedRevenueGrowthData = (data.revenueGrowthData || []).map(
         (item: revenue) => ({
-          name: monthNames[parseInt(item.month) - 1],
+          name: item.month,
           revenue: item.revenue,
         })
       );
@@ -205,10 +219,10 @@ export default function AdminDashboard() {
     }
   }, [selectedYear]);
 
-  /* const fetchAnalyticsData = useCallback(async () => {
+  const fetchAnalyticsData = useCallback(async () => {
     try {
       const response = await fetch(
-        `/api/dashboard/overview?year=${selectedYear}`
+        `/api/dashboard/revenue?year=${selectedAnalyticsYear}&month=${selectedAnalyticsMonth}`
       );
 
       if (!response.ok) {
@@ -217,29 +231,45 @@ export default function AdminDashboard() {
 
       const data = await response.json();
 
-      const transformedOverviewData = (data.overviewData || []).map(
-        (item: overview) => ({
-          name: monthNames[parseInt(item.month) - 1],
-          total: item.total,
+      console.log({ data });
+
+      const transformedIncomeData = (data.incomeData || []).map(
+        (item: category) => ({
+          category: item.category,
+          value: item.amount,
         })
       );
 
-      const transformedRevenueGrowthData = (data.revenueGrowthData || []).map(
-        (item: revenue) => ({
-          name: monthNames[parseInt(item.month) - 1],
-          revenue: item.revenue,
+      const transformedExpenseData = (data.expenseData || []).map(
+        (item: category) => ({
+          category: item.category,
+          value: item.amount,
         })
       );
+
+      const transformedProfit =
+        data.profitData.profit < 0 ? 0 : data.profitData.profit;
 
       setAdminDashboardAnalyticsData({
-        overviewData: transformedOverviewData,
-        revenueGrowthData: transformedRevenueGrowthData,
-        productPerformanceData: data.productPerformanceData || [],
+        yearlyRevenueData: {
+          projected: data.yearlyRevenueData.projected || 0,
+          actual: data.yearlyRevenueData.actual || 0,
+        },
+        monthlyRevenueData: {
+          projected: data.monthlyRevenueData.projected || 0,
+          actual: data.monthlyRevenueData.actual || 0,
+        },
+        profitData: {
+          totalRevenue: data.profitData.totalRevenue || 0,
+          profit: transformedProfit || 0,
+        },
+        incomeData: transformedIncomeData || [],
+        expenseData: transformedExpenseData || [],
       });
     } catch (error) {
       console.error("Error fetching analytics data: ", error);
     }
-  }, [selectedYear]); */
+  }, [selectedAnalyticsYear, selectedAnalyticsMonth]);
 
   const fetchReportData = useCallback(async () => {
     try {
@@ -354,40 +384,24 @@ export default function AdminDashboard() {
     }
   }, [selectedMonth, selectedReportYear]);
 
-  //mock data
-  const revenueData: RevenueData = {
-    projected: 100000,
-    actual: 75000,
-  };
-  const profitData: RevenueData = {
-    projected: 10000,
-    actual: 7500,
-  };
-
-  const incomeData: CategoryData[] = [
-    { category: "Sales", value: 50000 },
-    { category: "Services", value: 30000 },
-    { category: "Investments", value: 15000 },
-    { category: "Other", value: 5000 },
-  ];
-
-  const expenseData: CategoryData[] = [
-    { category: "Salaries", value: 40000 },
-    { category: "Marketing", value: 20000 },
-    { category: "Operations", value: 25000 },
-    { category: "Miscellaneous", value: 10000 },
-  ];
-
   //fetching data from db
   useEffect(() => {
     if (activeTab === "overview") {
       fetchOverviewData();
     } else if (activeTab === "performance") {
       fetchPerformanceData();
+    } else if (activeTab === "analytics") {
+      fetchAnalyticsData();
     } else if (activeTab === "reports") {
       fetchReportData();
     }
-  }, [activeTab, fetchOverviewData, fetchPerformanceData, fetchReportData]);
+  }, [
+    activeTab,
+    fetchOverviewData,
+    fetchAnalyticsData,
+    fetchPerformanceData,
+    fetchReportData,
+  ]);
 
   //Figure out why data is slow to display when YearPicker value changes
   const renderDatePicker = () => {
@@ -417,13 +431,15 @@ export default function AdminDashboard() {
       case "analytics":
         return (
           <MonthYearPicker
-            selectedMonth={selectedMonth}
-            selectedYear={selectedReportYear}
+            selectedMonth={selectedAnalyticsMonth}
+            selectedYear={selectedAnalyticsYear}
             onMonthChange={(newMonth) => {
-              setSelectedMonth(newMonth);
+              setSelectedAnalyticsMonth(newMonth);
+              fetchAnalyticsData();
             }}
             onYearChange={(newYear) => {
-              setSelectedReportYear(newYear);
+              setSelectedAnalyticsYear(newYear);
+              fetchAnalyticsData();
             }}
           />
         );
@@ -567,9 +583,25 @@ export default function AdminDashboard() {
                 <CardTitle>Year Revenue Progress</CardTitle>
               </CardHeader>
               <CardContent>
-                <SettingsProgress value={50} />
+                {/* const yearProgress = (totalActual / yearlyTarget) * 100; */}
+                <SettingsProgress
+                  value={
+                    (adminDashboardAnalyticsData.yearlyRevenueData.actual /
+                      adminDashboardAnalyticsData.yearlyRevenueData.projected) *
+                    100
+                  }
+                />
                 <p className="text-sm text-gray-500">
-                  50% of yearly target ($100 / $200)
+                  {(
+                    (adminDashboardAnalyticsData.yearlyRevenueData.actual /
+                      adminDashboardAnalyticsData.yearlyRevenueData.projected) *
+                    100
+                  ).toFixed(2)}
+                  % of yearly target ($
+                  {adminDashboardAnalyticsData.yearlyRevenueData.actual.toLocaleString()}{" "}
+                  / $
+                  {adminDashboardAnalyticsData.yearlyRevenueData.projected.toLocaleString()}
+                  )
                 </p>
               </CardContent>
             </Card>
@@ -579,7 +611,10 @@ export default function AdminDashboard() {
                 <CardTitle>Month Revenue Performance</CardTitle>
               </CardHeader>
               <CardContent>
-                <AnalyticsPieChart variant="Revenue" data={revenueData} />
+                <AnalyticsPieChart
+                  variant="Revenue"
+                  data={adminDashboardAnalyticsData.monthlyRevenueData}
+                />
               </CardContent>
             </Card>
 
@@ -588,7 +623,10 @@ export default function AdminDashboard() {
                 <CardTitle>Expense Chart</CardTitle>
               </CardHeader>
               <CardContent>
-                <AnalyticsPieChart variant="Expense" data={expenseData} />
+                <AnalyticsPieChart
+                  variant="Expense"
+                  data={adminDashboardAnalyticsData.expenseData}
+                />
               </CardContent>
             </Card>
 
@@ -597,7 +635,10 @@ export default function AdminDashboard() {
                 <CardTitle>Income Chart</CardTitle>
               </CardHeader>
               <CardContent>
-                <AnalyticsPieChart variant="Income" data={incomeData} />
+                <AnalyticsPieChart
+                  variant="Income"
+                  data={adminDashboardAnalyticsData.incomeData}
+                />
               </CardContent>
             </Card>
 
@@ -606,7 +647,10 @@ export default function AdminDashboard() {
                 <CardTitle>Profit Chart</CardTitle>
               </CardHeader>
               <CardContent>
-                <AnalyticsPieChart variant="Revenue" data={profitData} />
+                <AnalyticsPieChart
+                  variant="Profit"
+                  data={adminDashboardAnalyticsData.profitData}
+                />
               </CardContent>
             </Card>
           </div>
