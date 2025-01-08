@@ -33,8 +33,6 @@ export async function GET(req: Request) {
     const currentYear = new Date().getFullYear();
     const year = parseInt(searchParams.get("year") || currentYear.toString());
 
-    console.log("YEAR", year);
-
     if (isNaN(year)) {
       throw new Error("Invalid year parameter");
     }
@@ -62,8 +60,6 @@ export async function GET(req: Request) {
         revenue: parseFloat(item.actual.toFixed(1)),
       })
     );
-
-    console.log("Revenue Growth Data:", revenueGrowthData);
 
     // Fetch product performance data for specified year
     let productPerformance: ProductPerformanceData[] = [];
@@ -135,8 +131,6 @@ export async function GET(req: Request) {
           };
         })
       );
-
-      console.log("Product Performance Data:", productPerformance);
     } catch (queryError) {
       console.error("Error in product performance query:", queryError);
     }
@@ -146,17 +140,7 @@ export async function GET(req: Request) {
       productPerformanceData: productPerformance,
     };
 
-    console.log(
-      "Response before serialization:",
-      JSON.stringify(response, null, 2)
-    );
-
     const serializedResponse = serializeBigInt(response);
-
-    console.log(
-      "Serialized Response:",
-      JSON.stringify(serializedResponse, null, 2)
-    );
 
     return NextResponse.json(serializedResponse);
   } catch (error) {
