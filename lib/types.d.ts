@@ -263,7 +263,12 @@ interface RevenueData {
   actual: number;
 }
 
+interface ProfitData {
+  totalRevenue: number;
+  profit: number;
+}
+
 interface CategoryData {
   category: string;
-  value: number | string;
+  value: number;
 }
