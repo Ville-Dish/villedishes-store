@@ -10,7 +10,7 @@ export const Header = ({ show }: { show: boolean }) => {
   return (
     <div className="flex items-center justify-between px-4 my-4">
       <div className="flex-shrink-0">
-        <Link href="/">
+        <Link href={show ? "/" : "/admin/dashboard"}>
           <Image
             src="/assets/ville-logo.svg"
             alt="VilleDishes Logo"
