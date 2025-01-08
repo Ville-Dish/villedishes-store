@@ -39,6 +39,11 @@ type revenue = {
   revenue: number;
 };
 
+type revenueModified = {
+  name: string;
+  revenue: number;
+};
+
 type quarterly = {
   month: number;
   revenue: number;
@@ -203,12 +208,16 @@ export default function AdminDashboard() {
       const data = await response.json();
       console.log({ data });
 
-      const transformedRevenueGrowthData = (data.revenueGrowthData || []).map(
-        (item: revenue) => ({
+      const transformedRevenueGrowthData = (data.revenueGrowthData || [])
+        .map((item: revenue) => ({
           name: item.month,
           revenue: item.revenue,
-        })
-      );
+        }))
+        .sort(
+          (a: revenueModified, b: revenueModified) =>
+            new Date(`${a.name} 1, 2024`).getMonth() -
+            new Date(`${b.name} 1, 2024`).getMonth()
+        );
 
       setAdminDashboardPerformanceData({
         revenueGrowthData: transformedRevenueGrowthData,
