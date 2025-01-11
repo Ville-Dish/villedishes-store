@@ -1,3 +1,4 @@
+//app/admin/(dashboard)/dashboard/page.tsx
 "use client";
 
 import Link from "next/link";
@@ -30,7 +31,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { useCallback, useEffect, useState } from "react";
 import { DateRange } from "react-day-picker";
-import { subDays, format, parse, isBefore, isSameMonth } from "date-fns";
+import { subDays, format } from "date-fns";
 import { SettingsProgress } from "@/components/custom/settings/progress";
 import { AnalyticsPieChart } from "@/components/custom/dashboard/pie-chart";
 
@@ -44,23 +45,50 @@ type revenueModified = {
   revenue: number;
 };
 
-type quarterly = {
+type category = {
+  category: string;
+  amount: number;
+};
+
+interface MonthlyData {
   month: number;
   revenue: number;
   expenses: number;
   profit: number;
-};
+}
 
-type quarterlyPerformance = {
-  quarter: number;
-  sales: number;
-  orders: number;
-  customerSatisfaction: number;
-};
-
-type category = {
+interface ExpenseBreakdown {
   category: string;
   amount: number;
+}
+
+interface QuarterlyData {
+  quarter: number;
+  monthlyData: MonthlyData[];
+}
+
+interface QuarterlyExpenseBreakdown {
+  quarter: number;
+  data: ExpenseBreakdown[];
+}
+
+type QuarterlyReport = {
+  monthlyData: QuarterlyData[];
+  expenseBreakdown: QuarterlyExpenseBreakdown[];
+};
+
+type ReportItem = {
+  date: string;
+  status: string;
+  action?: string;
+  monthlySalesReport?: MonthlySalesReport;
+  quarterlyReport?: QuarterlyReport;
+  annualPerformance?: AnnualPerformance;
+};
+
+type ReportData = {
+  type: string;
+  items: ReportItem[];
 };
 
 const StatCard: React.FC<{
@@ -93,7 +121,6 @@ const monthNames = [
   "Nov",
   "Dec",
 ];
-const quarterNames = ["Q1", "Q2", "Q3", "Q4"];
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
@@ -240,8 +267,6 @@ export default function AdminDashboard() {
 
       const data = await response.json();
 
-      console.log({ data });
-
       const transformedIncomeData = (data.incomeData || []).map(
         (item: category) => ({
           category: item.category,
@@ -280,6 +305,8 @@ export default function AdminDashboard() {
     }
   }, [selectedAnalyticsYear, selectedAnalyticsMonth]);
 
+  //figure out why data is not displaying properly
+  // refactor so that when there is no data, it just shows no data and does not throw error
   const fetchReportData = useCallback(async () => {
     try {
       const [
@@ -290,11 +317,7 @@ export default function AdminDashboard() {
         fetch(
           `/api/dashboard/monthly-sales?year=${selectedReportYear}&month=${selectedMonth}`
         ),
-        fetch(
-          `/api/dashboard/quarterly-financials?year=${selectedReportYear}&quarter=${getQuarter(
-            selectedMonth
-          )}`
-        ),
+        fetch(`/api/dashboard/quarterly-financials?year=${selectedReportYear}`),
         fetch(`/api/dashboard/annual-performance?year=${selectedReportYear}`),
       ]);
 
@@ -307,24 +330,25 @@ export default function AdminDashboard() {
       }
 
       const monthlySalesData = await monthlySalesResponse.json();
-      const quarterlyFinancialsData = await quarterlyFinancialsResponse.json();
+      const quarterlyFinancialsData: QuarterlyReport =
+        await quarterlyFinancialsResponse.json();
       const annualPerformanceData = await annualPerformanceResponse.json();
+
+      console.log({ monthlySalesData });
+      console.log({ quarterlyFinancialsData });
+      console.log({ annualPerformanceData });
 
       //get report status
       const getReportStatus = (date: string) => {
         const currentDate = new Date();
-        const reportDate = parse(date, "MMMM yyyy", new Date());
-
+        const reportDate = new Date(date);
+        if (reportDate < currentDate) return "Completed";
         if (
-          isBefore(reportDate, currentDate) &&
-          !isSameMonth(reportDate, currentDate)
-        ) {
-          return "Completed";
-        } else if (isSameMonth(reportDate, currentDate)) {
+          reportDate.getMonth() === currentDate.getMonth() &&
+          reportDate.getFullYear() === currentDate.getFullYear()
+        )
           return "In Progress";
-        } else {
-          return "Unavailable";
-        }
+        return "Unavailable";
       };
 
       //setting adminDashboardReport
@@ -335,12 +359,9 @@ export default function AdminDashboard() {
             {
               date: `${monthNames[selectedMonth - 1]} ${selectedReportYear}`,
               status: getReportStatus(
-                `${monthNames[selectedMonth - 1]} ${selectedReportYear}`
+                `${selectedReportYear}-${selectedMonth}-01`
               ),
-              monthlySalesReport: {
-                monthlySales: monthlySalesData.monthlySales || [],
-                topProducts: monthlySalesData.topProductData || [],
-              },
+              monthlySalesReport: monthlySalesData,
             },
           ],
         },
@@ -348,22 +369,9 @@ export default function AdminDashboard() {
           type: "Quarterly Financials Report",
           items: [
             {
-              date: `Q${getQuarter(selectedMonth)} ${selectedReportYear}`,
-              status: getReportStatus(
-                `${monthNames[selectedMonth - 1]} ${selectedReportYear}`
-              ),
-              quarterlyReport: {
-                quarterlyData: (
-                  quarterlyFinancialsData.quarterlyData || []
-                ).map((item: quarterly) => ({
-                  month: monthNames[item.month - 1],
-                  revenue: item.revenue || 0,
-                  expenses: item.expenses || 0,
-                  profit: item.profit || 0,
-                })),
-                expenseBreakdown:
-                  quarterlyFinancialsData.expenseBreakdown || [],
-              },
+              date: `${selectedReportYear}`,
+              status: getReportStatus(`${selectedReportYear}-12-31`),
+              quarterlyReport: quarterlyFinancialsData,
             },
           ],
         },
@@ -372,24 +380,15 @@ export default function AdminDashboard() {
           items: [
             {
               date: selectedReportYear.toString(),
-              status: getReportStatus(`December ${selectedReportYear}`),
-              annualPerformance: {
-                quarterlyPerformance: (
-                  annualPerformanceData.quarterlyPerformance || []
-                ).map((item: quarterlyPerformance) => ({
-                  quarter: quarterNames[item.quarter - 1],
-                  sales: item.sales || 0,
-                  target: item.orders || 0,
-                  customerSatisfaction: item.customerSatisfaction || 0,
-                })),
-                keyMetrics: annualPerformanceData.keyMetrics || [],
-              },
+              status: getReportStatus(`${selectedReportYear}-12-31`),
+              annualPerformance: annualPerformanceData,
             },
           ],
         },
       ]);
     } catch (error) {
       console.error("Error fetching reports data: ", error);
+      setAdminDashboardReportData([]);
     }
   }, [selectedMonth, selectedReportYear]);
 
@@ -559,7 +558,7 @@ export default function AdminDashboard() {
             </Card>
           </div>
         </TabsContent>
-        {/* Performance Tab View: Fix issue with Revenue Growth tab, current data writes the month name while previous uses number */}
+        {/* Performance Tab View */}
         <TabsContent value="performance" className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             <Card className="col-span-3 md:col-span-2">
