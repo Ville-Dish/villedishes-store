@@ -138,21 +138,31 @@ type MonthlySalesReport = {
   topProducts: TopProducts[];
 };
 
-type QuarterlyProps = {
-  month: string;
+interface MonthlyData {
+  month: number;
   revenue: number;
   expenses: number;
   profit: number;
-};
+}
 
-type ExpenseBreakdownProps = {
+interface ExpenseBreakdown {
   category: string;
   amount: number;
-};
+}
+
+interface QuarterlyData {
+  quarter: number;
+  monthlyData: MonthlyData[];
+}
+
+interface QuarterlyExpenseBreakdown {
+  quarter: number;
+  data: ExpenseBreakdown[];
+}
 
 type QuarterlyReport = {
-  quarterlyData: QuarterlyProps[];
-  expenseBreakdown: ExpenseBreakdownProps[];
+  monthlyData: QuarterlyData[];
+  expenseBreakdown: QuarterlyExpenseBreakdown[];
 };
 
 type QuarterlyPerformanceProps = {
