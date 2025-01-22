@@ -22,7 +22,7 @@ const ProductPage = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await fetch("/api/products", { method: "GET" });
+        const response = await fetch("/api/menu", { method: "GET" });
         const data = await response.json();
 
         if (response.ok) {
