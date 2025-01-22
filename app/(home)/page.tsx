@@ -31,7 +31,7 @@ export default function Home() {
           subtitle="Experience the rich flavors of Nigeria with our delicious meals and desserts"
           ctaText="Order Now"
           ctaLink="/products"
-          backgroundImage="/assets/banner-bg.png"
+          backgroundImage="https://res.cloudinary.com/dxt7vk5dg/image/upload/v1737565949/banner-bg_do18g3.png"
         />
         <section className="w-full py-12 md:py-24 lg:py-32 bg-gray-100">
           <div className="container mx-auto grid grid-cols-1 gap-6 lg:grid-cols-3 lg:gap-12 px-4 md:px-6">
