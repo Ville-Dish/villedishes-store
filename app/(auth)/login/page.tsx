@@ -51,7 +51,7 @@ export default function LoginPage() {
   return (
     <div className="h-screen w-full container mx-auto flex flex-col items-center justify-center bg-gray-100">
       <Image
-        src="/assets/ville-logo.png"
+        src="https://res.cloudinary.com/dxt7vk5dg/image/upload/v1737565949/ville-logo_f41qet.png"
         alt="Logo"
         width={200}
         height={200}
