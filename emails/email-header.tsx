@@ -1,16 +1,10 @@
 import { Img, Section, Text } from "@react-email/components";
 
-const baseUrl = process.env.VERCEL_URL
-  ? process.env.VERCEL_URL
-  : process.env?.NEXT_PUBLIC_BASE_URL
-  ? process.env.NEXT_PUBLIC_BASE_URL
-  : "";
-
 export const EmailHeader = () => {
   return (
     <Section style={header}>
       <Img
-        src={`${baseUrl}/static/ville-logo.png`}
+        src="https://res.cloudinary.com/dxt7vk5dg/image/upload/v1737565949/ville-logo_f41qet.png"
         alt="VilleDishes Logo"
         width={50}
         height={50}
