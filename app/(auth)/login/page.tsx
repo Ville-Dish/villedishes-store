@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "@/config/firebase";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Separator } from "@/components/ui/separator";
 import Image from "next/image";
 
@@ -12,7 +12,16 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [from, setFrom] = useState("");
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const fromParam = searchParams.get("from");
+    if (fromParam) {
+      setFrom(encodeURIComponent(fromParam));
+    }
+  }, [searchParams]);
 
   const handleLogin = async () => {
     setError("");
@@ -39,7 +48,8 @@ export default function LoginPage() {
       }
 
       // Redirect the user to the dashboard
-      router.push("/admin/dashboard");
+      // router.push("/admin/dashboard");
+      router.push(from || "/admin/dashboard");
     } catch (error) {
       console.error("Login failed:", error);
       setError("Invalid email or password.");
