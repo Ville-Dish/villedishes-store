@@ -358,7 +358,7 @@ export const InvoiceDetails = ({
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
               <Image
-                src="/assets/ville-logo.svg"
+                src="https://res.cloudinary.com/dxt7vk5dg/image/upload/v1737565949/ville-logo_nuigjy.svg"
                 alt="Company Logo"
                 width={80}
                 height={80}
