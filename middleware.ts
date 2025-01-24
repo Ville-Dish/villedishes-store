@@ -19,7 +19,8 @@ export async function middleware(req: NextRequest) {
     // return NextResponse.redirect(url);
 
     const loginUrl = new URL("/login", req.url);
-    loginUrl.searchParams.set("from", encodeURIComponent(pathname));
+    // loginUrl.searchParams.set("from", encodeURIComponent(pathname));
+    loginUrl.searchParams.set("from", pathname);
     return NextResponse.redirect(loginUrl);
   }
 
@@ -45,7 +46,8 @@ export async function middleware(req: NextRequest) {
     // return NextResponse.redirect(url);
 
     const loginUrl = new URL("/login", req.url);
-    loginUrl.searchParams.set("from", encodeURIComponent(pathname));
+    // loginUrl.searchParams.set("from", encodeURIComponent(pathname));
+    loginUrl.searchParams.set("from", pathname);
     return NextResponse.redirect(loginUrl);
   }
 }

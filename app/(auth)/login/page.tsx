@@ -19,8 +19,11 @@ export default function LoginPage() {
   useEffect(() => {
     const fromParam = searchParams.get("from");
     if (fromParam) {
-      setFrom(encodeURIComponent(fromParam));
+      setFrom(fromParam);
     }
+    // if (fromParam) {
+    //   setFrom(encodeURIComponent(fromParam));
+    // }
   }, [searchParams]);
 
   const handleLogin = async () => {
