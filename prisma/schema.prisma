@@ -80,6 +80,8 @@ model Invoice {
   discountPercentage Int               @default(0)
   taxRate            Int               @default(0)
   shippingFee        Int               @default(0)
+  serviceCharge      Int               @default(0)
+  miscellaneous      Int               @default(0)
   dateCreated        String
   dueDate            String
   status             String

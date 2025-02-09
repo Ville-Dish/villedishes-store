@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "@/config/firebase";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Separator } from "@/components/ui/separator";
 import Image from "next/image";
 
@@ -12,7 +12,19 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [from, setFrom] = useState("");
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const fromParam = searchParams.get("from");
+    if (fromParam) {
+      setFrom(fromParam);
+    }
+    // if (fromParam) {
+    //   setFrom(encodeURIComponent(fromParam));
+    // }
+  }, [searchParams]);
 
   const handleLogin = async () => {
     setError("");
@@ -39,7 +51,8 @@ export default function LoginPage() {
       }
 
       // Redirect the user to the dashboard
-      router.push("/admin/dashboard");
+      // router.push("/admin/dashboard");
+      router.push(from || "/admin/dashboard");
     } catch (error) {
       console.error("Login failed:", error);
       setError("Invalid email or password.");
@@ -51,7 +64,7 @@ export default function LoginPage() {
   return (
     <div className="h-screen w-full container mx-auto flex flex-col items-center justify-center bg-gray-100">
       <Image
-        src="/assets/ville-logo.png"
+        src="https://res.cloudinary.com/dxt7vk5dg/image/upload/v1737565949/ville-logo_f41qet.png"
         alt="Logo"
         width={200}
         height={200}

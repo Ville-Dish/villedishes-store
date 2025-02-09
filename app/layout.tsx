@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   title: "VilleDishes",
   description: "Nigerian meal at your finger tips",
   icons: {
-    icon: "/assets/ville-logo.svg",
+    icon: "https://res.cloudinary.com/dxt7vk5dg/image/upload/v1737565949/ville-logo_nuigjy.svg",
   },
 };
 

@@ -58,6 +58,8 @@ interface Invoice {
   discountPercentage?: number;
   taxRate?: number;
   shippingFee?: number;
+  serviceCharge?: number;
+  miscellaneous?: number;
   amount: number;
   amountPaid: number;
   amountDue: number;
@@ -136,21 +138,31 @@ type MonthlySalesReport = {
   topProducts: TopProducts[];
 };
 
-type QuarterlyProps = {
-  month: string;
+interface MonthlyData {
+  month: number;
   revenue: number;
   expenses: number;
   profit: number;
-};
+}
 
-type ExpenseBreakdownProps = {
+interface ExpenseBreakdown {
   category: string;
   amount: number;
-};
+}
+
+interface QuarterlyData {
+  quarter: number;
+  monthlyData: MonthlyData[];
+}
+
+interface QuarterlyExpenseBreakdown {
+  quarter: number;
+  data: ExpenseBreakdown[];
+}
 
 type QuarterlyReport = {
-  quarterlyData: QuarterlyProps[];
-  expenseBreakdown: ExpenseBreakdownProps[];
+  monthlyData: QuarterlyData[];
+  expenseBreakdown: QuarterlyExpenseBreakdown[];
 };
 
 type QuarterlyPerformanceProps = {
@@ -254,4 +266,19 @@ interface SettingsFormProps {
   onClose: () => void;
   isYearlyProjection?: boolean;
   setIsYearlyProjection?: (value: boolean) => void;
+}
+
+interface RevenueData {
+  projected: number;
+  actual: number;
+}
+
+interface ProfitData {
+  totalRevenue: number;
+  profit: number;
+}
+
+interface CategoryData {
+  category: string;
+  value: number;
 }

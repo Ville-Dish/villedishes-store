@@ -64,7 +64,7 @@ export default function AdminInvoicesPage() {
     amountPaid: 0,
     amountDue: 0,
     dueDate: "",
-    status: "UNPAID",
+    status: "PENDING",
   });
 
   const [loading, setLoading] = useState<boolean>(true);
@@ -239,7 +239,6 @@ export default function AdminInvoicesPage() {
   };
 
   const handleUpdateInvoice = async (updatedInvoice: Invoice) => {
-    console.log({ updatedInvoice });
     try {
       const response = await fetch(`/api/invoices`, {
         method: "PATCH",
@@ -413,7 +412,7 @@ export default function AdminInvoicesPage() {
             <SelectItem value="all">All Statuses</SelectItem>
             <SelectItem value="PAID">Paid</SelectItem>
             <SelectItem value="UNPAID">Unpaid</SelectItem>
-            <SelectItem value="OVERDUE">Overdue</SelectItem>
+            <SelectItem value="DUE">Due</SelectItem>
           </SelectContent>
         </Select>
         <DatePickerWithRange
@@ -428,6 +427,7 @@ export default function AdminInvoicesPage() {
             });
           }}
         />
+        <div />
         <div className="w-full md:w-2/4">
           <Label htmlFor="amount-range">Amount Range</Label>
           <div className="flex items-center space-x-2">

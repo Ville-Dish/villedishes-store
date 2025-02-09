@@ -52,28 +52,6 @@ export async function GET() {
     );
   }
 }
-// GET method to retrieve all products with review
-// export async function GET() {
-//   try {
-//     const products = await prisma.product.findMany({
-//       include: {
-//         reviews: true, // Assuming you want to include related reviews
-//         OrderProduct: true, // Assuming you want to include related order products
-//       },
-//     });
-
-//     return NextResponse.json({
-//       data: products,
-//       message: "Products retrieved successfully",
-//       status: 200,
-//     });
-//   } catch (error) {
-//     return NextResponse.json(
-//       { message: "Error retrieving products", error },
-//       { status: 500 }
-//     );
-//   }
-// }
 
 // PATCH method to update a product
 export async function PATCH(req: Request) {

@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/sheet";
 import { usePathname } from "next/navigation";
 import { menuItems } from "@/lib/constantData";
+import { cn } from "@/lib/utils";
 
 export const NavbarMenu = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -41,9 +42,10 @@ export const NavbarMenu = () => {
     onClick?: () => void;
   }) => (
     <Link
-      className={`text-lg font-semibold hover:underline underline-offset-4 ${
-        pathname === href && "underline"
-      }`}
+      className={cn(
+        "text-lg text-muted-foreground font-semibold hover:underline hover:text-primary underline-offset-4",
+        pathname === href && "underline text-primary"
+      )}
       href={href}
       onClick={onClick}
     >
