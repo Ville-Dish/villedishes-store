@@ -47,34 +47,45 @@ export const AnalyticsPieChart = ({ variant, data }: PieChartProps) => {
 
   const chartData = isRevenue
     ? [
-        { name: "Actual", value: (data as RevenueData).actual },
-        {
-          name: "Projected",
-          value: (data as RevenueData).projected - (data as RevenueData).actual,
-        },
-      ]
+      { name: "Actual", value: (data as RevenueData).actual },
+      {
+        name: "Projected",
+        value: (data as RevenueData).projected - (data as RevenueData).actual,
+      },
+    ]
     : isProfit
-    ? [
+      ? [
         { name: "Profit", value: (data as ProfitData).profit },
         {
           name: "Revenue",
           value: (data as ProfitData).totalRevenue,
         },
       ]
-    : (data as CategoryData[]).map((item) => ({
+      : (data as CategoryData[]).map((item) => ({
         name: item.category,
         value: item.value,
       }));
 
+  // Check if data is empty or all values are 0
+  const hasValidData = chartData.some(item => item.value > 0);
+
+  if (!hasValidData) {
+    return (
+      <div className="flex justify-center items-center h-[300px]">
+        <p className="text-sm text-muted-foreground">No data available</p>
+      </div>
+    );
+  }
+
   return (
-    <ResponsiveContainer width="100%" height={300}>
+    <ResponsiveContainer width="100%" height="100%">
       <PieChart>
         <Pie
           data={chartData}
           cx="50%"
           cy="50%"
           labelLine={false}
-          outerRadius={100}
+          outerRadius="90%"
           fill="#8884d8"
           dataKey="value"
         >

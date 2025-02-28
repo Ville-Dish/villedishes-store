@@ -13,6 +13,7 @@ export default function Home() {
   const [activeCategory, setActiveCategory] = useState("All");
   const [popularProducts, setPopularProducts] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [loadingProducts, setLoadingProducts] = useState<boolean>(true);
 
   const [filteredItems, setFilteredItems] = useState<MenuItem[]>([]);
 
@@ -44,10 +45,12 @@ export default function Home() {
   ];
 
   useEffect(() => {
+    setLoadingProducts(true);
     const filtered = popularProducts.filter(
       (item) => activeCategory === "All" || item.category === activeCategory
     );
     setFilteredItems(filtered);
+    setLoadingProducts(false);
   }, [activeCategory, popularProducts]);
 
   return (
@@ -110,6 +113,10 @@ export default function Home() {
                 <p className="text-xl font-semibold text-gray-600">
                   Loading Products...
                 </p>
+              </div>
+            ) : loadingProducts ? (
+              <div className="flex justify-center items-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
               </div>
             ) : filteredItems.length > 0 ? (
               <ProductCard

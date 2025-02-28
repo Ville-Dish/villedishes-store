@@ -45,8 +45,8 @@ export const AdminNavbarMenu = () => {
   }) => (
     <Link
       className={cn(
-        "text-lg text-muted-foreground font-semibold hover:underline hover:text-primary underline-offset-4",
-        pathname === href && "underline text-primary"
+        "text-lg text-muted-foreground font-semibold hover:text-primary underline-offset-4 relative after:absolute after:bottom-0 after:left-0 after:h-[3px] after:w-0 hover:after:w-full after:bg-primary after:transition-all after:duration-300",
+        pathname === href && "text-primary after:w-full"
       )}
       href={href}
       onClick={onClick}

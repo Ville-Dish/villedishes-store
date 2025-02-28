@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useCallback } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   Table,
   TableBody,
@@ -26,21 +27,30 @@ import {
   DialogTitle,
   DialogContent,
 } from "@/components/ui/dialog";
-import { Eye } from "lucide-react";
+import { Eye, ChevronsLeft, ChevronsRight } from "lucide-react";
 import { DatePickerWithRange } from "@/components/custom/date-range-picker";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useLoading } from "@/context/LoadingContext";
 
 type OrderStatus = "UNVERIFIED" | "PENDING" | "CANCELLED" | "FULFILLED";
 
 export default function AdminOrdersPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [loading, setLoading] = useState(false);
   const [orders, setOrder] = useState<OrderDetails[]>([]);
   const [filteredOrders, setFilteredOrders] = useState<OrderDetails[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const { setIsLoading } = useLoading();
   const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [selectedOrder, setSelectedOrder] = useState<OrderDetails | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
 
   // Filter state
   const [statusFilter, setStatusFilter] = useState<OrderStatus | "all">("all");
@@ -51,6 +61,11 @@ export default function AdminOrdersPage() {
     from: undefined,
     to: undefined,
   });
+
+  useEffect(() => {
+    const page = Number(searchParams.get("page")) || 1;
+    setCurrentPage(page);
+  }, [searchParams]);
 
   const updateOrderStatus = async (orderId: string, newStatus: OrderStatus) => {
     try {
@@ -101,8 +116,8 @@ export default function AdminOrdersPage() {
 
   useEffect(() => {
     const fetchOrders = async () => {
+      setLoading(true);
       try {
-        setLoading(true);
         const response = await fetch("/api/orders", { method: "GET" });
         const data = await response.json();
         if (response.ok) {
@@ -115,10 +130,11 @@ export default function AdminOrdersPage() {
         console.error("Error fetching orders:", error);
       } finally {
         setLoading(false);
+        setIsLoading(false);
       }
     };
     fetchOrders();
-  }, []);
+  }, [setIsLoading]);
 
   const applyFiltersAndSearch = useCallback(() => {
     let filtered = orders;
@@ -158,7 +174,10 @@ export default function AdminOrdersPage() {
     }
 
     setFilteredOrders(filtered);
-  }, [searchTerm, statusFilter, dateRange, orders]);
+    setTotalPages(Math.ceil(filtered.length / itemsPerPage));
+
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter, dateRange, orders, itemsPerPage]);
 
   useEffect(() => {
     applyFiltersAndSearch();
@@ -170,9 +189,19 @@ export default function AdminOrdersPage() {
     setIsDialogOpen(true);
   };
 
-  if (loading) {
-    return <p>Loading orders...</p>;
-  }
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    if (page === 1) {
+      router.push(`/admin/orders`);
+    } else {
+      router.push(`/admin/orders?page=${page}`);
+    }
+  };
+
+  // Get current orders
+  const indexOfLastOrder = currentPage * itemsPerPage;
+  const indexOfFirstOrder = indexOfLastOrder - itemsPerPage;
+  const currentOrders = filteredOrders.slice(indexOfFirstOrder, indexOfLastOrder);
 
   return (
     <div className="flex-1 space-y-4 p-8 pt-6">
@@ -233,88 +262,139 @@ export default function AdminOrdersPage() {
               <TableHead>Details</TableHead>
             </TableRow>
           </TableHeader>
+          <TableBody>
 
-          {filteredOrders.length === 0 ? (
-            <TableBody>
-              <TableRow>
-                <TableCell colSpan={8} className="h-24 text-center">
-                  <p className="text-lg text-muted-foreground">
-                    {searchTerm
-                      ? "No matching orders found"
-                      : "There is no order yet"}
-                  </p>
-                </TableCell>
-              </TableRow>
-            </TableBody>
-          ) : (
-            <TableBody>
-              {filteredOrders.map((order, index) => (
-                <TableRow key={order.orderId}>
-                  <TableCell>{index + 1}</TableCell>
-                  <TableCell>{order.orderNumber}</TableCell>
-                  <TableCell>{order.orderDate}</TableCell>
-                  <TableCell>
-                    {order.shippingInfo.firstName} {order.shippingInfo.lastName}
-                  </TableCell>
-                  <TableCell>${order.total.toFixed(2)}</TableCell>
-                  <TableCell>
-                    <span
-                      className={cn(
-                        "font-medium border rounded-md px-3 py-1 text-white text-center inline-block cursor-default transition-colors",
-                        {
-                          "bg-[#da281c] border-[#da281c] hover:bg-[#b4443c]":
-                            order.status === "CANCELLED",
-                          "bg-green-500 border-green-500 hover:bg-green-600":
-                            order.status === "FULFILLED",
-                          "bg-[#fe9e1d] border-[#fe9e1d] hover:bg-[#c6893a]":
-                            order.status === "UNVERIFIED",
-                          "bg-orange-500 border-orange-500 hover:bg-orange-600":
-                            order.status === "PENDING",
-                        }
-                      )}
-                    >
-                      {order.status}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <Select
-                      onValueChange={(value) =>
-                        handleStatusChange(
-                          order.orderId as string,
-                          value as OrderStatus
-                        )
-                      }
-                      defaultValue={order.status}
-                      disabled={updatingOrderId === order.orderId}
-                    >
-                      <SelectTrigger className="w-[180px]">
-                        <SelectValue placeholder="Change status" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="UNVERIFIED">UNVERIFIED</SelectItem>
-                        <SelectItem value="PENDING">PENDING</SelectItem>
-                        <SelectItem value="FULFILLED">FULFILLED</SelectItem>
-                        <SelectItem value="CANCELLED">CANCELLED</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </TableCell>
-
-                  <TableCell>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleViewDetails(order)}
-                    >
-                      <Eye color="#fe9e1d" />
-                      <span className="sr-only">View Details</span>
-                    </Button>
+            {
+              loading ? (
+                <TableRow>
+                  <TableCell colSpan={8} className="h-24 text-center">
+                    <div className="flex justify-center items-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                    </div>
                   </TableCell>
                 </TableRow>
-              ))}
-            </TableBody>
-          )}
+              ) :
+                currentOrders.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={8} className="h-24 text-center">
+                      <p className="text-lg text-muted-foreground">
+                        {searchTerm
+                          ? "No matching orders found"
+                          : "There is no order yet"}
+                      </p>
+                    </TableCell>
+                  </TableRow>
+                ) : currentOrders.map((order, index) => (
+                  <TableRow key={order.orderId}>
+                    <TableCell>{(currentPage - 1) * itemsPerPage + index + 1}</TableCell>
+                    <TableCell>{order.orderNumber}</TableCell>
+                    <TableCell>{order.orderDate}</TableCell>
+                    <TableCell>
+                      {order.shippingInfo.firstName} {order.shippingInfo.lastName}
+                    </TableCell>
+                    <TableCell>${order.total.toFixed(2)}</TableCell>
+                    <TableCell>
+                      <span
+                        className={cn(
+                          "font-medium border rounded-md px-3 py-1 text-white text-center inline-block cursor-default transition-colors",
+                          {
+                            "bg-[#da281c] border-[#da281c] hover:bg-[#b4443c]":
+                              order.status === "CANCELLED",
+                            "bg-green-500 border-green-500 hover:bg-green-600":
+                              order.status === "FULFILLED",
+                            "bg-[#fe9e1d] border-[#fe9e1d] hover:bg-[#c6893a]":
+                              order.status === "UNVERIFIED",
+                            "bg-orange-500 border-orange-500 hover:bg-orange-600":
+                              order.status === "PENDING",
+                          }
+                        )}
+                      >
+                        {order.status}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <Select
+                        onValueChange={(value) =>
+                          handleStatusChange(
+                            order.orderId as string,
+                            value as OrderStatus
+                          )
+                        }
+                        defaultValue={order.status}
+                        disabled={updatingOrderId === order.orderId}
+                      >
+                        <SelectTrigger className="w-[180px]">
+                          <SelectValue placeholder="Change status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="UNVERIFIED">UNVERIFIED</SelectItem>
+                          <SelectItem value="PENDING">PENDING</SelectItem>
+                          <SelectItem value="FULFILLED">FULFILLED</SelectItem>
+                          <SelectItem value="CANCELLED">CANCELLED</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
+
+                    <TableCell>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleViewDetails(order)}
+                      >
+                        <Eye color="#fe9e1d" />
+                        <span className="sr-only">View Details</span>
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                )
+                )}
+          </TableBody>
         </Table>
       </div>
+
+      {/* Pagination */}
+      {!loading && filteredOrders.length > 0 && (
+        <div className="flex items-center justify-end space-x-2 py-4">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handlePageChange(1)}
+            disabled={currentPage === 1}
+          >
+            <ChevronsLeft className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+          >
+            Previous
+          </Button>
+          <div className="flex items-center space-x-1">
+            <span className="text-sm font-medium">
+              Page {currentPage} of {totalPages}
+            </span>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage >= totalPages}
+          >
+            Next
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handlePageChange(totalPages)}
+            disabled={currentPage >= totalPages}
+          >
+            <ChevronsRight className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
+
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="max-w-3xl">
           <DialogHeader>

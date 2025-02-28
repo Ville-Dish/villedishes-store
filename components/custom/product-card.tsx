@@ -40,9 +40,11 @@ export const ProductCard = ({
 }: ProductTabsProps) => {
   const { addToCart } = useCartStore();
   const [isLargeScreen, setIsLargeScreen] = useState(false);
-  const itemsPerPage = isLargeScreen ? 9 : 5;
+  const itemsPerPage = isLargeScreen ? 12 : 5;
   const [currentPage, setCurrentPage] = useState(1);
   const [loadingItem, setLoadingItem] = useState<string | null>(null);
+  const [isChanging, setIsChanging] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleResize = useCallback(() => {
     setIsLargeScreen(window.innerWidth > 768);
@@ -67,7 +69,14 @@ export const ProductCard = ({
   };
 
   useEffect(() => {
+    setIsChanging(true);
+    setIsLoading(true);
     setCurrentPage(1);
+    const timer = setTimeout(() => {
+      setIsChanging(false);
+      setIsLoading(false);
+    }, 300);
+    return () => clearTimeout(timer);
   }, [activeCategory, items]);
 
   const handleAddToCart = async (item: MenuItem) => {
@@ -130,85 +139,93 @@ export const ProductCard = ({
       </TabsList>
 
       <TabsContent value={activeCategory} className="mt-0">
-        <div className="grid gap-6 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
-          {currentItems.map((item) => (
-            <Card
-              key={item.id}
-              className="flex flex-col justify-between overflow-hidden h-[250px] w-full md:w-[245px]"
-            >
-              <div className="relative w-full h-[120px]">
-                <Image
-                  src={item.image}
-                  alt={item.name}
-                  layout="fill"
-                  objectFit="cover"
-                  className="absolute top-0 left-0 w-full h-full"
-                />
-              </div>
-              <CardHeader className="p-2">
-                <CardTitle className="text-lg truncate">{item.name}</CardTitle>
-              </CardHeader>
-              <CardContent className="p-2 pt-0 flex-grow">
-                <p className="text-sm text-gray-600 line-clamp-2">
-                  {item.description}
-                </p>
-                <div className="mt-1">
-                  <RatingReview
-                    rating={item.rating || 0}
-                    reviewCount={item.reviews?.length || 0}
-                  />
-                </div>
-              </CardContent>
-              <CardFooter className="p-2 flex justify-between items-center">
-                <span className="font-bold">${item.price.toFixed(2)}</span>
-                <Button
-                  size="sm"
-                  className="bg-[#fe9e1d]"
-                  onClick={() => handleAddToCart(item)}
-                  disabled={loadingItem === item.id}
-                >
-                  {loadingItem === item.id ? (
-                    <Loader className="animate-spin" />
-                  ) : (
-                    <ShoppingBasket className="text-[#fff1e2]" />
-                  )}
-                </Button>
-              </CardFooter>
-            </Card>
-          ))}
-        </div>
-
-        {totalPages > 1 && (
-          <div className="flex justify-center items-center mt-8 space-x-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handlePageChange(currentPage - 1)}
-              disabled={currentPage === 1}
-            >
-              <ChevronLeft className="w-4 h-4" />
-              <span className="sr-only">Previous page</span>
-            </Button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-              <Button
-                key={page}
-                variant={currentPage === page ? "default" : "outline"}
-                size="sm"
-                onClick={() => handlePageChange(page)}
-              >
-                {page}
-              </Button>
-            ))}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handlePageChange(currentPage + 1)}
-              disabled={currentPage === totalPages}
-            >
-              <ChevronRight className="w-4 h-4" />
-              <span className="sr-only">Next page</span>
-            </Button>
+        {isLoading ? (
+          <div className="flex justify-center items-center h-64">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
           </div>
+        ) : (
+          <>
+            <div className={`grid gap-6 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 transition-opacity duration-300 ease-in-out ${isChanging ? 'opacity-0' : 'opacity-100'}`}>
+              {currentItems.map((item) => (
+                <Card
+                  key={item.id}
+                  className="flex flex-col justify-between overflow-hidden h-[250px] w-full md:w-[245px]"
+                >
+                  <div className="relative w-full h-[120px]">
+                    <Image
+                      src={item.image || "https://img.icons8.com/cute-clipart/64/no-image.png"}
+                      alt={item.name || "No image"}
+                      layout="fill"
+                      objectFit="cover"
+                      className="absolute top-0 left-0 w-full h-full"
+                    />
+                  </div>
+                  <CardHeader className="p-2">
+                    <CardTitle className="text-lg truncate">{item.name}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-2 pt-0 flex-grow">
+                    <p className="text-sm text-gray-600 line-clamp-2">
+                      {item.description}
+                    </p>
+                    <div className="mt-1">
+                      <RatingReview
+                        rating={item.rating || 0}
+                        reviewCount={item.reviews?.length || 0}
+                      />
+                    </div>
+                  </CardContent>
+                  <CardFooter className="p-2 flex justify-between items-center">
+                    <span className="font-bold">${item.price.toFixed(2)}</span>
+                    <Button
+                      size="sm"
+                      className="bg-[#fe9e1d]"
+                      onClick={() => handleAddToCart(item)}
+                      disabled={loadingItem === item.id}
+                    >
+                      {loadingItem === item.id ? (
+                        <Loader className="animate-spin" />
+                      ) : (
+                        <ShoppingBasket className="text-[#fff1e2]" />
+                      )}
+                    </Button>
+                  </CardFooter>
+                </Card>
+              ))}
+            </div>
+
+            {totalPages > 1 && (
+              <div className="flex justify-center items-center mt-8 space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                  <span className="sr-only">Previous page</span>
+                </Button>
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                  <Button
+                    key={page}
+                    variant={currentPage === page ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => handlePageChange(page)}
+                  >
+                    {page}
+                  </Button>
+                ))}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                >
+                  <ChevronRight className="w-4 h-4" />
+                  <span className="sr-only">Next page</span>
+                </Button>
+              </div>
+            )}
+          </>
         )}
       </TabsContent>
     </Tabs>

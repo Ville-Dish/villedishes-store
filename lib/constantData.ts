@@ -10,6 +10,7 @@ export const adminMenuItems = [
   { href: "/admin/products", label: "Products" },
   { href: "/admin/orders", label: "Order" },
   { href: "/admin/invoices", label: "Invoice" },
+  { href: "/", label: "Home" },
 ];
 
 export const allProduct = [

@@ -143,7 +143,7 @@ export const createInvoicePDF = (data: Invoice): Promise<Uint8Array> => {
           (product) => product.discount === 0
         );
         const tableColumn = [
-          "S?N",
+          "S/N",
           "Product",
           "Price ($)",
           "Qty",

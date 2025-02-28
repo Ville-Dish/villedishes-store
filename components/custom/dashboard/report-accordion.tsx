@@ -133,16 +133,9 @@ export const ReportsSection = ({ data }: AdminReportProps) => {
 
   if (!data || data.length === 0) {
     return (
-      <Accordion type="single" collapsible className="w-full">
-        <AccordionItem value="no-data">
-          <AccordionTrigger className="text-xl font-bold">
-            Reports
-          </AccordionTrigger>
-          <AccordionContent>
-            <p>No data available</p>
-          </AccordionContent>
-        </AccordionItem>
-      </Accordion>
+      <div className="flex justify-center items-center p-8">
+        <p className="text-muted-foreground text-lg">No reports available at this time</p>
+      </div>
     );
   }
 
@@ -153,7 +146,7 @@ export const ReportsSection = ({ data }: AdminReportProps) => {
           <AccordionTrigger>{report.type}</AccordionTrigger>
           <AccordionContent>
             {report.type === "Quarterly Financials Report" &&
-            report.items[0]?.quarterlyReport ? (
+              report.items[0]?.quarterlyReport ? (
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -312,12 +305,12 @@ export const ReportsSection = ({ data }: AdminReportProps) => {
                                   <strong>Date:</strong> {item.date}
                                 </p>
                                 {report.type === "Monthly Sales Report" &&
-                                item.monthlySalesReport ? (
+                                  item.monthlySalesReport ? (
                                   <MonthlySalesReport
                                     {...item.monthlySalesReport}
                                   />
                                 ) : report.type ===
-                                    "Annual Performance Report" &&
+                                  "Annual Performance Report" &&
                                   item.annualPerformance ? (
                                   <AnnualPerformanceReview
                                     {...item.annualPerformance}

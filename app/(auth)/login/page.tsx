@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Separator } from "@/components/ui/separator";
 import Image from "next/image";
 
+
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
@@ -21,9 +22,6 @@ export default function LoginPage() {
     if (fromParam) {
       setFrom(fromParam);
     }
-    // if (fromParam) {
-    //   setFrom(encodeURIComponent(fromParam));
-    // }
   }, [searchParams]);
 
   const handleLogin = async () => {
@@ -62,7 +60,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="h-screen w-full container mx-auto flex flex-col items-center justify-center bg-gray-100">
+    <div className="h-screen w-full flex flex-col items-center justify-center bg-gray-100">
       <Image
         src="https://res.cloudinary.com/dxt7vk5dg/image/upload/v1737565949/ville-logo_f41qet.png"
         alt="Logo"
@@ -70,26 +68,50 @@ export default function LoginPage() {
         height={200}
         className="mb-4"
       />
-      <div className="border px-4 shadow-md flex flex-col space-y-4 w-1/2  h-1/3 rounded-md bg-white">
-        <h1 className="mt-4 text-2xl font-semibold text-center">Admin Login</h1>
-        <Separator />
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          className="h-9 px-2 border rounded-md focus:outline-none"
-          onChange={(e) => setEmail(e.target.value)}
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          className="h-9 px-2 border rounded-md focus:outline-none"
-          onChange={(e) => setPassword(e.target.value)}
-        />
-        {error && <p style={{ color: "red" }}>{error}</p>}
+      <div className="border px-8 py-6 shadow-lg flex flex-col space-y-6 w-full max-w-md rounded-lg bg-white">
+        <h1 className="text-2xl font-semibold text-center text-gray-800">Admin Login</h1>
+        <Separator className="bg-gray-200" />
+        <div className="space-y-4">
+          <div className="relative">
+            <input
+              type="email"
+              id="email"
+              value={email}
+              className="w-full h-11 px-4 pt-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1aa879] focus:border-transparent transition-all peer placeholder-transparent"
+              placeholder="Email"
+              onChange={(e) => setEmail(e.target.value)}
+            />
+            <label
+              htmlFor="email"
+              className="absolute left-4 -top-2.5 bg-white px-1 text-sm text-gray-600 transition-all 
+                peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 peer-placeholder-shown:top-3 
+                peer-focus:-top-2.5 peer-focus:text-sm peer-focus:text-[#1aa879]"
+            >
+              Email
+            </label>
+          </div>
+          <div className="relative">
+            <input
+              type="password"
+              id="password"
+              value={password}
+              className="w-full h-11 px-4 pt-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1aa879] focus:border-transparent transition-all peer placeholder-transparent"
+              placeholder="Password"
+              onChange={(e) => setPassword(e.target.value)}
+            />
+            <label
+              htmlFor="password"
+              className="absolute left-4 -top-2.5 bg-white px-1 text-sm text-gray-600 transition-all 
+                peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 peer-placeholder-shown:top-3 
+                peer-focus:-top-2.5 peer-focus:text-sm peer-focus:text-[#1aa879]"
+            >
+              Password
+            </label>
+          </div>
+        </div>
+        {error && <p className="text-red-500 text-sm text-center">{error}</p>}
         <button
-          className="w-full bg-[#1aa879] py-2 rounded-md text-white font-semibold hover:bg-[#1cd396]"
+          className="w-full bg-[#1aa879] py-3 rounded-md text-white font-semibold hover:bg-[#1cd396] transition-colors duration-200 text-lg"
           onClick={handleLogin}
           disabled={loading}
         >

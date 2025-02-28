@@ -9,6 +9,7 @@ import { Rabbit } from "lucide-react";
 import { Banner } from "@/components/custom/banner";
 
 import { useEffect, useState } from "react";
+import { useLoading } from "@/context/LoadingContext";
 
 const ProductPage = () => {
   const [products, setProducts] = useState<MenuItem[]>([]);

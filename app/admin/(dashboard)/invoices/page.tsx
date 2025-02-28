@@ -20,7 +20,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { CheckCheck, CircleX, Download, Eye, Plus } from "lucide-react";
+import { CheckCheck, ChevronsRight, ChevronsLeft, CircleX, Download, Eye, Plus } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -44,12 +44,16 @@ import {
 import { DatePickerWithRange } from "@/components/custom/date-range-picker";
 import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
+import { useLoading } from "@/context/LoadingContext";
 
 type InvoiceProduct = {
   id: string;
   name: string;
   basePrice: number;
 };
+
+type SortField = 'customerName' | 'amount' | 'dueDate' | null;
+type SortDirection = 'asc' | 'desc' | null;
 
 export default function AdminInvoicesPage() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
@@ -67,7 +71,9 @@ export default function AdminInvoicesPage() {
     status: "PENDING",
   });
 
-  const [loading, setLoading] = useState<boolean>(true);
+
+  const { setIsLoading } = useLoading();
+  const [loading, setLoading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
 
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
@@ -88,6 +94,46 @@ export default function AdminInvoicesPage() {
   });
   const [amountRange, setAmountRange] = useState<[number, number]>([0, 10000]);
   const [maxAmount, setMaxAmount] = useState<number>(10000);
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(20);
+  const [totalPages, setTotalPages] = useState(1);
+
+  const [sortField, setSortField] = useState<SortField>(null);
+  const [sortDirection, setSortDirection] = useState<SortDirection>(null);
+
+  // Add this sorting handler
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      // Cycle through: asc -> desc -> null
+      if (sortDirection === 'asc') {
+        setSortDirection('desc');
+      } else if (sortDirection === 'desc') {
+        setSortDirection(null);
+        setSortField(null);
+      }
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  // Add this after the existing useEffect hooks
+  useEffect(() => {
+    // Update URL when page changes (only for pages > 1)
+    if (currentPage > 1) {
+      window.history.pushState({}, '', `?page=${currentPage}`);
+    } else {
+      window.history.pushState({}, '', window.location.pathname);
+    }
+  }, [currentPage]);
+
+  // Add this effect to handle initial page from URL
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const page = parseInt(params.get('page') || '1');
+    setCurrentPage(page);
+  }, []);
 
   // Fetch invoices from the API
   useEffect(() => {
@@ -114,10 +160,11 @@ export default function AdminInvoicesPage() {
         console.error("Error fetching invoices:", error);
       } finally {
         setLoading(false);
+        setIsLoading(false);
       }
     };
     fetchInvoices();
-  }, []);
+  }, [setIsLoading]);
 
   // Fetch available products from the API
   useEffect(() => {
@@ -144,7 +191,7 @@ export default function AdminInvoicesPage() {
   }, []);
 
   const applyFiltersAndSearch = useCallback(() => {
-    let filtered = invoices;
+    let filtered = [...invoices];
 
     // Apply search
     if (searchTerm.trim() !== "") {
@@ -174,8 +221,46 @@ export default function AdminInvoicesPage() {
         invoice.amount >= amountRange[0] && invoice.amount <= amountRange[1]
     );
 
+    // Apply sorting
+    if (sortField && sortDirection) {
+      filtered.sort((a, b) => {
+        if (sortField === 'customerName') {
+          return sortDirection === 'asc'
+            ? a.customerName.localeCompare(b.customerName)
+            : b.customerName.localeCompare(a.customerName);
+        }
+        if (sortField === 'amount') {
+          return sortDirection === 'asc'
+            ? a.amount - b.amount
+            : b.amount - a.amount;
+        }
+        if (sortField === 'dueDate') {
+          const dateA = new Date(a.dueDate).getTime();
+          const dateB = new Date(b.dueDate).getTime();
+          return sortDirection === 'asc'
+            ? dateA - dateB
+            : dateB - dateA;
+        }
+        return 0;
+      });
+    }
+
+    // Update total pages
+    setTotalPages(Math.ceil(filtered.length / itemsPerPage));
+
+    // Apply pagination
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    filtered = filtered.slice(startIndex, endIndex);
+
     setFilteredInvoices(filtered);
-  }, [searchTerm, statusFilter, dateRange, amountRange, invoices]);
+  }, [searchTerm, statusFilter, dateRange, amountRange, invoices, currentPage, itemsPerPage, sortField, sortDirection]);
+
+  // Add this pagination handler
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+    window.scrollTo(0, 0);
+  };
 
   useEffect(() => {
     applyFiltersAndSearch();
@@ -253,16 +338,38 @@ export default function AdminInvoicesPage() {
       }
 
       const result = await response.json();
-      const updatedInvoices = invoices.map((inv) =>
-        inv.id === updatedInvoice.id ? result.data : inv
+
+      // Ensure the returned data has all the necessary fields
+      const updatedData = {
+        ...result.data,
+        products: updatedInvoice.products // Preserve products if not returned from API
+      };
+
+      // Update the invoices state
+      setInvoices((prevInvoices) =>
+        prevInvoices.map((inv) =>
+          inv.id === updatedInvoice.id ? updatedData : inv
+        )
       );
-      setInvoices(updatedInvoices);
-      applyFiltersAndSearch();
-      setSelectedInvoice(null);
-      toast.success("Invoice updated successfully");
+
+      // Update filtered invoices
+      setFilteredInvoices((prevFiltered) =>
+        prevFiltered.map((inv) =>
+          inv.id === updatedInvoice.id ? result.data : inv
+        )
+      );
+
+      // Update selected invoice if it's the one being edited
+      if (selectedInvoice?.id === updatedInvoice.id) {
+        setSelectedInvoice(updatedData);
+      }
+
+      return updatedData; // Return the updated data
+
     } catch (error) {
       console.error("Error updating invoice:", error);
       toast.error("Failed to update invoice");
+      throw error;
     }
   };
 
@@ -288,9 +395,10 @@ export default function AdminInvoicesPage() {
     }
   };
 
-  if (loading) {
-    return <p>Loading invoices...</p>;
-  }
+  const getInvoiceIndex = (invoice: Invoice) => {
+    return invoices.findIndex((inv) => inv.id === invoice.id);
+  };
+
 
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 max-w-7xl mx-auto">
@@ -455,130 +563,226 @@ export default function AdminInvoicesPage() {
             <TableRow>
               <TableHead>S/N</TableHead>
               <TableHead>Invoice Number</TableHead>
-              <TableHead>Customer</TableHead>
-              <TableHead>Amount</TableHead>
-              <TableHead>Due Date</TableHead>
+              <TableHead
+                className="cursor-pointer hover:bg-muted/50"
+                onClick={() => handleSort('customerName')}
+              >
+                <div className="flex items-center">
+                  Customer
+                  {sortField === 'customerName' && (
+                    <span className="ml-2">
+                      {sortDirection === 'asc' ? '↑' : '↓'}
+                    </span>
+                  )}
+                </div>
+              </TableHead>
+              <TableHead
+                className="cursor-pointer hover:bg-muted/50"
+                onClick={() => handleSort('amount')}
+              >
+                <div className="flex items-center">
+                  Amount
+                  {sortField === 'amount' && (
+                    <span className="ml-2">
+                      {sortDirection === 'asc' ? '↑' : '↓'}
+                    </span>
+                  )}
+                </div>
+              </TableHead>
+              <TableHead
+                className="cursor-pointer hover:bg-muted/50"
+                onClick={() => handleSort('dueDate')}
+              >
+                <div className="flex items-center">
+                  Due Date
+                  {sortField === 'dueDate' && (
+                    <span className="ml-2">
+                      {sortDirection === 'asc' ? '↑' : '↓'}
+                    </span>
+                  )}
+                </div>
+              </TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredInvoices.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={7} className="h-24 text-center">
-                  <p className="text-lg text-muted-foreground">
-                    {searchTerm
-                      ? "No matching invoices found"
-                      : "There are no invoices yet"}
-                  </p>
-                </TableCell>
-              </TableRow>
-            ) : (
-              filteredInvoices.map((invoice, index) => (
-                <TableRow key={invoice.id}>
-                  <TableCell>{index + 1}</TableCell>
-                  <TableCell>{invoice.invoiceNumber}</TableCell>
-                  <TableCell>{invoice.customerName}</TableCell>
-                  <TableCell>${invoice.amount.toFixed(2)}</TableCell>
-                  <TableCell>{invoice.dueDate}</TableCell>
-                  <TableCell>
-                    <span
-                      className={cn(
-                        "font-medium border rounded-md px-3 py-1 text-white text-center inline-block cursor-default transition-colors",
-                        {
-                          "bg-[#d57771] border-[#d57771] hover:bg-[#d3736d]":
-                            invoice.status === "UNPAID",
-                          "bg-green-500 border-green-500 hover:bg-green-600":
-                            invoice.status === "PAID",
-                          "bg-[#da281c] border-[#da281c] hover:bg-[#b4443c]":
-                            invoice.status === "DUE",
-                          "bg-[#fe9e1d] border-[#fe9e1d] hover:bg-[#c6893a]":
-                            invoice.status === "PENDING",
-                        }
-                      )}
-                    >
-                      {invoice.status}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleViewInvoice(invoice)}
-                          >
-                            <Eye className="h-4 w-4" color="#fe9e1d" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>View</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDownloadInvoice(invoice)}
-                          >
-                            <Download className="h-4 w-4" color="#c7c940" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Download</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() =>
-                              handleUpdateInvoice({
-                                ...invoice,
-                                status:
-                                  invoice.status === "PAID" ? "UNPAID" : "PAID",
-                                amountPaid:
-                                  invoice.status === "PAID"
-                                    ? invoice.amount
-                                    : invoice.amountPaid,
-                                amountDue:
-                                  invoice.status === "PAID"
-                                    ? 0
-                                    : invoice.amountDue,
-                              })
-                            }
-                          >
-                            {invoice.status === "PAID" ? (
-                              <CircleX className="h-4 w-4" color="#d57771" />
-                            ) : (
-                              <CheckCheck className="h-4 w-4" color="#107a47" />
-                            )}
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>
-                            {invoice.status === "PAID"
-                              ? "Mark as Unpaid"
-                              : "Mark as Paid"}
-                          </p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
+            {
+              loading ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="h-24 text-center">
+                    <div className="flex justify-center items-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                    </div>
                   </TableCell>
                 </TableRow>
-              ))
-            )}
+              ) :
+
+                filteredInvoices.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="h-24 text-center">
+                      <p className="text-lg text-muted-foreground">
+                        {searchTerm
+                          ? "No matching invoices found"
+                          : "There are no invoices yet"}
+                      </p>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredInvoices.map((invoice) => (
+                    <TableRow key={invoice.id}>
+                      <TableCell>{getInvoiceIndex(invoice) + 1}</TableCell>
+                      <TableCell>{invoice.invoiceNumber}</TableCell>
+                      <TableCell>{invoice.customerName}</TableCell>
+                      <TableCell>${invoice.amount.toFixed(2)}</TableCell>
+                      <TableCell>{invoice.dueDate}</TableCell>
+                      <TableCell>
+                        <span
+                          className={cn(
+                            "font-medium border rounded-md px-3 py-1 text-white text-center inline-block cursor-default transition-colors",
+                            {
+                              "bg-[#d57771] border-[#d57771] hover:bg-[#d3736d]":
+                                invoice.status === "UNPAID",
+                              "bg-green-500 border-green-500 hover:bg-green-600":
+                                invoice.status === "PAID",
+                              "bg-[#da281c] border-[#da281c] hover:bg-[#b4443c]":
+                                invoice.status === "DUE",
+                              "bg-[#fe9e1d] border-[#fe9e1d] hover:bg-[#c6893a]":
+                                invoice.status === "PENDING",
+                            }
+                          )}
+                        >
+                          {invoice.status}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleViewInvoice(invoice)}
+                              >
+                                <Eye className="h-4 w-4" color="#fe9e1d" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>View</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDownloadInvoice(invoice)}
+                              >
+                                <Download className="h-4 w-4" color="#c7c940" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Download</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() =>
+                                  handleUpdateInvoice({
+                                    ...invoice,
+                                    status:
+                                      invoice.status === "PAID" ? "UNPAID" : "PAID",
+                                    amountPaid:
+                                      invoice.status === "PAID"
+                                        ? invoice.amount
+                                        : invoice.amountPaid,
+                                    amountDue:
+                                      invoice.status === "PAID"
+                                        ? 0
+                                        : invoice.amountDue,
+                                  })
+                                }
+                              >
+                                {invoice.status === "PAID" ? (
+                                  <CircleX className="h-4 w-4" color="#d57771" />
+                                ) : (
+                                  <CheckCheck className="h-4 w-4" color="#107a47" />
+                                )}
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>
+                                {invoice.status === "PAID"
+                                  ? "Mark as Unpaid"
+                                  : "Mark as Paid"}
+                              </p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
           </TableBody>
         </Table>
+
+        {/* Add pagination controls */}
+        {
+          !loading &&
+          <div className="flex items-center justify-between px-4 py-4 border-t">
+            <div className="text-sm text-muted-foreground">
+              Showing {((currentPage - 1) * itemsPerPage) + 1} to{" "}
+              {(currentPage - 1) * itemsPerPage + filteredInvoices.length} of{" "}
+              {invoices.length} entries
+            </div>
+            <div className="flex space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(1)}
+                disabled={currentPage === 1}
+              >
+                <ChevronsLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+              >
+                Previous
+              </Button>
+              <div className="flex items-center space-x-1">
+                <span className="text-sm font-medium">Page {currentPage} of {totalPages}</span>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage >= totalPages}
+              >
+                Next
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(totalPages)}
+                disabled={currentPage >= totalPages}
+              >
+                <ChevronsRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        }
       </div>
 
       {selectedInvoice && (

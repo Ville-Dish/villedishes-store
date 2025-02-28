@@ -34,6 +34,8 @@ import { DateRange } from "react-day-picker";
 import { subDays, format } from "date-fns";
 import { SettingsProgress } from "@/components/custom/settings/progress";
 import { AnalyticsPieChart } from "@/components/custom/dashboard/pie-chart";
+import { useLoading } from "@/context/LoadingContext";
+
 
 type revenue = {
   month: string;
@@ -123,6 +125,9 @@ const monthNames = [
 ];
 
 export default function AdminDashboard() {
+  const { setIsLoading } = useLoading(); // Use loading context
+  const [isFetchingData, setIsFetchingData] = useState(false);
+
   const [activeTab, setActiveTab] = useState("overview");
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: subDays(new Date(), 30),
@@ -178,6 +183,7 @@ export default function AdminDashboard() {
 
   const fetchOverviewData = useCallback(async () => {
     if (!dateRange?.from || !dateRange?.to) return;
+    setIsFetchingData(true)
 
     const fromDate = format(dateRange.from, "yyyy-MM-dd");
     const toDate = format(dateRange.to, "yyyy-MM-dd");
@@ -219,6 +225,8 @@ export default function AdminDashboard() {
       });
     } catch (error) {
       console.error("Error fetching overview data:", error);
+    } finally {
+      setIsFetchingData(false);
     }
   }, [dateRange]);
 
@@ -394,21 +402,25 @@ export default function AdminDashboard() {
 
   //fetching data from db
   useEffect(() => {
-    if (activeTab === "overview") {
-      fetchOverviewData();
-    } else if (activeTab === "performance") {
-      fetchPerformanceData();
-    } else if (activeTab === "analytics") {
-      fetchAnalyticsData();
-    } else if (activeTab === "reports") {
-      fetchReportData();
+    const initializeData = async () => {
+      if (activeTab === "overview") {
+        await fetchOverviewData();
+      } else if (activeTab === "performance") {
+        await fetchPerformanceData();
+      } else if (activeTab === "analytics") {
+        await fetchAnalyticsData();
+      } else if (activeTab === "reports") {
+        await fetchReportData();
+      }
+      setIsLoading(false);
     }
+    initializeData();
   }, [
     activeTab,
     fetchOverviewData,
     fetchAnalyticsData,
     fetchPerformanceData,
-    fetchReportData,
+    fetchReportData
   ]);
 
   //Figure out why data is slow to display when YearPicker value changes
@@ -471,6 +483,220 @@ export default function AdminDashboard() {
     }
   };
 
+  const renderTabContent = () => {
+    if (isFetchingData) {
+      return (
+        <div className="flex justify-center items-center min-h-[400px]">
+          <div className="flex justify-center items-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          </div>
+        </div>
+      );
+    }
+
+    switch (activeTab) {
+      case "overview":
+        return (
+          <>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+              <StatCard
+                title="Total Revenue"
+                value={`$${adminDashboardOverviewData.totalRevenue.toLocaleString('en-US', { maximumFractionDigits: 2 }) ?? "0.00"
+                  }`}
+                icon={DollarSign}
+              />
+              <StatCard
+                title="Total Orders"
+                value={adminDashboardOverviewData.totalOrders.toString() ?? "0"}
+                icon={CreditCard}
+              />
+              <StatCard
+                title="Unverified Orders"
+                value={
+                  adminDashboardOverviewData.unverifiedOrders.toString() ?? "0"
+                }
+                icon={TriangleAlert}
+              />
+              <StatCard
+                title="Pending Orders"
+                value={adminDashboardOverviewData.pendingOrders.toString() ?? "0"}
+                icon={ClockArrowUp}
+              />
+            </div>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              <StatCard
+                title="Total Invoices"
+                value={adminDashboardOverviewData.totalInvoices.toString() ?? "0"}
+                icon={FileText}
+              />
+              <StatCard
+                title="Unpaid Invoices"
+                value={
+                  adminDashboardOverviewData.unpaidInvoices.toString() ?? "0"
+                }
+                icon={CircleX}
+              />
+              <StatCard
+                title="Due Invoices"
+                value={adminDashboardOverviewData.dueInvoices.toString() ?? "0"}
+                icon={ClockAlert}
+              />
+            </div>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              <Card className="col-span-3">
+                <CardHeader>
+                  <CardTitle>Recent Orders</CardTitle>
+                  <CardDescription>
+                    Your most recent order activity
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <RecentOrders
+                    data={adminDashboardOverviewData.recentOrders ?? []}
+                  />
+                </CardContent>
+                <CardFooter className="flex justify-center">
+                  <Link href="/admin/orders" passHref>
+                    <Button className="w-full sm:w-auto bg-[#fd9e1d]">
+                      View All Orders
+                    </Button>
+                  </Link>
+                </CardFooter>
+              </Card>
+            </div>
+          </>
+        );
+
+      case "performance":
+        return (
+          <div className="grid gap-4">
+            <Card className="col-span-full">
+              <CardHeader>
+                <CardTitle>Revenue Growth</CardTitle>
+              </CardHeader>
+              <CardContent className="h-[400px] sm:h-[450px] md:h-[500px]">
+                <RevenueGrowth
+                  data={adminDashboardPerformanceData.revenueGrowthData}
+                />
+              </CardContent>
+            </Card>
+            <Card className="col-span-full">
+              <CardHeader>
+                <CardTitle>Product Performance</CardTitle>
+              </CardHeader>
+              <CardContent className="h-[400px] sm:h-[450px] md:h-[500px]">
+                <ProductPerformance
+                  data={adminDashboardPerformanceData.productPerformanceData}
+                />
+              </CardContent>
+            </Card>
+          </div>
+        );
+
+      case "analytics":
+        return (
+          <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+            <Card className="col-span-1 md:col-span-2 lg:col-span-3">
+              <CardHeader>
+                <CardTitle>Year Revenue Progress</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <SettingsProgress
+                  value={
+                    (adminDashboardAnalyticsData.yearlyRevenueData.actual /
+                      adminDashboardAnalyticsData.yearlyRevenueData.projected) *
+                    100
+                  }
+                />
+                <p className="text-sm text-gray-500">
+                  {adminDashboardAnalyticsData.yearlyRevenueData.actual &&
+                    adminDashboardAnalyticsData.yearlyRevenueData.projected ? (
+                    <>
+                      {(
+                        (adminDashboardAnalyticsData.yearlyRevenueData.actual /
+                          adminDashboardAnalyticsData.yearlyRevenueData.projected) *
+                        100
+                      ).toFixed(2)}
+                      % of yearly target ($
+                      {adminDashboardAnalyticsData.yearlyRevenueData.actual.toLocaleString()}{" "}
+                      / $
+                      {adminDashboardAnalyticsData.yearlyRevenueData.projected.toLocaleString()}
+                      )
+                    </>
+                  ) : (
+                    "No revenue data available"
+                  )}
+                </p>
+              </CardContent>
+            </Card>
+            <Card className="col-span-1 md:col-span-2 lg:col-span-3">
+              <CardHeader>
+                <CardTitle>Month Revenue Performance</CardTitle>
+              </CardHeader>
+              <CardContent className="h-[300px] sm:h-[350px] lg:h-[400px]">
+                <AnalyticsPieChart
+                  variant="Revenue"
+                  data={adminDashboardAnalyticsData.monthlyRevenueData}
+                />
+              </CardContent>
+            </Card>
+
+            <Card className="col-span-1 md:col-span-1">
+              <CardHeader>
+                <CardTitle>Expense Chart</CardTitle>
+              </CardHeader>
+              <CardContent className="h-[300px] sm:h-[350px] lg:h-[400px]">
+                <AnalyticsPieChart
+                  variant="Expense"
+                  data={adminDashboardAnalyticsData.expenseData}
+                />
+              </CardContent>
+            </Card>
+
+            <Card className="col-span-1 md:col-span-1">
+              <CardHeader>
+                <CardTitle>Income Chart</CardTitle>
+              </CardHeader>
+              <CardContent className="h-[300px] sm:h-[350px] lg:h-[400px]">
+                <AnalyticsPieChart
+                  variant="Income"
+                  data={adminDashboardAnalyticsData.incomeData}
+                />
+              </CardContent>
+            </Card>
+
+            <Card className="col-span-1 md:col-span-1">
+              <CardHeader>
+                <CardTitle>Profit Chart</CardTitle>
+              </CardHeader>
+              <CardContent className="h-[300px] sm:h-[350px] lg:h-[400px]">
+                <AnalyticsPieChart
+                  variant="Profit"
+                  data={adminDashboardAnalyticsData.profitData}
+                />
+              </CardContent>
+            </Card>
+          </div>
+        );
+
+      case "reports":
+        return (
+          <Card>
+            <CardHeader>
+              <CardTitle>Reports</CardTitle>
+              <CardDescription>View and download your reports</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ReportsSection data={adminDashboardReportData} />
+            </CardContent>
+          </Card>
+        );
+
+      default:
+        return null;
+    }
+  };
+
   return (
     <div className="flex-1 space-y-4 p-8 pt-6">
       <div className="flex flex-col sm:flex-row items-center justify-between space-y-2 sm:space-y-0">
@@ -488,192 +714,8 @@ export default function AdminDashboard() {
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
           <TabsTrigger value="reports">Reports</TabsTrigger>
         </TabsList>
-        {/* Overview Tab View */}
-        <TabsContent value="overview" className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <StatCard
-              title="Total Revenue"
-              value={`$${
-                adminDashboardOverviewData.totalRevenue.toFixed(2) ?? "0.00"
-              }`}
-              icon={DollarSign}
-            />
-            <StatCard
-              title="Total Orders"
-              value={adminDashboardOverviewData.totalOrders.toString() ?? "0"}
-              icon={CreditCard}
-            />
-            <StatCard
-              title="Unverified Orders"
-              value={
-                adminDashboardOverviewData.unverifiedOrders.toString() ?? "0"
-              }
-              icon={TriangleAlert}
-            />
-            <StatCard
-              title="Pending Orders"
-              value={adminDashboardOverviewData.pendingOrders.toString() ?? "0"}
-              icon={ClockArrowUp}
-            />
-          </div>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            <StatCard
-              title="Total Invoices"
-              value={adminDashboardOverviewData.totalInvoices.toString() ?? "0"}
-              icon={FileText}
-            />
-            <StatCard
-              title="Unpaid Invoices"
-              value={
-                adminDashboardOverviewData.unpaidInvoices.toString() ?? "0"
-              }
-              icon={CircleX}
-            />
-            <StatCard
-              title="Due Invoices"
-              value={adminDashboardOverviewData.dueInvoices.toString() ?? "0"}
-              icon={ClockAlert}
-            />
-          </div>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            <Card className="col-span-3">
-              <CardHeader>
-                <CardTitle>Recent Orders</CardTitle>
-                <CardDescription>
-                  Your most recent order activity
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <RecentOrders
-                  data={adminDashboardOverviewData.recentOrders ?? []}
-                />
-              </CardContent>
-              <CardFooter className="flex justify-center">
-                <Link href="/admin/orders" passHref>
-                  <Button className="w-full sm:w-auto bg-[#fd9e1d]">
-                    View All Orders
-                  </Button>
-                </Link>
-              </CardFooter>
-            </Card>
-          </div>
-        </TabsContent>
-        {/* Performance Tab View */}
-        <TabsContent value="performance" className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            <Card className="col-span-3 md:col-span-2">
-              <CardHeader>
-                <CardTitle>Revenue Growth</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <RevenueGrowth
-                  data={adminDashboardPerformanceData.revenueGrowthData}
-                />
-              </CardContent>
-            </Card>
-            <Card className="col-span-3 md:col-span-2">
-              <CardHeader>
-                <CardTitle>Product Performance</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ProductPerformance
-                  data={adminDashboardPerformanceData.productPerformanceData}
-                />
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-        {/* Analytics Tab View */}
-        <TabsContent value="analytics" className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            <Card className="col-span-3">
-              <CardHeader>
-                <CardTitle>Year Revenue Progress</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {/* const yearProgress = (totalActual / yearlyTarget) * 100; */}
-                <SettingsProgress
-                  value={
-                    (adminDashboardAnalyticsData.yearlyRevenueData.actual /
-                      adminDashboardAnalyticsData.yearlyRevenueData.projected) *
-                    100
-                  }
-                />
-                <p className="text-sm text-gray-500">
-                  {(
-                    (adminDashboardAnalyticsData.yearlyRevenueData.actual /
-                      adminDashboardAnalyticsData.yearlyRevenueData.projected) *
-                    100
-                  ).toFixed(2)}
-                  % of yearly target ($
-                  {adminDashboardAnalyticsData.yearlyRevenueData.actual.toLocaleString()}{" "}
-                  / $
-                  {adminDashboardAnalyticsData.yearlyRevenueData.projected.toLocaleString()}
-                  )
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="col-span-3 md:col-span-2">
-              <CardHeader>
-                <CardTitle>Month Revenue Performance</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <AnalyticsPieChart
-                  variant="Revenue"
-                  data={adminDashboardAnalyticsData.monthlyRevenueData}
-                />
-              </CardContent>
-            </Card>
-
-            <Card className="col-span-3 md:col-span-2">
-              <CardHeader>
-                <CardTitle>Expense Chart</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <AnalyticsPieChart
-                  variant="Expense"
-                  data={adminDashboardAnalyticsData.expenseData}
-                />
-              </CardContent>
-            </Card>
-
-            <Card className="col-span-3 md:col-span-2">
-              <CardHeader>
-                <CardTitle>Income Chart</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <AnalyticsPieChart
-                  variant="Income"
-                  data={adminDashboardAnalyticsData.incomeData}
-                />
-              </CardContent>
-            </Card>
-
-            <Card className="col-span-3 md:col-span-2">
-              <CardHeader>
-                <CardTitle>Profit Chart</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <AnalyticsPieChart
-                  variant="Profit"
-                  data={adminDashboardAnalyticsData.profitData}
-                />
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-        {/* Report Tab View */}
-        <TabsContent value="reports" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Reports</CardTitle>
-              <CardDescription>View and download your reports</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ReportsSection data={adminDashboardReportData} />
-            </CardContent>
-          </Card>
+        <TabsContent value={activeTab} className="space-y-4">
+          {renderTabContent()}
         </TabsContent>
       </Tabs>
     </div>
