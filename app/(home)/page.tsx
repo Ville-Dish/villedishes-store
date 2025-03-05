@@ -53,6 +53,32 @@ export default function Home() {
     setLoadingProducts(false);
   }, [activeCategory, popularProducts]);
 
+  //function to render No products
+  const renderNoProductsFound = () => (
+    <div className="flex flex-col items-center justify-center py-12">
+      <Rabbit className="w-16 h-16 mb-4 text-gray-400" />
+      <p className="text-xl font-semibold text-gray-600">No products found</p>
+      {popularProducts.length > 0 ? (
+        <>
+          {/* <p className="text-gray-500 mt-2 text-center">
+            Try adjusting your search or filter to find what you&apos;re looking for.
+          </p>
+          <Button
+            className="mt-4"
+            onClick={() => {
+              setActiveCategory("All")
+            }}
+          >
+            Clear filters
+          </Button> */}
+          <p className="text-gray-500 mt-2">Check back later.</p>
+        </>
+      ) : (
+        <p className="text-gray-500 mt-2">Check back later.</p>
+      )}
+    </div>
+  )
+
   return (
     <div className="flex flex-col min-h-screen">
       <main className="flex-1">
@@ -118,31 +144,27 @@ export default function Home() {
               <div className="flex justify-center items-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
               </div>
-            ) : filteredItems.length > 0 ? (
-              <>
-              <div className="text-center mt-12">
-            <ProductCard
-              categories={categories}
-              items={filteredItems}
-              activeCategory={activeCategory}
-              onCategoryChange={setActiveCategory}
-            />
-              <Button asChild>
-                <Link href="/products">View Full Menu</Link>
-              </Button>
-            </div>
-              </>
-            ) : (
-              <div className="flex  flex-col justify-center items-center h-64">
-                <Rabbit className="w-16 h-16 mb-4 text-gray-400" />
-                <p className="text-xl font-semibold text-gray-600">
-                  No products found
-                </p>
-                <p className="text-gray-500 mt-2">
-                 Check back later.
-                </p>
+            ) : 
+            popularProducts.length > 0 ? (
+              filteredItems.length > 0 ? (
+                <>
+                <div className="text-center mt-12">
+              <ProductCard
+                categories={categories}
+                items={filteredItems}
+                activeCategory={activeCategory}
+                onCategoryChange={setActiveCategory}
+              />
+                <Button asChild className="mt-4">
+                  <Link href="/products">View Full Menu</Link>
+                </Button>
               </div>
-            )}
+                </>
+              ) : (
+                renderNoProductsFound()
+              )
+            ):  (renderNoProductsFound())
+          }
           </div>
         </section>
         <section className="w-full py-12 md:py-24 lg:py-32 bg-gray-100">
