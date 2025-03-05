@@ -2,7 +2,7 @@
 
 import { Banner } from "@/components/custom/banner";
 import { Button } from "@/components/ui/button";
-import { ChefHat, Clock, Truck } from "lucide-react";
+import { ChefHat, Clock, Rabbit, Truck } from "lucide-react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { testimonials } from "@/lib/constantData";
@@ -119,20 +119,30 @@ export default function Home() {
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
               </div>
             ) : filteredItems.length > 0 ? (
-              <ProductCard
-                categories={categories}
-                items={filteredItems}
-                activeCategory={activeCategory}
-                onCategoryChange={setActiveCategory}
-              />
-            ) : (
-              <div className="flex justify-center items-center h-64"></div>
-            )}
-            <div className="text-center mt-12">
+              <>
+              <div className="text-center mt-12">
+            <ProductCard
+              categories={categories}
+              items={filteredItems}
+              activeCategory={activeCategory}
+              onCategoryChange={setActiveCategory}
+            />
               <Button asChild>
                 <Link href="/products">View Full Menu</Link>
               </Button>
             </div>
+              </>
+            ) : (
+              <div className="flex  flex-col justify-center items-center h-64">
+                <Rabbit className="w-16 h-16 mb-4 text-gray-400" />
+                <p className="text-xl font-semibold text-gray-600">
+                  No products found
+                </p>
+                <p className="text-gray-500 mt-2">
+                 Check back later.
+                </p>
+              </div>
+            )}
           </div>
         </section>
         <section className="w-full py-12 md:py-24 lg:py-32 bg-gray-100">

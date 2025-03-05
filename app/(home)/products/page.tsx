@@ -9,7 +9,6 @@ import { Rabbit } from "lucide-react";
 import { Banner } from "@/components/custom/banner";
 
 import { useEffect, useState } from "react";
-import { useLoading } from "@/context/LoadingContext";
 
 const ProductPage = () => {
   const [products, setProducts] = useState<MenuItem[]>([]);
@@ -78,18 +77,13 @@ const ProductPage = () => {
                 </p>
               </div>
             ) : filteredItems.length > 0 ? (
+              <>
               <ProductCard
                 categories={categories}
                 items={filteredItems}
                 activeCategory={activeCategory}
                 onCategoryChange={setActiveCategory}
               />
-            ) : (
-              <div className="flex flex-col items-center justify-center py-12">
-                <Rabbit className="w-16 h-16 mb-4 text-gray-400" />
-                <p className="text-xl font-semibold text-gray-600">
-                  No products found
-                </p>
                 <p className="text-gray-500 mt-2">
                   Try adjusting your search or filter to find what you&apos;re
                   looking for.
@@ -103,6 +97,16 @@ const ProductPage = () => {
                 >
                   Clear filters
                 </Button>
+                  </>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-12">
+                <Rabbit className="w-16 h-16 mb-4 text-gray-400" />
+                <p className="text-xl font-semibold text-gray-600">
+                  No products found
+                </p>
+                <p className="text-gray-500 mt-2">
+                 Check back later.
+                </p>
               </div>
             )}
           </div>
