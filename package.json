@@ -40,6 +40,7 @@
     "file-saver": "^2.0.5",
     "firebase": "^11.0.2",
     "firebase-admin": "^13.0.1",
+    "fs": "^0.0.1-security",
     "html-to-image": "^1.11.11",
     "jspdf": "^2.5.2",
     "jspdf-autotable": "^3.8.4",
