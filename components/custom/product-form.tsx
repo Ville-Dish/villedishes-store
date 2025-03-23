@@ -6,7 +6,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import ImageUpload from "@/components/custom/imageUpload/ImageUpload";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/select";
 
 interface ProductFormProps {
   product: Omit<MenuItem, "id"> & { id?: string };
@@ -38,8 +44,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({
     }));
   };
 
-  const handleImageChange = (url: string) => {
-    setFormData((prev) => ({ ...prev, image: url }));
+  const handleImageChange = (url: string, assetId: string) => {
+    setFormData((prev) => ({ ...prev, image: url, assetId }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -89,7 +95,9 @@ export const ProductForm: React.FC<ProductFormProps> = ({
             <Label htmlFor="category">Category</Label>
             <Select
               value={formData.category}
-              onValueChange={(value) => handleChange({ target: { name: 'category', value } } as any)}
+              onValueChange={(value) =>
+                handleChange({ target: { name: "category", value } } as any)
+              }
             >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select a category" />
@@ -106,25 +114,25 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                       if (!categories.includes(value) && value) {
                         handleChange({
                           target: {
-                            name: 'category',
-                            value: value
-                          }
+                            name: "category",
+                            value: value,
+                          },
                         } as any);
                       }
                     }}
                   />
                 </div>
                 {categories
-                  .filter(cat => cat.toLowerCase().includes(searchTerm.toLowerCase()))
+                  .filter((cat) =>
+                    cat.toLowerCase().includes(searchTerm.toLowerCase())
+                  )
                   .map((category) => (
                     <SelectItem key={category} value={category}>
                       {category}
                     </SelectItem>
                   ))}
                 {searchTerm && !categories.includes(searchTerm) && (
-                  <SelectItem value={searchTerm}>
-                    Add "{searchTerm}"
-                  </SelectItem>
+                  <SelectItem value={searchTerm}>Add {searchTerm}</SelectItem>
                 )}
               </SelectContent>
             </Select>
@@ -147,6 +155,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
             <Label>Image</Label>
             <ImageUpload
               value={formData.image}
+              assetId={product.assetId}
               onChange={handleImageChange}
               onRemove={() => setFormData((prev) => ({ ...prev, image: "" }))}
             />
@@ -165,8 +174,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({
           {isLoading
             ? "Saving..."
             : product.id
-              ? "Update Product"
-              : "Create Product"}
+            ? "Update Product"
+            : "Create Product"}
         </Button>
       </div>
     </form>
