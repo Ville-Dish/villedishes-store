@@ -96,7 +96,9 @@ export const ProductForm: React.FC<ProductFormProps> = ({
             <Select
               value={formData.category}
               onValueChange={(value) =>
-                handleChange({ target: { name: "category", value } } as any)
+                handleChange({
+                  target: { name: "category", value },
+                } as React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>)
               }
             >
               <SelectTrigger className="w-full">
@@ -117,7 +119,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                             name: "category",
                             value: value,
                           },
-                        } as any);
+                        } as React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>);
                       }
                     }}
                   />
