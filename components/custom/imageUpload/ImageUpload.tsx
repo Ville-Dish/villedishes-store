@@ -5,27 +5,43 @@ import { Plus, Trash } from "lucide-react";
 import { CldUploadWidget } from "next-cloudinary";
 import Image from "next/image";
 
+// Use the type provided by Cloudinary for the upload widget result
+import { CloudinaryUploadWidgetResults } from "next-cloudinary";
+import cloudinary from "@/lib/cloudinary";
+
 interface ImageUploadProps {
   value: string;
-  onChange: (url: string) => void;
+  assetId?: string;
+  onChange: (url: string, assetId: string) => void;
   onRemove: () => void;
   onRemoveError?: (error: string) => void;
 }
 
-// Use the type provided by Cloudinary for the upload widget result
-import { CloudinaryUploadWidgetResults } from "next-cloudinary";
-
 const ImageUpload: React.FC<ImageUploadProps> = ({
   value,
+  assetId,
   onChange,
   onRemove,
   onRemoveError,
 }) => {
   const onUpload = (result: CloudinaryUploadWidgetResults) => {
+    // Delete the old asset it its exists
+    if (assetId) {
+      cloudinary.api.delete_resources([assetId], async (error, result) => {
+        if (error) {
+          console.error(error);
+        }
+
+        if (result.result === "ok") {
+          // Update the product with the new asset ID
+          console.log("Deleted old asset");
+        }
+      });
+    }
     const info = result.info;
     // Check if 'info' is of type CloudinaryUploadWidgetInfo and has 'secure_url'
     if (info && typeof info !== "string" && "secure_url" in info) {
-      onChange(info.secure_url);
+      onChange(info.secure_url, info.asset_id);
       if (onRemoveError) {
         onRemoveError("");
       }
