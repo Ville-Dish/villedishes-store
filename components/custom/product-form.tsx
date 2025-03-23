@@ -45,6 +45,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
   };
 
   const handleImageChange = (url: string, assetId: string) => {
+    console.log("Assets Id:", assetId);
     setFormData((prev) => ({ ...prev, image: url, assetId }));
   };
 
@@ -157,7 +158,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
             <Label>Image</Label>
             <ImageUpload
               value={formData.image}
-              assetId={product.assetId}
+              assetId={formData.assetId}
               onChange={handleImageChange}
               onRemove={() => setFormData((prev) => ({ ...prev, image: "" }))}
             />

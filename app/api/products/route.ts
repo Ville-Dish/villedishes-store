@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma/client";
+import cloudinary from "@/lib/cloudinary";
 
 // POST method to create a new product
 export async function POST(req: Request) {
   try {
-    const { name, description, price, image, category, rating } =
+    const { name, description, price, image, assetId, category, rating } =
       await req.json();
 
     const newProduct = await prisma.product.create({
@@ -13,6 +14,7 @@ export async function POST(req: Request) {
         description,
         price,
         image,
+        assetId,
         category,
         rating,
       },
@@ -56,7 +58,7 @@ export async function GET() {
 // PATCH method to update a product
 export async function PATCH(req: Request) {
   try {
-    const { id, name, description, price, category, image, rating } =
+    const { id, name, description, price, category, image, assetId, rating } =
       await req.json();
 
     // Define the type for updateData using Partial and your Prisma model
@@ -66,6 +68,7 @@ export async function PATCH(req: Request) {
       price: number;
       category: string;
       image: string;
+      assetId: string;
       rating: number;
     }> = {};
 
@@ -74,6 +77,7 @@ export async function PATCH(req: Request) {
     if (price !== undefined) updateData.price = price;
     if (category !== undefined) updateData.category = category;
     if (image !== undefined) updateData.image = image;
+    if (assetId !== undefined) updateData.assetId = assetId;
     if (rating !== undefined) updateData.rating = rating;
 
     // Check if there's any data to update
@@ -110,6 +114,15 @@ export async function DELETE(req: Request) {
     const deletedProduct = await prisma.product.delete({
       where: { id },
     });
+
+    // Delete the asset from cloudinary
+    if (deletedProduct.assetId) {
+      const asset = await cloudinary.api.resources_by_asset_ids([
+        deletedProduct.assetId,
+      ]);
+
+      await cloudinary.api.delete_resources([asset.resources[0].public_id]);
+    }
 
     return NextResponse.json({
       data: deletedProduct,

@@ -7,7 +7,6 @@ import Image from "next/image";
 
 // Use the type provided by Cloudinary for the upload widget result
 import { CloudinaryUploadWidgetResults } from "next-cloudinary";
-import cloudinary from "@/lib/cloudinary";
 
 interface ImageUploadProps {
   value: string;
@@ -24,19 +23,30 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
   onRemove,
   onRemoveError,
 }) => {
-  const onUpload = (result: CloudinaryUploadWidgetResults) => {
+  const onUpload = async (result: CloudinaryUploadWidgetResults) => {
     // Delete the old asset it its exists
     if (assetId) {
-      cloudinary.api.delete_resources([assetId], async (error, result) => {
-        if (error) {
-          console.error(error);
-        }
+      try {
+        const response = await fetch("/api/cloudinary/delete", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ assetId }),
+        });
 
-        if (result.result === "ok") {
-          // Update the product with the new asset ID
-          console.log("Deleted old asset");
+        if (!response.ok) {
+          const errorData = await response
+            .json()
+            .catch(() => ({ message: "Unknown error" }));
+          console.error("Error deleting Cloudinary resource:", errorData);
+        } else {
+          const data = await response
+            .json()
+            .catch(() => ({ message: "Success" }));
+          console.log("Deleted old asset:", data);
         }
-      });
+      } catch (error) {
+        console.error("Error calling delete API:", error);
+      }
     }
     const info = result.info;
     // Check if 'info' is of type CloudinaryUploadWidgetInfo and has 'secure_url'
