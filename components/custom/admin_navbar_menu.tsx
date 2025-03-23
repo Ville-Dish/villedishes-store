@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/sheet";
 import { usePathname } from "next/navigation";
 import { adminMenuItems } from "@/lib/constantData";
+import { cn } from "@/lib/utils";
 
 export const AdminNavbarMenu = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -43,9 +44,10 @@ export const AdminNavbarMenu = () => {
     onClick?: () => void;
   }) => (
     <Link
-      className={`text-lg font-semibold hover:underline underline-offset-4 ${
-        pathname === href && "underline"
-      }`}
+      className={cn(
+        "text-lg text-muted-foreground font-semibold hover:text-primary underline-offset-4 relative after:absolute after:bottom-0 after:left-0 after:h-[3px] after:w-0 hover:after:w-full after:bg-primary after:transition-all after:duration-300",
+        pathname === href && "text-primary after:w-full"
+      )}
       href={href}
       onClick={onClick}
     >
@@ -57,9 +59,9 @@ export const AdminNavbarMenu = () => {
     <header className="flex items-center justify-between">
       {!isLargeScreen ? (
         <Sheet open={isOpen} onOpenChange={setIsOpen}>
-          <SheetTrigger asChild>
+          <SheetTrigger asChild className="md:hidden">
             <Button variant="ghost" size="icon" className="bg-transparent">
-              <Menu className="h-6 w-6" />
+              <Menu className="h-8 w-8" />
               <span className="sr-only">Toggle menu</span>
             </Button>
           </SheetTrigger>
@@ -75,11 +77,12 @@ export const AdminNavbarMenu = () => {
                   onClick={() => setIsOpen(false)}
                 />
               ))}
+              <Button>Logout</Button>
             </nav>
           </SheetContent>
         </Sheet>
       ) : (
-        <nav className="flex gap-4 sm:gap-6">
+        <nav className="hidden md:flex gap-4 sm:gap-6">
           {menuItems.map((item) => (
             <NavLink key={item.href} {...item} />
           ))}

@@ -1,20 +1,21 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma/client";
-import { isValidInvoiceStatus } from "@/lib/invoiceUtils";
+import { InvoiceStatus, isValidInvoiceStatus } from "@/lib/invoiceUtils";
 import { generateInvoiceNumber } from "@/lib/invoiceHelperFunction";
 
 // POST method to create a new invoice
 export async function POST(req: Request) {
   try {
+    const body = await req.json();
     const {
       customerName,
       customerEmail,
       customerPhone,
       dueDate,
-      status,
+      status = "PENDING",
       amount = 0,
       discountPercentage = 0,
-    } = await req.json();
+    } = body;
 
     const invoiceNumber = await generateInvoiceNumber();
 
@@ -96,60 +97,9 @@ export async function POST(req: Request) {
       status: 201,
     });
   } catch (error) {
-    console.log("Error Adding Invoice", error);
+    console.error("Error Adding Invoice", error);
     return NextResponse.json(
       { message: "Error adding invoice", error },
-      { status: 500 }
-    );
-  }
-}
-
-// GET method to retrieve all invoices
-export async function GET() {
-  try {
-    // Retrieve all invoices
-    const invoices = await prisma.invoice.findMany({
-      include: {
-        InvoiceProducts: {
-          include: {
-            Product: true,
-          },
-        },
-      },
-    });
-
-    // Transform the data to match the expected format
-    const transformedInvoices = invoices.map((invoice) => ({
-      id: invoice.id,
-      invoiceNumber: invoice.invoiceNumber,
-      customerName: invoice.customerName,
-      customerEmail: invoice.customerEmail,
-      customerPhone: invoice.customerPhone,
-      amount: invoice.amount,
-      amountPaid: invoice.amountPaid,
-      amountDue: invoice.amountDue,
-      dateCreated: invoice.dateCreated,
-      dueDate: invoice.dueDate,
-      status: invoice.status,
-      discountPercentage: invoice.discountPercentage,
-      products: invoice.InvoiceProducts.map((ip) => ({
-        id: ip.Product[0]?.id,
-        name: ip.Product[0]?.name,
-        basePrice: ip.basePrice,
-        quantity: ip.quantity,
-        discount: ip.discount,
-      })),
-    }));
-
-    return NextResponse.json({
-      data: transformedInvoices,
-      message: "Invoices retrieved successfully",
-      status: 200,
-    });
-  } catch (error) {
-    console.error("Error retrieving invoices:", error);
-    return NextResponse.json(
-      { message: "Error retrieving invoices", error },
       { status: 500 }
     );
   }
@@ -172,19 +122,13 @@ export async function PATCH(req: Request) {
       discountPercentage,
       taxRate,
       shippingFee,
+      serviceCharge,
+      miscellaneous,
     } = await req.json();
 
     if (!id) {
       return NextResponse.json(
         { message: "Invoice ID is required" },
-        { status: 400 }
-      );
-    }
-
-    // Validate the status if it's provided
-    if (status && !isValidInvoiceStatus(status)) {
-      return NextResponse.json(
-        { message: "Invalid invoice status" },
         { status: 400 }
       );
     }
@@ -195,7 +139,6 @@ export async function PATCH(req: Request) {
     if (customerEmail !== undefined) updateData.customerEmail = customerEmail;
     if (customerPhone !== undefined) updateData.customerPhone = customerPhone;
     if (dueDate !== undefined) updateData.dueDate = dueDate;
-    if (status !== undefined) updateData.status = status;
     if (amount !== undefined) updateData.amount = amount;
     if (amountPaid !== undefined) updateData.amountPaid = amountPaid;
     if (amountDue !== undefined) updateData.amountDue = amountDue;
@@ -203,13 +146,38 @@ export async function PATCH(req: Request) {
     if (shippingFee !== undefined) updateData.shippingFee = shippingFee;
     if (discountPercentage !== undefined)
       updateData.discountPercentage = discountPercentage;
+    if (serviceCharge !== undefined) updateData.serviceCharge = serviceCharge;
+    if (miscellaneous !== undefined) updateData.miscellaneous = miscellaneous;
 
-    // Check if there's any data to update
-    if (Object.keys(updateData).length === 0) {
-      return NextResponse.json(
-        { message: "No fields to update provided" },
-        { status: 400 }
-      );
+    const currentDate = new Date();
+    const invoiceDueDate = new Date(dueDate);
+
+    if (products && products.length > 0) {
+      updateData.status = InvoiceStatus.UNPAID;
+    } else {
+      updateData.status = InvoiceStatus.PENDING;
+    }
+
+    if (
+      currentDate > invoiceDueDate &&
+      updateData.status !== InvoiceStatus.PAID
+    ) {
+      updateData.status = InvoiceStatus.OVERDUE;
+    }
+
+    if (updateData.status === InvoiceStatus.PAID) {
+      updateData.amountPaid = updateData.amount;
+      updateData.amountDue = 0;
+    }
+
+    if (updateData.status !== InvoiceStatus.PAID) {
+      updateData.amountDue = updateData.amount;
+      updateData.amountPaid = 0;
+    }
+
+    // If status is provided and valid, allow manual override
+    if (status && isValidInvoiceStatus(status)) {
+      updateData.status = status;
     }
 
     // Start a transaction
@@ -244,16 +212,51 @@ export async function PATCH(req: Request) {
         }
       }
 
-      return prisma.invoice.findUnique({
+      // Recompute status after product updates
+      const currentDate = new Date();
+      const invoiceDueDate = new Date(dueDate);
+
+      if (products && products.length > 0) {
+        updateData.status = InvoiceStatus.UNPAID;
+      } else {
+        updateData.status = InvoiceStatus.PENDING;
+      }
+
+      if (
+        currentDate > invoiceDueDate &&
+        updateData.status !== InvoiceStatus.PAID
+      ) {
+        updateData.status = InvoiceStatus.OVERDUE;
+      }
+
+      // If status is provided and valid, allow manual override
+      if (status && isValidInvoiceStatus(status)) {
+        updateData.status = status;
+        if (status === InvoiceStatus.PAID) {
+          updateData.amountPaid = amount;
+          updateData.amountDue = 0;
+        } else {
+          updateData.amountPaid = 0;
+          updateData.amountDue = amount;
+        }
+      }
+
+      // Type assertion for status
+      const updatedStatus = updateData.status as string;
+      const updatedAmountPaid = updateData.amountPaid as number;
+      const updatedAmountDue = updateData.amountDue as number;
+
+      // Update the invoice with the recomputed status
+      const invoice = await prisma.invoice.update({
         where: { id },
-        include: {
-          InvoiceProducts: {
-            include: {
-              Product: true,
-            },
-          },
+        data: {
+          status: updatedStatus,
+          amountPaid: updatedAmountPaid,
+          amountDue: updatedAmountDue,
         },
       });
+
+      return invoice;
     });
 
     if (!updatedInvoice) {
@@ -263,25 +266,107 @@ export async function PATCH(req: Request) {
       );
     }
 
-    const transformedInvoice = {
-      ...updatedInvoice,
-      products: updatedInvoice.InvoiceProducts.map((ip) => ({
-        id: ip.Product[0]?.id,
-        name: ip.Product[0]?.name,
-        basePrice: ip.basePrice,
-        quantity: ip.quantity,
-      })),
-    };
-
     return NextResponse.json({
-      data: transformedInvoice,
+      data: updatedInvoice,
       message: "Invoice updated successfully",
       status: 200,
     });
   } catch (error) {
-    console.log("ERROR: ", error);
+    console.error("ERROR: ", error);
     return NextResponse.json(
       { message: "Error updating invoice", error },
+      { status: 500 }
+    );
+  }
+}
+
+// GET method to retrieve all invoices
+export async function GET() {
+  try {
+    const currentDate = new Date();
+
+    // Retrieve all invoices
+    const invoices = await prisma.invoice.findMany({
+      include: {
+        InvoiceProducts: {
+          include: {
+            Product: true,
+          },
+        },
+      },
+    });
+
+    // Transform the data to match the expected format
+    const transformedInvoices = await Promise.all(
+      invoices.map(async (invoice) => {
+        let status = invoice.status;
+        let amountDue = invoice.amountDue;
+        let amountPaid = invoice.amountPaid;
+        const dueDate = new Date(invoice.dueDate);
+
+        //Check if the invoice is overdue and not already marked as PAID
+        if (currentDate > dueDate && invoice.status !== InvoiceStatus.PAID) {
+          status = InvoiceStatus.OVERDUE;
+
+          //Update the status in the database
+          await prisma.invoice.update({
+            where: { id: invoice.id },
+            data: { status },
+          });
+        } else if (
+          invoice.status === InvoiceStatus.PENDING &&
+          invoice.InvoiceProducts &&
+          invoice.InvoiceProducts.length > 0
+        ) {
+          status = InvoiceStatus.UNPAID;
+
+          //Update the status in the database
+          await prisma.invoice.update({
+            where: { id: invoice.id },
+            data: { status },
+          });
+        } else if (invoice.status === InvoiceStatus.PAID) {
+          amountPaid = invoice.amount;
+          amountDue = 0;
+          await prisma.invoice.update({
+            where: { id: invoice.id },
+            data: { amountPaid, amountDue },
+          });
+        }
+
+        return {
+          id: invoice.id,
+          invoiceNumber: invoice.invoiceNumber,
+          customerName: invoice.customerName,
+          customerEmail: invoice.customerEmail,
+          customerPhone: invoice.customerPhone,
+          amount: invoice.amount,
+          amountPaid: invoice.amountPaid,
+          amountDue: invoice.amountDue,
+          dateCreated: invoice.dateCreated,
+          dueDate: invoice.dueDate,
+          status: invoice.status,
+          discountPercentage: invoice.discountPercentage,
+          products: invoice.InvoiceProducts.map((ip) => ({
+            id: ip.Product[0]?.id,
+            name: ip.Product[0]?.name,
+            basePrice: ip.basePrice,
+            quantity: ip.quantity,
+            discount: ip.discount,
+          })),
+        };
+      })
+    );
+
+    return NextResponse.json({
+      data: transformedInvoices,
+      message: "Invoices retrieved successfully",
+      status: 200,
+    });
+  } catch (error) {
+    console.error("Error retrieving invoices:", error);
+    return NextResponse.json(
+      { message: "Error retrieving invoices", error },
       { status: 500 }
     );
   }

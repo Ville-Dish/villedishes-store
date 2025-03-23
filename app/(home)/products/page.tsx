@@ -9,6 +9,7 @@ import { Rabbit } from "lucide-react";
 import { Banner } from "@/components/custom/banner";
 
 import { useEffect, useState } from "react";
+import { useLoading } from "@/context/LoadingContext";
 
 const ProductPage = () => {
   const [products, setProducts] = useState<MenuItem[]>([]);
@@ -22,7 +23,7 @@ const ProductPage = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await fetch("/api/products", { method: "GET" });
+        const response = await fetch("/api/menu", { method: "GET" });
         const data = await response.json();
 
         if (response.ok) {
@@ -60,7 +61,7 @@ const ProductPage = () => {
           subtitle="Explore our delicious Nigerian dishes"
           ctaText="Place Order"
           ctaLink="#product-items"
-          backgroundImage="/assets/product-banner-bg.png"
+          backgroundImage="https://res.cloudinary.com/dxt7vk5dg/image/upload/v1737565949/product-banner-bg_crzxsm.png"
         />
         <section id="product-items" className="w-full py-12 md:py-24 lg:py-32">
           <div className="px-4 md:px-6">

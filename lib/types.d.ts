@@ -58,6 +58,8 @@ interface Invoice {
   discountPercentage?: number;
   taxRate?: number;
   shippingFee?: number;
+  serviceCharge?: number;
+  miscellaneous?: number;
   amount: number;
   amountPaid: number;
   amountDue: number;
@@ -136,21 +138,31 @@ type MonthlySalesReport = {
   topProducts: TopProducts[];
 };
 
-type QuarterlyProps = {
-  month: string;
+interface MonthlyData {
+  month: number;
   revenue: number;
   expenses: number;
   profit: number;
-};
+}
 
-type ExpenseBreakdownProps = {
+interface ExpenseBreakdown {
   category: string;
   amount: number;
-};
+}
+
+interface QuarterlyData {
+  quarter: number;
+  monthlyData: MonthlyData[];
+}
+
+interface QuarterlyExpenseBreakdown {
+  quarter: number;
+  data: ExpenseBreakdown[];
+}
 
 type QuarterlyReport = {
-  quarterlyData: QuarterlyProps[];
-  expenseBreakdown: ExpenseBreakdownProps[];
+  monthlyData: QuarterlyData[];
+  expenseBreakdown: QuarterlyExpenseBreakdown[];
 };
 
 type QuarterlyPerformanceProps = {
@@ -194,3 +206,79 @@ type ImageUploadProps = {
   onRemove: (value: string) => void;
   onRemoveError?: (value: string) => void;
 };
+
+interface MonthlyRevenue {
+  month: string;
+  projection: number;
+  actual: number;
+}
+
+interface YearlyRevenue {
+  id?: string;
+  year: number;
+  yearlyTarget: number;
+  monthlyProjections: MonthlyRevenue[];
+}
+
+interface Income {
+  id?: string;
+  name: string;
+  category: string;
+  amount: number;
+  date: string;
+}
+
+interface Expense {
+  id?: string;
+  name: string;
+  category: string;
+  amount: number;
+  date: string;
+}
+
+interface YearlyRevenueAccordionProps {
+  revenueProjections: YearlyRevenue[];
+  onUpdate: (
+    year: number,
+    updatedProjections: YearlyRevenue["monthlyProjections"]
+  ) => void;
+}
+
+interface MonthlyRevenueProjectionsProps {
+  year: number;
+  yearlyTarget: number;
+  monthlyProjections: MonthlyRevenue[];
+  onUpdate: (updatedProjections: MonthlyRevenue[]) => void;
+  currentYear: number;
+  currentMonth: number;
+}
+
+interface SettingsTableProps {
+  variant: "Income" | "Expense";
+  data: Income[] | Expense[];
+  onEdit: (item: Income | Expense) => void;
+  onDelete: (id: string) => void;
+}
+
+interface SettingsFormProps {
+  variant: "Revenue" | "Income" | "Expense";
+  onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
+  onClose: () => void;
+  isYearlyProjection?: boolean;
+  setIsYearlyProjection?: (value: boolean) => void;
+}
+
+interface RevenueData {
+  projected: number;
+  actual: number;
+}
+
+interface ProfitData {
+  totalRevenue: number;
+  profit: number;
+}
+
+interface CategoryData {
+  category: string;
+  value: number;
+}

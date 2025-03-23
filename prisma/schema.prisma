@@ -16,18 +16,16 @@ model Product {
   category        String?
   rating          Float?
   OrderProduct    OrderProduct[]
-  reviews         Review[]
   InvoiceProducts InvoiceProducts[]
   invoiceId       String?
 }
 
 model Review {
-  id        String   @id @unique @default(uuid())
+  id        String  @id @unique @default(uuid())
   rating    Int
   comment   String
   author    String
   productId String?
-  Product   Product? @relation(fields: [productId], references: [id])
 }
 
 model Order {
@@ -82,6 +80,8 @@ model Invoice {
   discountPercentage Int               @default(0)
   taxRate            Int               @default(0)
   shippingFee        Int               @default(0)
+  serviceCharge      Int               @default(0)
+  miscellaneous      Int               @default(0)
   dateCreated        String
   dueDate            String
   status             String
@@ -98,4 +98,39 @@ model InvoiceProducts {
   invoiceId String?
   invoice   Invoice?  @relation("InvoiceProducts", fields: [invoiceId], references: [id])
   Product   Product[]
+}
+
+// Schema for Income, Expense, and Revenue Projections.
+model Expense {
+  id       String @id @default(uuid())
+  name     String
+  category String
+  amount   Float
+  date     String
+}
+
+model Income {
+  id       String @id @default(uuid())
+  name     String
+  category String
+  amount   Float
+  date     String
+}
+
+model Revenue {
+  id                 String              @id @default(uuid())
+  year               Int
+  yearlyTarget       Float
+  monthlyProjections MonthlyProjection[]
+}
+
+model MonthlyProjection {
+  id         String  @id @default(uuid())
+  month      String
+  projection Float
+  actual     Float
+  revenue    Revenue @relation(fields: [revenueId], references: [id])
+  revenueId  String
+
+  @@unique([revenueId, month])
 }

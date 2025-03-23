@@ -44,6 +44,18 @@ export const sendInvoiceEmail = async (
 
   const pdfData = await createInvoicePDF(invoiceData);
 
+  // Check PDF size
+  const pdfSizeInMB = pdfData.length / (1024 * 1024);
+  const maxSizeInMB = 25; // Gmail's attachment size limit is 25MB
+
+  if (pdfSizeInMB > maxSizeInMB) {
+    throw new Error(
+      `PDF size (${pdfSizeInMB.toFixed(
+        2
+      )}MB) exceeds the maximum allowed size of ${maxSizeInMB}MB`
+    );
+  }
+
   return await transporter.sendMail({
     ...emailData,
     attachments: [

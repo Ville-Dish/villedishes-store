@@ -1,33 +1,53 @@
+"use client"
+
 import Image from "next/image";
 import Link from "next/link";
 
 import ShoppingCart from "./shopping-cart";
 import { NavbarMenu } from "./navbar_menu";
 import { AdminNavbarMenu } from "./admin_navbar_menu";
+import AdminAvatar from "./admin_avatar";
+import { Button } from "@/components/ui/button";
+import { Shield } from "lucide-react";
+import { useRouter } from "next/navigation";
+
 
 export const Header = ({ show }: { show: boolean }) => {
+  const router = useRouter();
   return (
-    <div className="flex gap-20 justify-between items-center px-4 my-4">
-      <Link href="/" className="flex gap-7">
-        <Image
-          src="/assets/ville.svg"
-          alt="VilleDishes Logo"
-          width={50}
-          height={50}
-        />
-        <h1 className="text-3xl font-bold hidden md:inline">VilleDishes</h1>
-      </Link>
-      {show ? (
-        <div className="md:flex-[40%] flex flex-row-reverse md:flex-row items-center md:justify-between">
-          <NavbarMenu />
-          <ShoppingCart />
+    <div className="flex items-center justify-between px-4 my-4">
+      <div className="flex-shrink-0">
+        <Link href={show ? "/" : "/admin/dashboard"}>
+          <Image
+            src="https://res.cloudinary.com/dxt7vk5dg/image/upload/v1737565949/ville-logo_nuigjy.svg"
+            alt="VilleDishes Logo"
+            width={100}
+            height={50}
+          />
+        </Link>
+      </div>
+      <div className="flex items-center flex-row-reverse md:flex-1 md:flex-row">
+        <div className="flex-grow flex justify-center">
+          {show ? (
+            <NavbarMenu />
+          ) : (
+            <AdminNavbarMenu />
+          )}
         </div>
-      ) : (
-        <div className="md:flex-[40%] flex flex-row-reverse md:flex-row items-center md:justify-between">
-          <AdminNavbarMenu />
-          <div />
+
+        <div className="flex-shrink-0">
+          {show ? (
+            <div className="flex items-center space-x-2">
+              <Button variant="ghost" size="icon" className="text-[#adadad] hover:bg-transparent" title="Admin" onClick={() => router.push("/admin/dashboard")}>
+                <Shield className="h-32 w-32 text-lg text-[#181d1b]" />
+              </Button>
+              <ShoppingCart />
+            </div>
+          ) : (
+            <AdminAvatar />
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 };

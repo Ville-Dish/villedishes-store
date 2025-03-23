@@ -36,7 +36,6 @@ export async function GET() {
   try {
     const products = await prisma.product.findMany({
       include: {
-        reviews: true, // Assuming you want to include related reviews
         OrderProduct: true, // Assuming you want to include related order products
       },
     });

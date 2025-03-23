@@ -22,9 +22,9 @@ export default function ShoppingCart() {
   return (
     <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
       <SheetTrigger asChild>
-        <Button variant="ghost" size="icon" className="text-slate-500 relative">
-          <CartIcon className="mr-2 h-32 w-32 text-lg" />
-          <span className="absolute top-2 right-2 text-xs text-red-500">
+        <Button variant="ghost" size="icon" className="text-[#adadad] relative">
+          <CartIcon className="mr-2 h-32 w-32 text-lg text-[#181d1b]" />
+          <span className="absolute top-2 right-2 text-xs text-[#fe9e1d]">
             {totalQuantity}
           </span>
         </Button>

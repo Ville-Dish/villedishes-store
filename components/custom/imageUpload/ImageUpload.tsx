@@ -12,10 +12,8 @@ interface ImageUploadProps {
   onRemoveError?: (error: string) => void;
 }
 
-type Result = {
-  event: string;
-  info: { secure_url: string };
-};
+// Use the type provided by Cloudinary for the upload widget result
+import { CloudinaryUploadWidgetResults } from "next-cloudinary";
 
 const ImageUpload: React.FC<ImageUploadProps> = ({
   value,
@@ -23,11 +21,19 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
   onRemove,
   onRemoveError,
 }) => {
-  const onUpload = (result: any) => {
-    onChange(result.info.secure_url);
-
-    if (onRemoveError) {
-      onRemoveError("");
+  const onUpload = (result: CloudinaryUploadWidgetResults) => {
+    const info = result.info;
+    // Check if 'info' is of type CloudinaryUploadWidgetInfo and has 'secure_url'
+    if (info && typeof info !== "string" && "secure_url" in info) {
+      onChange(info.secure_url);
+      if (onRemoveError) {
+        onRemoveError("");
+      }
+    } else {
+      console.error("Secure URL not found in upload result:", result);
+      if (onRemoveError) {
+        onRemoveError("Upload failed: Secure URL not found.");
+      }
     }
   };
 
@@ -65,7 +71,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
           return (
             <Button
               type="button"
-              className="bg-gray-500 text-white"
+              className="bg-[#e7a7a3] text-white"
               onClick={() => {
                 try {
                   open();

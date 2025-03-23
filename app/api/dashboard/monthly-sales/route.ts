@@ -10,13 +10,12 @@ type WeeklySalesData = {
   averageOrderValue: number;
 };
 
-// Custom serializer function to handle BigInt
-// const bigIntSerializer = (key: string, value: unknown) => {
-//   if (typeof value === "bigint") {
-//     return value.toString();
-//   }
-//   return value;
-// };
+type TopProductsData = {
+  name: string;
+  sales: number;
+  revenue: number;
+  unitsSold: number;
+};
 
 export async function GET(req: Request) {
   try {
@@ -29,41 +28,111 @@ export async function GET(req: Request) {
       searchParams.get("month") || currentMonth.toString()
     );
 
-    // console.log("Year selected", year);
-    // console.log("Month selected", month);
-
     if (isNaN(year) || isNaN(month)) {
       throw new Error("Invalid year or month parameter");
     }
 
+    const startDate = new Date(year, month - 1, 1);
+    const endDate = new Date(year, month, 0);
+
     let weeklySales: WeeklySalesData[] = [];
     try {
-      // Fetch weekly sales data
-      const result = await prisma.$queryRaw`
-        SELECT 
-          CAST(strftime('%W', "orderDate") AS INTEGER) + 1 as week,
-          COALESCE(CAST(SUM(total) AS FLOAT), 0) as sales,
-          COUNT(*) as orders,
-          COALESCE(CAST(AVG(total) AS FLOAT), 0) as averageOrderValue
-        FROM "Order"
-        WHERE strftime('%Y', "orderDate") = ${year.toString()}
-          AND strftime('%m', "orderDate") = ${month.toString().padStart(2, "0")}
-        GROUP BY strftime('%W', "orderDate")
-        ORDER BY week
-      `;
+      const [orders, invoices, incomes] = await Promise.all([
+        prisma.order.groupBy({
+          by: ["orderDate"],
+          where: {
+            orderDate: {
+              gte: startDate.toISOString(),
+              lte: endDate.toISOString(),
+            },
+            status: {
+              in: ["PENDING", "FULFILLED"],
+            },
+          },
+          _count: {
+            id: true,
+          },
+          _sum: {
+            total: true,
+          },
+        }),
+        prisma.invoice.groupBy({
+          by: ["dateCreated"],
+          where: {
+            dateCreated: {
+              gte: startDate.toISOString(),
+              lte: endDate.toISOString(),
+            },
+            status: "PAID",
+          },
+          _count: {
+            id: true,
+          },
+          _sum: {
+            amount: true,
+          },
+        }),
+        prisma.income.groupBy({
+          by: ["date"],
+          where: {
+            date: {
+              gte: startDate.toISOString(),
+              lte: endDate.toISOString(),
+            },
+          },
+          _sum: {
+            amount: true,
+          },
+        }),
+      ]);
 
-      if (!Array.isArray(result)) {
-        throw new Error(`Expected an array, but got: ${typeof result}`);
-      }
+      const weeklyData = new Map<number, WeeklySalesData>();
 
-      weeklySales = result.map((item) => ({
-        week: Number(item.week),
-        sales: Number(item.sales),
-        orders: Number(item.orders),
-        averageOrderValue: Number(item.averageOrderValue),
+      orders.forEach((item) => {
+        const date = item.orderDate ? new Date(item.orderDate) : new Date();
+        const week = Math.ceil((date.getDate() + 6 - date.getDay()) / 7);
+        const existingData = weeklyData.get(week) || {
+          week,
+          sales: 0,
+          orders: 0,
+          averageOrderValue: 0,
+        };
+        existingData.sales += item._sum?.total || 0;
+        existingData.orders += item._count?.id || 0;
+        weeklyData.set(week, existingData);
+      });
+
+      invoices.forEach((item) => {
+        const date = new Date(item.dateCreated);
+        const week = Math.ceil((date.getDate() + 6 - date.getDay()) / 7);
+        const existingData = weeklyData.get(week) || {
+          week,
+          sales: 0,
+          orders: 0,
+          averageOrderValue: 0,
+        };
+        existingData.sales += item._sum?.amount || 0;
+        existingData.orders += item._count?.id || 0;
+        weeklyData.set(week, existingData);
+      });
+
+      incomes.forEach((item) => {
+        const date = new Date(item.date);
+        const week = Math.ceil((date.getDate() + 6 - date.getDay()) / 7);
+        const existingData = weeklyData.get(week) || {
+          week,
+          sales: 0,
+          orders: 0,
+          averageOrderValue: 0,
+        };
+        existingData.sales += item._sum?.amount || 0;
+        weeklyData.set(week, existingData);
+      });
+
+      weeklySales = Array.from(weeklyData.values()).map((item) => ({
+        ...item,
+        averageOrderValue: item.orders > 0 ? item.sales / item.orders : 0,
       }));
-
-      // console.log("Weekly sales data fetched successfully");
     } catch (error) {
       console.error(
         "Error fetching weekly sales data:",
@@ -78,72 +147,105 @@ export async function GET(req: Request) {
       );
     }
 
-    // console.log(
-    //   "Weekly sales data:",
-    //   JSON.stringify(weeklySales, bigIntSerializer, 2)
-    // );
-
-    let topProducts = [];
+    let topProducts: TopProductsData[] = [];
     try {
-      // Fetch top products
-      topProducts = await prisma.orderProduct.groupBy({
+      const orderProducts = await prisma.orderProduct.groupBy({
         by: ["productId"],
+        where: {
+          order: {
+            orderDate: {
+              gte: startDate.toISOString(),
+              lte: endDate.toISOString(),
+            },
+            status: {
+              in: ["PENDING", "FULFILLED"],
+            },
+          },
+        },
         _sum: {
           quantity: true,
         },
-        orderBy: {
-          _sum: {
-            quantity: "desc",
+        _count: {
+          orderId: true,
+        },
+      });
+
+      const invoiceProducts = await prisma.invoiceProducts.findMany({
+        where: {
+          invoice: {
+            dateCreated: {
+              gte: startDate.toISOString(),
+              lte: endDate.toISOString(),
+            },
+            status: "PAID",
           },
         },
-        take: 5,
+        include: {
+          Product: true,
+        },
       });
-      // console.log("Top products data fetched successfully");
+
+      const productMap = new Map<
+        string,
+        { unitsSold: number; sales: number }
+      >();
+
+      orderProducts.forEach((item) => {
+        productMap.set(item.productId, {
+          unitsSold: (item._sum?.quantity || 0) as number,
+          sales: (item._count?.orderId || 0) as number,
+        });
+      });
+
+      invoiceProducts.forEach((item) => {
+        item.Product.forEach((product) => {
+          const productId = product.id;
+          const existing = productMap.get(productId) || {
+            unitsSold: 0,
+            sales: 0,
+          };
+          existing.unitsSold += item.quantity;
+          existing.sales += 1; //Count each invoice as one sale
+          productMap.set(productId, existing);
+        });
+      });
+
+      const productDetails = await prisma.product.findMany({
+        where: {
+          id: {
+            in: Array.from(productMap.keys()),
+          },
+        },
+        select: {
+          id: true,
+          name: true,
+          price: true,
+        },
+      });
+
+      topProducts = productDetails
+        .map((product) => {
+          const data = productMap.get(product.id) || { unitsSold: 0, sales: 0 };
+          return {
+            name: product.name,
+            sales: data.sales,
+            revenue: Number((data.unitsSold * product.price).toFixed(2)),
+            unitsSold: data.unitsSold,
+          };
+        })
+        .sort((a, b) => b.unitsSold - a.unitsSold)
+        .slice(0, 5);
     } catch (error) {
       console.error("Error fetching top products:", error);
       throw new Error("Failed to fetch top products");
     }
 
-    // console.log("Top products data:", JSON.stringify(topProducts, null, 2));
-
-    let topProductDetails = [];
-    try {
-      topProductDetails = await Promise.all(
-        topProducts.map(async (item) => {
-          const product = await prisma.product.findUnique({
-            where: { id: item.productId },
-            select: { name: true, price: true },
-          });
-          return {
-            name: product?.name ?? "Unknown Product",
-            sales: Number(item._sum.quantity) || 0,
-            revenue: Number((item._sum.quantity || 0) * (product?.price || 0)),
-            unitsSold: Number(item._sum.quantity) || 0,
-          };
-        })
-      );
-      // console.log("Top product details processed successfully");
-    } catch (error) {
-      console.error("Error processing top product details:", error);
-      throw new Error("Failed to process top product details");
-    }
-
-    // console.log(
-    //   "Top product details:",
-    //   JSON.stringify(topProductDetails, null, 2)
-    // );
-
     const response = {
       monthlySales: weeklySales,
-      topProducts: topProductDetails,
+      topProducts: topProducts,
     };
 
-    // console.log(
-    //   "Final response:",
-    //   JSON.stringify(response, bigIntSerializer, 2)
-    // );
-
-    if (weeklySales.length === 0 && topProductDetails.length === 0) {
+    if (weeklySales.length === 0 && topProducts.length === 0) {
       return NextResponse.json(
         { message: "No data found for the specified period" },
         { status: 404 }

@@ -1,10 +1,23 @@
-// app/api/dashboard/overview/route.ts
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma/client";
 
 // Define a type for the data structure
-type DataStructure = {
-  [key: string]: unknown;
+type DataStructure = { [key: string]: unknown };
+
+// Define types for our data structures
+type RevenueGrowthData = {
+  month: string;
+  revenue: number;
+};
+
+type ProductPerformanceData = {
+  name: string;
+  value: number;
+};
+
+type ResponseData = {
+  revenueGrowthData: RevenueGrowthData[];
+  productPerformanceData: ProductPerformanceData[];
 };
 
 // Helper function to serialize BigInt
@@ -20,79 +33,116 @@ export async function GET(req: Request) {
     const currentYear = new Date().getFullYear();
     const year = parseInt(searchParams.get("year") || currentYear.toString());
 
-    // console.log("YEAR", year);
-
     if (isNaN(year)) {
       throw new Error("Invalid year parameter");
     }
 
-    // Fetch monthly order totals for the Overview
-    const monthlyTotals = await prisma.$queryRaw`
-      SELECT 
-        CAST(SUBSTR("orderDate", 6, 2) AS INTEGER) as month,
-        COUNT(*) as total
-      FROM "Order"
-      WHERE SUBSTR("orderDate", 1, 4) = ${year.toString()}
-      GROUP BY SUBSTR("orderDate", 6, 2)
-      ORDER BY month
-    `;
-
-    // Fetch monthly revenue for RevenueGrowth
-    const monthlyRevenue = await prisma.$queryRaw`
-      SELECT 
-        CAST(SUBSTR("orderDate", 6, 2) AS INTEGER) as month,
-        SUM(CAST(total AS DECIMAL(10,2))) as revenue
-      FROM "Order"
-      WHERE SUBSTR("orderDate", 1, 4) = ${year.toString()}
-        AND status != 'UNVERIFIED'
-      GROUP BY SUBSTR("orderDate", 6, 2)
-      ORDER BY month
-    `;
-
-    // Fetch product performance data
-    const productPerformance = await prisma.orderProduct.groupBy({
-      by: ["productId"],
-      _sum: {
-        quantity: true,
-      },
-      orderBy: {
-        _sum: {
-          quantity: "desc",
+    // Fetch monthly revenue projections for the specified year
+    const monthlyRevenue = await prisma.monthlyProjection.findMany({
+      where: {
+        revenue: {
+          year: year,
         },
       },
-      take: 5,
+      select: {
+        month: true,
+        actual: true,
+      },
+      orderBy: {
+        month: "asc",
+      },
     });
 
-    const productDetails = await Promise.all(
-      productPerformance.map(async (item) => {
-        const product = await prisma.product.findUnique({
-          where: { id: item.productId },
-          select: { name: true },
-        });
-        return {
-          name: product?.name ?? "Unknown Product",
-          value: item._sum.quantity ?? 0,
-        };
+    // Transform the monthly revenue data to match the desired format
+    const revenueGrowthData: RevenueGrowthData[] = monthlyRevenue.map(
+      (item) => ({
+        month: item.month,
+        revenue: parseFloat(item.actual.toFixed(1)),
       })
     );
 
-    const response = serializeBigInt({
-      overviewData: monthlyTotals,
-      revenueGrowthData: monthlyRevenue,
-      productPerformanceData: productDetails,
-    });
+    // Fetch product performance data for specified year
+    let productPerformance: ProductPerformanceData[] = [];
+    try {
+      const startDate = `${year}-01-01`;
+      const endDate = `${year}-12-31`;
 
-    // console.log("Response:", JSON.stringify(response, null, 2));
+      const orderProducts = await prisma.orderProduct.groupBy({
+        by: ["productId"],
+        where: {
+          order: {
+            orderDate: {
+              gte: startDate,
+              lte: endDate,
+            },
+            status: {
+              in: ["PENDING", "FULFILLED"],
+            },
+          },
+        },
+        _sum: {
+          quantity: true,
+        },
+      });
 
-    if (
-      !Array.isArray(response.overviewData) ||
-      !Array.isArray(response.revenueGrowthData) ||
-      !Array.isArray(response.productPerformanceData)
-    ) {
-      throw new Error("Invalid data structure in query results");
+      // Fetch invoice products
+      const invoiceProducts = await prisma.invoiceProducts.findMany({
+        where: {
+          invoice: {
+            dateCreated: {
+              gte: startDate,
+              lte: endDate,
+            },
+            status: "PAID",
+          },
+        },
+        include: {
+          Product: true,
+        },
+      });
+
+      const productQuantities = new Map<string, number>();
+
+      orderProducts.forEach((op) => {
+        productQuantities.set(op.productId, op._sum.quantity || 0);
+      });
+
+      // Aggregate quantities from invoice products
+      invoiceProducts.forEach((ip) => {
+        ip.Product.forEach((product) => {
+          const currentQuantity = productQuantities.get(product.id) || 0;
+          productQuantities.set(product.id, currentQuantity + ip.quantity);
+        });
+      });
+
+      const sortedProducts = Array.from(productQuantities.entries())
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5);
+
+      productPerformance = await Promise.all(
+        sortedProducts.map(async ([productId, quantity]) => {
+          const product = await prisma.product.findUnique({
+            where: { id: productId },
+            select: { name: true },
+          });
+          return {
+            name: product?.name || "Unknown Product",
+            value: quantity,
+          };
+        })
+      );
+    } catch (queryError) {
+      console.error("Error in product performance query:", queryError);
     }
 
-    return NextResponse.json(response);
+    const response: ResponseData = {
+      revenueGrowthData: revenueGrowthData,
+      productPerformanceData: productPerformance,
+    };
+
+    const serializedResponse = serializeBigInt(response);
+
+    return NextResponse.json(serializedResponse);
   } catch (error) {
     console.error("Error fetching dashboard overview data:", error);
     return NextResponse.json(

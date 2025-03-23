@@ -5,7 +5,13 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 const COLORS = ["#FE9E1D", "#DA281C", "#AA8865", "#FFF1E2", "#1AA879"];
 
 export const ProductPerformance = ({ data }: productPerformanceProps) => {
-  // const total = data.reduce((sum, entry) => sum + entry.value, 0);
+  if (!data || data.length === 0) {
+    return (
+      <div className="flex justify-center items-center h-full">
+        <p className="text-sm text-muted-foreground">No product performance data available</p>
+      </div>
+    );
+  }
 
   const renderCustomizedLabel = ({
     cx,
@@ -49,14 +55,14 @@ export const ProductPerformance = ({ data }: productPerformanceProps) => {
   };
 
   return (
-    <ResponsiveContainer width="100%" height={300}>
+    <ResponsiveContainer width="100%" height="100%">
       <PieChart>
         <Pie
           data={data}
           cx="50%"
           cy="50%"
           labelLine={false}
-          outerRadius={80}
+          outerRadius="90%"
           fill="#8884d8"
           dataKey="value"
           label={renderCustomizedLabel}

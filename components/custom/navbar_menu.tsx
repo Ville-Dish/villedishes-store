@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/sheet";
 import { usePathname } from "next/navigation";
 import { menuItems } from "@/lib/constantData";
+import { cn } from "@/lib/utils";
 
 export const NavbarMenu = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -41,9 +42,10 @@ export const NavbarMenu = () => {
     onClick?: () => void;
   }) => (
     <Link
-      className={`text-lg font-semibold hover:underline underline-offset-4 ${
-        pathname === href && "underline"
-      }`}
+      className={cn(
+        "text-lg text-muted-foreground font-semibold hover:underline hover:text-primary underline-offset-4",
+        pathname === href && "underline text-primary"
+      )}
       href={href}
       onClick={onClick}
     >
@@ -55,9 +57,9 @@ export const NavbarMenu = () => {
     <header className="flex items-center justify-between">
       {!isLargeScreen ? (
         <Sheet open={isOpen} onOpenChange={setIsOpen}>
-          <SheetTrigger asChild>
+          <SheetTrigger asChild className="md:hidden">
             <Button variant="ghost" size="icon" className="bg-transparent">
-              <Menu className="h-6 w-6" />
+              <Menu className="h-10 w-10" />
               <span className="sr-only">Toggle menu</span>
             </Button>
           </SheetTrigger>
@@ -77,7 +79,7 @@ export const NavbarMenu = () => {
           </SheetContent>
         </Sheet>
       ) : (
-        <nav className="flex gap-4 sm:gap-6">
+        <nav className="hidden md:flex gap-4 sm:gap-6">
           {menuItems.map((item) => (
             <NavLink key={item.href} {...item} />
           ))}

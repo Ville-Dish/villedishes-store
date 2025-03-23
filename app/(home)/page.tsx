@@ -5,23 +5,53 @@ import { Button } from "@/components/ui/button";
 import { ChefHat, Clock, Truck } from "lucide-react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { popularProducts, testimonials } from "@/lib/constantData";
-import { useState } from "react";
+import { testimonials } from "@/lib/constantData";
+import { useEffect, useState } from "react";
 import { ProductCard } from "@/components/custom/product-card";
-
-const productItems: MenuItem[] = popularProducts;
-const categories = [
-  "All",
-  ...new Set(productItems.map((item) => item.category)),
-];
 
 export default function Home() {
   const [activeCategory, setActiveCategory] = useState("All");
+  const [popularProducts, setPopularProducts] = useState<MenuItem[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [loadingProducts, setLoadingProducts] = useState<boolean>(true);
 
-  const filteredItems =
-    activeCategory === "All"
-      ? productItems
-      : productItems.filter((item) => item.category === activeCategory);
+  const [filteredItems, setFilteredItems] = useState<MenuItem[]>([]);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const response = await fetch("/api/menu?limit=8", { method: "GET" });
+        const data = await response.json();
+
+        if (response.ok) {
+          setPopularProducts(data.data);
+          // setFilteredItems(data.data); // Set filtered items initially to all products
+        } else {
+          console.error("Error fetching products:", data.message);
+        }
+      } catch (error) {
+        console.error("Error fetching products:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, []);
+
+  const categories = [
+    "All",
+    ...new Set(popularProducts.map((item) => item.category)),
+  ];
+
+  useEffect(() => {
+    setLoadingProducts(true);
+    const filtered = popularProducts.filter(
+      (item) => activeCategory === "All" || item.category === activeCategory
+    );
+    setFilteredItems(filtered);
+    setLoadingProducts(false);
+  }, [activeCategory, popularProducts]);
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -31,7 +61,7 @@ export default function Home() {
           subtitle="Experience the rich flavors of Nigeria with our delicious meals and desserts"
           ctaText="Order Now"
           ctaLink="/products"
-          backgroundImage="/assets/banner-bg.png"
+          backgroundImage="https://res.cloudinary.com/dxt7vk5dg/image/upload/v1737565949/banner-bg_do18g3.png"
         />
         <section className="w-full py-12 md:py-24 lg:py-32 bg-gray-100">
           <div className="container mx-auto grid grid-cols-1 gap-6 lg:grid-cols-3 lg:gap-12 px-4 md:px-6">
@@ -78,12 +108,26 @@ export default function Home() {
             <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl text-center mb-12">
               Our Popular Menu
             </h2>
-            <ProductCard
-              categories={categories}
-              items={filteredItems}
-              activeCategory={activeCategory}
-              onCategoryChange={setActiveCategory}
-            />
+            {loading ? (
+              <div className="flex justify-center items-center h-64">
+                <p className="text-xl font-semibold text-gray-600">
+                  Loading Products...
+                </p>
+              </div>
+            ) : loadingProducts ? (
+              <div className="flex justify-center items-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : filteredItems.length > 0 ? (
+              <ProductCard
+                categories={categories}
+                items={filteredItems}
+                activeCategory={activeCategory}
+                onCategoryChange={setActiveCategory}
+              />
+            ) : (
+              <div className="flex justify-center items-center h-64"></div>
+            )}
             <div className="text-center mt-12">
               <Button asChild>
                 <Link href="/products">View Full Menu</Link>

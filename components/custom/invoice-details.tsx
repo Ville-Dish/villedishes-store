@@ -32,6 +32,9 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { adminEmail } from "@/lib/constantData";
 import { formattedCurrency } from "@/lib/helper";
+import { InvoiceStatus, isValidInvoiceStatus } from "@/lib/invoiceUtils";
+import { ScrollArea } from "../ui/scroll-area";
+import { cn } from "@/lib/utils";
 
 export const InvoiceDetails = ({
   invoice,
@@ -40,11 +43,11 @@ export const InvoiceDetails = ({
 }: InvoiceDetailsProps) => {
   const [updatedInvoice, setUpdatedInvoice] = useState<Invoice>(invoice);
 
-  const [newProduct, setNewProduct] = useState<{
+  const [newProducts, setNewProducts] = useState<Array<{
     id: string;
     quantity: number;
     discount: number;
-  }>({ id: "", quantity: 1, discount: 0 });
+  }>>([{ id: "", quantity: 1, discount: 0 }]);
 
   const [isAddProductDialogOpen, setIsAddProductDialogOpen] = useState(false);
   const [editingProductIndex, setEditingProductIndex] = useState<number | null>(
@@ -53,7 +56,6 @@ export const InvoiceDetails = ({
   const [discountPercentage, setDiscountPercentage] = useState(
     invoice.discountPercentage || 0
   );
-  console.log({ invoice });
   const [productDiscount, setProductDiscount] = useState<number[]>(
     invoice?.products?.map((p) => p.discount) || []
   );
@@ -69,11 +71,23 @@ export const InvoiceDetails = ({
   const [filteredProducts, setFilteredProducts] = useState(availableProducts);
   const [searchTerm, setSearchTerm] = useState("");
 
+  const [serviceCharge, setServiceCharge] = useState(
+    invoice.serviceCharge || 0
+  );
+  const [miscellaneous, setMiscellaneous] = useState(
+    invoice.miscellaneous || 0
+  );
+
   useEffect(() => {
     setUpdatedInvoice(invoice);
-    setInvoiceAmount(invoice.amount || 0);
     setAmountPaid(invoice.amountPaid || 0);
-    setAmountDue(invoice.amount - (invoice.amountPaid || 0));
+    setAmountDue(invoice.amountDue || 0);
+    setDiscountPercentage(invoice.discountPercentage || 0);
+    setTaxRate(invoice.taxRate || 0);
+    setShippingFee(invoice.shippingFee || 0);
+    setServiceCharge(invoice.serviceCharge || 0);
+    setMiscellaneous(invoice.miscellaneous || 0);
+    setProductDiscount(invoice.products?.map((p) => p.discount) || []);
   }, [invoice]);
 
   useEffect(() => {
@@ -105,32 +119,50 @@ export const InvoiceDetails = ({
     setShippingFee(isNaN(value) ? 0 : value);
   };
 
-  const handleStatusChange = (value: Invoice["status"]) => {
-    setUpdatedInvoice((prev) => {
-      const newStatus = value;
-      let newAmountPaid = prev.amountPaid;
-      let newAmountDue = prev.amountDue;
+  const handleServiceChargeChange = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const value = parseFloat(e.target.value);
+    setServiceCharge(isNaN(value) ? 0 : value);
+  };
 
-      if (newStatus === "PAID") {
-        newAmountPaid = prev.amount;
-        newAmountDue = 0;
-      } else if (
-        prev.status === "PAID" &&
-        (newStatus === "UNPAID" ||
-          newStatus === "DUE" ||
-          newStatus === "PENDING")
-      ) {
-        newAmountPaid = 0;
-        newAmountDue = prev.amount;
-      }
+  const handleMiscellaneousChange = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const value = parseFloat(e.target.value);
+    setMiscellaneous(isNaN(value) ? 0 : value);
+  };
 
-      return {
-        ...prev,
-        status: newStatus,
-        amountPaid: newAmountPaid,
-        amountDue: newAmountDue,
-      };
-    });
+  const handleStatusChange = (value: string) => {
+    if (isValidInvoiceStatus(value)) {
+      setUpdatedInvoice((prev) => {
+        const newStatus = value as InvoiceStatus;
+        let newAmountPaid = prev.amountPaid;
+        let newAmountDue = prev.amountDue;
+
+        if (newStatus === "PAID") {
+          newAmountPaid = prev.amount;
+          newAmountDue = 0;
+        } else {
+          newAmountPaid = 0;
+          newAmountDue = prev.amount;
+        }
+
+        return {
+          ...prev,
+          status: newStatus,
+          amountPaid: newAmountPaid,
+          amountDue: newAmountDue,
+        };
+      });
+    }
+  };
+
+  const resetProductDialog = () => {
+    setNewProducts([{ id: "", quantity: 1, discount: 0 }]);
+    setEditingProductIndex(null);
+    setIsAddProductDialogOpen(false);
+    setSearchTerm(""); // Clear search term
   };
 
   const handleProductChange = (
@@ -174,82 +206,105 @@ export const InvoiceDetails = ({
     setUpdatedInvoice((prev) => ({ ...prev, products: updatedProducts }));
   };
 
-  const resetProductDialog = () => {
-    setNewProduct({ id: "", quantity: 1, discount: 0 });
-    // setProductDiscount(0);
-    setEditingProductIndex(null);
-    setIsAddProductDialogOpen(false);
-  };
 
   const addProduct = () => {
-    const selectedProduct = availableProducts.find(
-      (p) => p.id === newProduct.id
-    );
-    if (selectedProduct) {
-      const updatedProducts = updatedInvoice.products
-        ? [...updatedInvoice.products]
-        : []; // Ensure invoice.products is not undefined
+    const validProducts = newProducts.filter(product => product.id !== "");
 
-      const existingProductIndex = updatedProducts.findIndex(
-        (p) => p.id === selectedProduct.id
-      );
-      if (existingProductIndex !== -1) {
-        updatedProducts[existingProductIndex].quantity += newProduct.quantity;
-        updatedProducts[existingProductIndex].discount =
-          productDiscount[existingProductIndex];
-      } else {
-        updatedProducts.push({
-          id: selectedProduct.id,
-          name: selectedProduct.name,
-          basePrice: selectedProduct.basePrice,
-          quantity: newProduct.quantity,
-          price:
-            selectedProduct.basePrice * newProduct.quantity * (1 - 0 / 100),
-          discount: 0,
-        });
+    // Create a copy of the current products array
+    let updatedProducts = updatedInvoice.products ? [...updatedInvoice.products] : [];
+    
+    validProducts.forEach(newProduct => {
+      const selectedProduct = availableProducts.find(p => p.id === newProduct.id);
+      if (selectedProduct) {
+        // const updatedProducts = updatedInvoice.products ? [...updatedInvoice.products] : [];
+  
+        const existingProductIndex = updatedProducts.findIndex(
+          p => p.id === selectedProduct.id
+        );
+        if (existingProductIndex !== -1) {
+          updatedProducts[existingProductIndex].quantity += newProduct.quantity;
+          updatedProducts[existingProductIndex].discount = productDiscount[existingProductIndex];
+          updatedProducts[existingProductIndex].price = 
+            updatedProducts[existingProductIndex].basePrice * 
+            updatedProducts[existingProductIndex].quantity * 
+            (1 - updatedProducts[existingProductIndex].discount / 100);
+        } else {
+          updatedProducts.push({
+            id: selectedProduct.id,
+            name: selectedProduct.name,
+            basePrice: selectedProduct.basePrice,
+            quantity: newProduct.quantity,
+            price: selectedProduct.basePrice * newProduct.quantity * (1 - 0 / 100),
+            discount: 0,
+          });
+        }
       }
-      setUpdatedInvoice((prev) => ({ ...prev, products: updatedProducts }));
-      resetProductDialog();
-    }
+    });
+    
+    setUpdatedInvoice(prev => ({ ...prev, products: updatedProducts }));
+    resetProductDialog();
   };
 
-  const removeProduct = (index: number) => {
+  const removeProduct = async (index: number) => {
+    // Create new products array with the item removed
     const updatedProducts = updatedInvoice.products
       ? [...updatedInvoice.products]
       : [];
     updatedProducts.splice(index, 1);
-    setUpdatedInvoice((prev) => ({ ...prev, products: updatedProducts }));
+    
+    // Update the invoice state with new products array
+    await setUpdatedInvoice((prev) => {
+      const newState = { ...prev, products: updatedProducts };
+      return newState;
+    });
+
+    // Update product discounts array to stay in sync
+    setProductDiscount(prevDiscounts => {
+      const newDiscounts = [...prevDiscounts];
+      newDiscounts.splice(index, 1);
+      return newDiscounts;
+    });
   };
 
   const startEditingProduct = (index: number) => {
     if (updatedInvoice.products) {
       setEditingProductIndex(index);
       const productToEdit = updatedInvoice.products[index];
-      setNewProduct({
+      setNewProducts([{
         id: productToEdit.id,
         quantity: productToEdit.quantity,
         discount: productToEdit.discount,
-      });
+      }]);
       setIsAddProductDialogOpen(true);
     }
   };
 
   const saveEditedProduct = () => {
-    if (editingProductIndex !== null) {
-      const updatedProducts = updatedInvoice.products
-        ? [...updatedInvoice.products]
-        : [];
+    // Check that we have a valid editing index and valid product data
+    if (editingProductIndex === null || !newProducts?.length || !newProducts[0]?.id) {
+      toast.error("Invalid product data");
+      return;
+    }
+
+    const updatedProducts = updatedInvoice.products
+      ? [...updatedInvoice.products]
+      : [];
+
+    // Ensure the editing index is within bounds
+    if (editingProductIndex >= 0 && editingProductIndex < updatedProducts.length) {
       updatedProducts[editingProductIndex] = {
         ...updatedProducts[editingProductIndex],
-        quantity: newProduct.quantity,
+        quantity: newProducts[0].quantity,
         discount: productDiscount[editingProductIndex],
         price:
           updatedProducts[editingProductIndex].basePrice *
-          newProduct.quantity *
+          newProducts[0].quantity *
           (1 - productDiscount[editingProductIndex] / 100),
       };
       setUpdatedInvoice((prev) => ({ ...prev, products: updatedProducts }));
       resetProductDialog();
+    } else {
+      toast.error("Invalid product index");
     }
   };
 
@@ -268,25 +323,41 @@ export const InvoiceDetails = ({
     const subtotal = calculateSubtotal() || 0;
     const discountAmount = subtotal * (discountPercentage / 100);
     const taxAmount = subtotal * (taxRate / 100);
-    return subtotal - discountAmount + taxAmount + shippingFee;
+    return subtotal - discountAmount + taxAmount + shippingFee + serviceCharge + miscellaneous;
   };
 
   const handleUpdateInvoice = async () => {
     try {
       setUpdating(true);
+      const total = calculateTotal();
+
+      // Get the latest products state
+      const currentProducts = updatedInvoice.products?.map(product => ({
+        ...product,
+        price: product.basePrice * product.quantity * (1 - (product.discount || 0) / 100)
+      })) || [];
+
       const updatedInvoiceData = {
         ...updatedInvoice,
-        amount: calculateTotal(),
+        amount: total,
         amountPaid: amountPaid,
         amountDue: amountDue,
         discountPercentage,
         taxRate,
         shippingFee,
+        serviceCharge,
+        miscellaneous,
+        products: currentProducts
       };
 
-      console.log({ updatedInvoiceData });
+      await onUpdate(updatedInvoiceData);
 
-      onUpdate(updatedInvoiceData);
+      // Update local state to reflect changes
+      setUpdatedInvoice(updatedInvoiceData);
+      setInvoiceAmount(total);
+      setAmountDue(total - amountPaid);
+
+      toast.success("Invoice updated successfully");
     } catch (error) {
       console.error("Error updating invoice:", error);
       toast.error("Error trying to update invoice", {
@@ -296,6 +367,22 @@ export const InvoiceDetails = ({
       setUpdating(false);
     }
   };
+
+  // Modify the useEffect to properly track product changes
+  useEffect(() => {
+    const total = calculateTotal();
+    setInvoiceAmount(total);
+    setAmountDue(total - amountPaid);
+  }, [
+    // Add updatedInvoice as a dependency to ensure updates when products change
+    updatedInvoice,
+    discountPercentage,
+    taxRate,
+    shippingFee,
+    serviceCharge,
+    miscellaneous,
+    amountPaid
+  ]);
 
   const handleSendInvoiceEmail = async () => {
     try {
@@ -332,16 +419,16 @@ export const InvoiceDetails = ({
 
   const subTotal = calculateSubtotal() || 0;
 
-  console.log({ productDiscount });
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Seller Data */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
               <Image
-                src="/assets/ville-logo.svg"
+                src="https://res.cloudinary.com/dxt7vk5dg/image/upload/v1737565949/ville-logo_nuigjy.svg"
                 alt="Company Logo"
                 width={80}
                 height={80}
@@ -369,6 +456,7 @@ export const InvoiceDetails = ({
           </CardContent>
         </Card>
 
+        {/* Customer Data */}
         <Card>
           <CardHeader>
             <CardTitle>Bill To</CardTitle>
@@ -407,6 +495,7 @@ export const InvoiceDetails = ({
         </Card>
       </div>
 
+      {/* Invoice Overview */}
       <Card>
         <CardHeader>
           <CardTitle>Invoice Overview</CardTitle>
@@ -441,10 +530,10 @@ export const InvoiceDetails = ({
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="UNPAID">Unpaid</SelectItem>
-                  <SelectItem value="DUE">Due</SelectItem>
-                  <SelectItem value="PAID">Paid</SelectItem>
-                  <SelectItem value="PENDING">Pending</SelectItem>
+                  <SelectItem value={InvoiceStatus.PENDING}>Pending</SelectItem>
+                  <SelectItem value={InvoiceStatus.UNPAID}>Unpaid</SelectItem>
+                  <SelectItem value={InvoiceStatus.OVERDUE}>Due</SelectItem>
+                  <SelectItem value={InvoiceStatus.PAID}>Paid</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -489,12 +578,13 @@ export const InvoiceDetails = ({
         </CardContent>
       </Card>
 
+      {/* Invoice Product Details */}
       <Card>
         <CardHeader>
           <CardTitle>Invoice Product Details</CardTitle>
         </CardHeader>
         <CardContent>
-          {updatedInvoice.products && (
+          {updatedInvoice?.products && updatedInvoice?.products?.length > 0 && (
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
@@ -566,7 +656,11 @@ export const InvoiceDetails = ({
             onOpenChange={setIsAddProductDialogOpen}
           >
             <DialogTrigger asChild>
-              <Button onClick={resetProductDialog} className="mt-4">
+              <Button
+                onClick={resetProductDialog}
+                className="mt-4"
+                variant="create"
+              >
                 Add Product
               </Button>
             </DialogTrigger>
@@ -578,68 +672,100 @@ export const InvoiceDetails = ({
                     : "Add Product to Invoice"}
                 </DialogTitle>
               </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="product" className="text-right">
-                    Product
-                  </Label>
-                  <Select
-                    onValueChange={(value) =>
-                      setNewProduct((prev) => ({ ...prev, id: value }))
-                    }
-                    value={newProduct.id}
-                  >
-                    <SelectTrigger className="col-span-3">
-                      <SelectValue placeholder="Select product" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <Input
-                        type="text"
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        placeholder="Filter Product"
-                      />
-                      {filteredProducts.map((p) => (
-                        <SelectItem key={p.id} value={p.id}>
-                          {p.name} - ${p.basePrice.toFixed(2)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="quantity" className="text-right">
-                    Quantity
-                  </Label>
-                  <Input
-                    id="quantity"
-                    type="number"
-                    value={newProduct.quantity}
-                    onChange={(e) =>
-                      setNewProduct((prev) => ({
-                        ...prev,
-                        quantity: parseInt(e.target.value),
-                      }))
-                    }
-                    className="col-span-3"
-                    min="1"
-                  />
-                </div>
+              <div className="grid gap-4 py-4 pt-8">
+                <ScrollArea className="max-h-[400px] pr-4">
+                  <div className="space-y-4">
+                    {newProducts.map((product, index) => (
+                      <div key={index} className={cn("space-y-4 border-b border-input py-4", newProducts.length === 1 && "pr-2")}>
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1 space-y-2">
+                            <div className="grid grid-cols-4 items-center gap-4">
+                              <Label htmlFor={`product-${index}`} className="text-right">
+                                Product {index + 1}
+                              </Label>
+                              <Select
+                                onValueChange={(value) => {
+                                  const updated = [...newProducts];
+                                  updated[index].id = value;
+                                  setNewProducts(updated);
+                                }}
+                                value={product.id}
+                              >
+                                <SelectTrigger className="col-span-3">
+                                  <SelectValue placeholder="Select product" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <Input
+                                    type="text"
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    placeholder="Filter Product"
+                                  />
+                                  {filteredProducts.map((p) => (
+                                    <SelectItem key={p.id} value={p.id}>
+                                      {p.name} - ${p.basePrice.toFixed(2)}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                              <Label htmlFor={`quantity-${index}`} className="text-right">
+                                Quantity
+                              </Label>
+                              <Input
+                                id={`quantity-${index}`}
+                                type="number"
+                                value={product.quantity}
+                                onChange={(e) => {
+                                  const updated = [...newProducts];
+                                  updated[index].quantity = parseInt(e.target.value);
+                                  setNewProducts(updated);
+                                }}
+                                className="col-span-3"
+                                min="1"
+                              />
+                            </div>
+                          </div>
+                          {newProducts.length > 1 && ( // Only show remove button if there's more than one product
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                const updated = newProducts.filter((_, i) => i !== index);
+                                setNewProducts(updated);
+                              }}
+                              className="ml-2 hover:bg-transparent"
+                            >
+                              <Trash2 className="h-4 w-4 text-red-500" />
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+                
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setNewProducts([...newProducts, { id: "", quantity: 1, discount: 0 }])}
+                >
+                  Add Another Product
+                </Button>
               </div>
-              <Button
-                onClick={
-                  editingProductIndex !== null ? saveEditedProduct : addProduct
-                }
-              >
-                {editingProductIndex !== null
-                  ? "Save Changes"
-                  : "Add to Invoice"}
-              </Button>
+            <Button
+              onClick={editingProductIndex !== null ? saveEditedProduct : addProduct}
+              variant={editingProductIndex !== null ? "submit" : "create"}
+            >
+              {editingProductIndex !== null ? "Save Changes" : "Add to Invoice"}
+            </Button>
             </DialogContent>
           </Dialog>
         </CardContent>
       </Card>
 
+      {/* Invoice Summary */}
       <Card>
         <CardHeader>
           <CardTitle>Invoice Summary</CardTitle>
@@ -700,6 +826,36 @@ export const InvoiceDetails = ({
                 <span>{formattedCurrency.format(shippingFee)}</span>
               </div>
             </div>
+            <div className="flex justify-between">
+              <span>Service Charge:</span>
+              <div className="flex items-center">
+                <Input
+                  id="serviceCharge"
+                  type="number"
+                  value={serviceCharge}
+                  className="w-20 mr-2"
+                  min="0"
+                  step={0.05}
+                  onChange={handleServiceChargeChange}
+                />
+                <span>{formattedCurrency.format(serviceCharge)}</span>
+              </div>
+            </div>
+            <div className="flex justify-between">
+              <span>Miscellaneous:</span>
+              <div className="flex items-center">
+                <Input
+                  id="miscellaneous"
+                  type="number"
+                  value={miscellaneous}
+                  className="w-20 mr-2"
+                  min="0"
+                  step={0.05}
+                  onChange={handleMiscellaneousChange}
+                />
+                <span>{formattedCurrency.format(miscellaneous)}</span>
+              </div>
+            </div>
             <div className="flex justify-between text-lg font-bold">
               <span>Total:</span>
               <span>{formattedCurrency.format(calculateTotal())}</span>
@@ -711,6 +867,7 @@ export const InvoiceDetails = ({
       <div className="flex flex-col sm:flex-row gap-4 justify-between">
         <Button
           className="w-full sm:w-auto"
+          variant="submit"
           onClick={handleUpdateInvoice}
           disabled={updating || sending}
         >
@@ -719,6 +876,7 @@ export const InvoiceDetails = ({
         </Button>
         <Button
           className="w-full sm:w-auto"
+          variant="send"
           onClick={handleSendInvoiceEmail}
           disabled={sending || updating}
         >

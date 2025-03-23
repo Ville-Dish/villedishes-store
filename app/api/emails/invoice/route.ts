@@ -36,9 +36,24 @@ export async function POST(req: Request) {
       { message: "Email with attached pdf sent successfully" },
       { status: 200 }
     );
-  } catch (error) {
+  } catch (error: unknown) {
+    console.error("Error sending email:", error);
+
+    if (error instanceof Error) {
+      if (error.message.includes("PDF size")) {
+        return NextResponse.json(
+          { message: "Error sending email", error: error.message },
+          { status: 413 } // 413 Payload Too Large
+        );
+      }
+      return NextResponse.json(
+        { message: "Error sending email", error: error.message },
+        { status: 500 }
+      );
+    }
+
     return NextResponse.json(
-      { message: "Error sending email", error },
+      { message: "Error sending email", error: "An unknown error occurred" },
       { status: 500 }
     );
   }

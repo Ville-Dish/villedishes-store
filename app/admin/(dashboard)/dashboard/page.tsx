@@ -1,3 +1,4 @@
+//app/admin/(dashboard)/dashboard/page.tsx
 "use client";
 
 import Link from "next/link";
@@ -14,7 +15,6 @@ import {
 import { RevenueGrowth } from "@/components/custom/dashboard/revenue-growth";
 import { ProductPerformance } from "@/components/custom/dashboard/product-performance";
 import { RecentOrders } from "@/components/custom/dashboard/recent-orders";
-import { Overview } from "@/components/custom/dashboard/overview";
 import { ReportsSection } from "@/components/custom/dashboard/report-accordion";
 import { DatePickerWithRange } from "@/components/custom/date-range-picker";
 import { YearPicker } from "@/components/custom/dashboard/year-picker";
@@ -31,30 +31,66 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { useCallback, useEffect, useState } from "react";
 import { DateRange } from "react-day-picker";
-import { subDays, format, parse, isBefore, isSameMonth } from "date-fns";
+import { subDays, format } from "date-fns";
+import { SettingsProgress } from "@/components/custom/settings/progress";
+import { AnalyticsPieChart } from "@/components/custom/dashboard/pie-chart";
+import { useLoading } from "@/context/LoadingContext";
 
-type overview = {
-  month: string;
-  total: string;
-};
 
 type revenue = {
   month: string;
   revenue: number;
 };
 
-type quarterly = {
+type revenueModified = {
+  name: string;
+  revenue: number;
+};
+
+type category = {
+  category: string;
+  amount: number;
+};
+
+interface MonthlyData {
   month: number;
   revenue: number;
   expenses: number;
   profit: number;
+}
+
+interface ExpenseBreakdown {
+  category: string;
+  amount: number;
+}
+
+interface QuarterlyData {
+  quarter: number;
+  monthlyData: MonthlyData[];
+}
+
+interface QuarterlyExpenseBreakdown {
+  quarter: number;
+  data: ExpenseBreakdown[];
+}
+
+type QuarterlyReport = {
+  monthlyData: QuarterlyData[];
+  expenseBreakdown: QuarterlyExpenseBreakdown[];
 };
 
-type quarterlyPerformance = {
-  quarter: number;
-  sales: number;
-  orders: number;
-  customerSatisfaction: number;
+type ReportItem = {
+  date: string;
+  status: string;
+  action?: string;
+  monthlySalesReport?: MonthlySalesReport;
+  quarterlyReport?: QuarterlyReport;
+  annualPerformance?: AnnualPerformance;
+};
+
+type ReportData = {
+  type: string;
+  items: ReportItem[];
 };
 
 const StatCard: React.FC<{
@@ -87,9 +123,11 @@ const monthNames = [
   "Nov",
   "Dec",
 ];
-const quarterNames = ["Q1", "Q2", "Q3", "Q4"];
 
 export default function AdminDashboard() {
+  const { setIsLoading } = useLoading(); // Use loading context
+  const [isFetchingData, setIsFetchingData] = useState(false);
+
   const [activeTab, setActiveTab] = useState("overview");
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: subDays(new Date(), 30),
@@ -98,6 +136,12 @@ export default function AdminDashboard() {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [selectedReportYear, setSelectedReportYear] = useState(
+    new Date().getFullYear()
+  );
+  const [selectedAnalyticsMonth, setSelectedAnalyticsMonth] = useState(
+    new Date().getMonth() + 1
+  );
+  const [selectedAnalyticsYear, setSelectedAnalyticsYear] = useState(
     new Date().getFullYear()
   );
 
@@ -113,11 +157,19 @@ export default function AdminDashboard() {
     recentOrders: [],
   });
 
-  const [adminDashboardAnalyticsData, setAdminDashboardAnalyticsData] =
+  const [adminDashboardPerformanceData, setAdminDashboardPerformanceData] =
     useState({
-      overviewData: [],
       revenueGrowthData: [],
       productPerformanceData: [],
+    });
+
+  const [adminDashboardAnalyticsData, setAdminDashboardAnalyticsData] =
+    useState({
+      yearlyRevenueData: { projected: 0, actual: 0 },
+      monthlyRevenueData: { projected: 0, actual: 0 },
+      profitData: { totalRevenue: 0, profit: 0 },
+      incomeData: [],
+      expenseData: [],
     });
 
   const [adminDashboardReportData, setAdminDashboardReportData] = useState<
@@ -131,19 +183,24 @@ export default function AdminDashboard() {
 
   const fetchOverviewData = useCallback(async () => {
     if (!dateRange?.from || !dateRange?.to) return;
+    setIsFetchingData(true)
 
     const fromDate = format(dateRange.from, "yyyy-MM-dd");
     const toDate = format(dateRange.to, "yyyy-MM-dd");
 
     try {
-      const [ordersResponse, invoicesResponse] = await Promise.all([
-        fetch(
-          `/api/dashboard/orders?limit=5&startDate=${fromDate}&endDate=${toDate}`
-        ),
-        fetch(
-          `/api/dashboard/invoices?startDate=${fromDate}&endDate=${toDate}`
-        ),
-      ]);
+      const [ordersResponse, invoicesResponse, incomeResponse] =
+        await Promise.all([
+          fetch(
+            `/api/dashboard/orders?limit=5&startDate=${fromDate}&endDate=${toDate}`
+          ),
+          fetch(
+            `/api/dashboard/invoices?startDate=${fromDate}&endDate=${toDate}`
+          ),
+          fetch(
+            `/api/dashboard/income?startDate=${fromDate}&endDate=${toDate}`
+          ),
+        ]);
 
       if (!ordersResponse.ok || !invoicesResponse.ok) {
         throw new Error("Failed to fetch overview data");
@@ -151,14 +208,13 @@ export default function AdminDashboard() {
 
       const ordersData = await ordersResponse.json();
       const invoicesData = await invoicesResponse.json();
-
-      console.log({ ordersData });
-      console.log({ invoicesData });
+      const incomeData = await incomeResponse.json();
 
       setAdminDashboardOverviewData({
         totalRevenue:
           (ordersData.totalOrderRevenue || 0) +
-          (invoicesData.totalInvoiceRevenue || 0),
+          (invoicesData.totalInvoiceRevenue || 0) +
+          (incomeData.totalIncomeAmount || 0),
         totalOrders: ordersData.totalOrders || 0,
         unverifiedOrders: ordersData.unverifiedOrders || 0,
         pendingOrders: ordersData.pendingOrders || 0,
@@ -169,10 +225,12 @@ export default function AdminDashboard() {
       });
     } catch (error) {
       console.error("Error fetching overview data:", error);
+    } finally {
+      setIsFetchingData(false);
     }
   }, [dateRange]);
 
-  const fetchAnalyticsData = useCallback(async () => {
+  const fetchPerformanceData = useCallback(async () => {
     try {
       const response = await fetch(
         `/api/dashboard/overview?year=${selectedYear}`
@@ -183,23 +241,20 @@ export default function AdminDashboard() {
       }
 
       const data = await response.json();
+      console.log({ data });
 
-      const transformedOverviewData = (data.overviewData || []).map(
-        (item: overview) => ({
-          name: monthNames[parseInt(item.month) - 1],
-          total: item.total,
-        })
-      );
-
-      const transformedRevenueGrowthData = (data.revenueGrowthData || []).map(
-        (item: revenue) => ({
-          name: monthNames[parseInt(item.month) - 1],
+      const transformedRevenueGrowthData = (data.revenueGrowthData || [])
+        .map((item: revenue) => ({
+          name: item.month,
           revenue: item.revenue,
-        })
-      );
+        }))
+        .sort(
+          (a: revenueModified, b: revenueModified) =>
+            new Date(`${a.name} 1, 2024`).getMonth() -
+            new Date(`${b.name} 1, 2024`).getMonth()
+        );
 
-      setAdminDashboardAnalyticsData({
-        overviewData: transformedOverviewData,
+      setAdminDashboardPerformanceData({
         revenueGrowthData: transformedRevenueGrowthData,
         productPerformanceData: data.productPerformanceData || [],
       });
@@ -208,6 +263,58 @@ export default function AdminDashboard() {
     }
   }, [selectedYear]);
 
+  const fetchAnalyticsData = useCallback(async () => {
+    try {
+      const response = await fetch(
+        `/api/dashboard/revenue?year=${selectedAnalyticsYear}&month=${selectedAnalyticsMonth}`
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch dashboard data");
+      }
+
+      const data = await response.json();
+
+      const transformedIncomeData = (data.incomeData || []).map(
+        (item: category) => ({
+          category: item.category,
+          value: item.amount,
+        })
+      );
+
+      const transformedExpenseData = (data.expenseData || []).map(
+        (item: category) => ({
+          category: item.category,
+          value: item.amount,
+        })
+      );
+
+      const transformedProfit =
+        data.profitData.profit < 0 ? 0 : data.profitData.profit;
+
+      setAdminDashboardAnalyticsData({
+        yearlyRevenueData: {
+          projected: data.yearlyRevenueData.projected || 0,
+          actual: data.yearlyRevenueData.actual || 0,
+        },
+        monthlyRevenueData: {
+          projected: data.monthlyRevenueData.projected || 0,
+          actual: data.monthlyRevenueData.actual || 0,
+        },
+        profitData: {
+          totalRevenue: data.profitData.totalRevenue || 0,
+          profit: transformedProfit || 0,
+        },
+        incomeData: transformedIncomeData || [],
+        expenseData: transformedExpenseData || [],
+      });
+    } catch (error) {
+      console.error("Error fetching analytics data: ", error);
+    }
+  }, [selectedAnalyticsYear, selectedAnalyticsMonth]);
+
+  //figure out why data is not displaying properly
+  // refactor so that when there is no data, it just shows no data and does not throw error
   const fetchReportData = useCallback(async () => {
     try {
       const [
@@ -218,11 +325,7 @@ export default function AdminDashboard() {
         fetch(
           `/api/dashboard/monthly-sales?year=${selectedReportYear}&month=${selectedMonth}`
         ),
-        fetch(
-          `/api/dashboard/quarterly-financials?year=${selectedReportYear}&quarter=${getQuarter(
-            selectedMonth
-          )}`
-        ),
+        fetch(`/api/dashboard/quarterly-financials?year=${selectedReportYear}`),
         fetch(`/api/dashboard/annual-performance?year=${selectedReportYear}`),
       ]);
 
@@ -235,24 +338,25 @@ export default function AdminDashboard() {
       }
 
       const monthlySalesData = await monthlySalesResponse.json();
-      const quarterlyFinancialsData = await quarterlyFinancialsResponse.json();
+      const quarterlyFinancialsData: QuarterlyReport =
+        await quarterlyFinancialsResponse.json();
       const annualPerformanceData = await annualPerformanceResponse.json();
+
+      console.log({ monthlySalesData });
+      console.log({ quarterlyFinancialsData });
+      console.log({ annualPerformanceData });
 
       //get report status
       const getReportStatus = (date: string) => {
         const currentDate = new Date();
-        const reportDate = parse(date, "MMMM yyyy", new Date());
-
+        const reportDate = new Date(date);
+        if (reportDate < currentDate) return "Completed";
         if (
-          isBefore(reportDate, currentDate) &&
-          !isSameMonth(reportDate, currentDate)
-        ) {
-          return "Completed";
-        } else if (isSameMonth(reportDate, currentDate)) {
+          reportDate.getMonth() === currentDate.getMonth() &&
+          reportDate.getFullYear() === currentDate.getFullYear()
+        )
           return "In Progress";
-        } else {
-          return "Unavailable";
-        }
+        return "Unavailable";
       };
 
       //setting adminDashboardReport
@@ -263,12 +367,9 @@ export default function AdminDashboard() {
             {
               date: `${monthNames[selectedMonth - 1]} ${selectedReportYear}`,
               status: getReportStatus(
-                `${monthNames[selectedMonth - 1]} ${selectedReportYear}`
+                `${selectedReportYear}-${selectedMonth}-01`
               ),
-              monthlySalesReport: {
-                monthlySales: monthlySalesData.monthlySales || [],
-                topProducts: monthlySalesData.topProductData || [],
-              },
+              monthlySalesReport: monthlySalesData,
             },
           ],
         },
@@ -276,22 +377,9 @@ export default function AdminDashboard() {
           type: "Quarterly Financials Report",
           items: [
             {
-              date: `Q${getQuarter(selectedMonth)} ${selectedReportYear}`,
-              status: getReportStatus(
-                `${monthNames[selectedMonth - 1]} ${selectedReportYear}`
-              ),
-              quarterlyReport: {
-                quarterlyData: (
-                  quarterlyFinancialsData.quarterlyData || []
-                ).map((item: quarterly) => ({
-                  month: monthNames[item.month - 1],
-                  revenue: item.revenue || 0,
-                  expenses: item.expenses || 0,
-                  profit: item.profit || 0,
-                })),
-                expenseBreakdown:
-                  quarterlyFinancialsData.expenseBreakdown || [],
-              },
+              date: `${selectedReportYear}`,
+              status: getReportStatus(`${selectedReportYear}-12-31`),
+              quarterlyReport: quarterlyFinancialsData,
             },
           ],
         },
@@ -300,38 +388,42 @@ export default function AdminDashboard() {
           items: [
             {
               date: selectedReportYear.toString(),
-              status: getReportStatus(`December ${selectedReportYear}`),
-              annualPerformance: {
-                quarterlyPerformance: (
-                  annualPerformanceData.quarterlyPerformance || []
-                ).map((item: quarterlyPerformance) => ({
-                  quarter: quarterNames[item.quarter - 1],
-                  sales: item.sales || 0,
-                  target: item.orders || 0,
-                  customerSatisfaction: item.customerSatisfaction || 0,
-                })),
-                keyMetrics: annualPerformanceData.keyMetrics || [],
-              },
+              status: getReportStatus(`${selectedReportYear}-12-31`),
+              annualPerformance: annualPerformanceData,
             },
           ],
         },
       ]);
     } catch (error) {
       console.error("Error fetching reports data: ", error);
+      setAdminDashboardReportData([]);
     }
   }, [selectedMonth, selectedReportYear]);
 
   //fetching data from db
   useEffect(() => {
-    if (activeTab === "overview") {
-      fetchOverviewData();
-    } else if (activeTab === "analytics") {
-      fetchAnalyticsData();
-    } else if (activeTab === "reports") {
-      fetchReportData();
+    const initializeData = async () => {
+      if (activeTab === "overview") {
+        await fetchOverviewData();
+      } else if (activeTab === "performance") {
+        await fetchPerformanceData();
+      } else if (activeTab === "analytics") {
+        await fetchAnalyticsData();
+      } else if (activeTab === "reports") {
+        await fetchReportData();
+      }
+      setIsLoading(false);
     }
-  }, [activeTab, fetchOverviewData, fetchAnalyticsData, fetchReportData]);
+    initializeData();
+  }, [
+    activeTab,
+    fetchOverviewData,
+    fetchAnalyticsData,
+    fetchPerformanceData,
+    fetchReportData
+  ]);
 
+  //Figure out why data is slow to display when YearPicker value changes
   const renderDatePicker = () => {
     switch (activeTab) {
       case "overview":
@@ -346,12 +438,27 @@ export default function AdminDashboard() {
             }}
           />
         );
-      case "analytics":
+      case "performance":
         return (
           <YearPicker
             selectedYear={selectedYear}
             onYearChange={(newYear) => {
               setSelectedYear(newYear);
+              fetchPerformanceData();
+            }}
+          />
+        );
+      case "analytics":
+        return (
+          <MonthYearPicker
+            selectedMonth={selectedAnalyticsMonth}
+            selectedYear={selectedAnalyticsYear}
+            onMonthChange={(newMonth) => {
+              setSelectedAnalyticsMonth(newMonth);
+              fetchAnalyticsData();
+            }}
+            onYearChange={(newYear) => {
+              setSelectedAnalyticsYear(newYear);
               fetchAnalyticsData();
             }}
           />
@@ -376,131 +483,204 @@ export default function AdminDashboard() {
     }
   };
 
-  return (
-    <div className="flex-1 space-y-4 p-8 pt-6">
-      <div className="flex flex-col sm:flex-row items-center justify-between space-y-2 sm:space-y-0">
-        <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
-        <div className="flex items-center space-x-2">
-          {renderDatePicker()}
-          {/* <Button onClick={filterData}>Filter</Button> */}
+  const renderTabContent = () => {
+    if (isFetchingData) {
+      return (
+        <div className="flex justify-center items-center min-h-[400px]">
+          <div className="flex justify-center items-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          </div>
         </div>
-      </div>
-      <Tabs
-        defaultValue="overview"
-        className="space-y-4"
-        onValueChange={setActiveTab}
-      >
-        <TabsList className="w-full">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="analytics">Analytics</TabsTrigger>
-          <TabsTrigger value="reports">Reports</TabsTrigger>
-        </TabsList>
-        {/* Overview Tab View */}
-        <TabsContent value="overview" className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <StatCard
-              title="Total Revenue"
-              value={`$${
-                adminDashboardOverviewData.totalRevenue.toFixed(2) ?? "0.00"
-              }`}
-              icon={DollarSign}
-            />
-            <StatCard
-              title="Total Orders"
-              value={adminDashboardOverviewData.totalOrders.toString() ?? "0"}
-              icon={CreditCard}
-            />
-            <StatCard
-              title="Unverified Orders"
-              value={
-                adminDashboardOverviewData.unverifiedOrders.toString() ?? "0"
-              }
-              icon={TriangleAlert}
-            />
-            <StatCard
-              title="Pending Orders"
-              value={adminDashboardOverviewData.pendingOrders.toString() ?? "0"}
-              icon={ClockArrowUp}
-            />
-          </div>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            <StatCard
-              title="Total Invoices"
-              value={adminDashboardOverviewData.totalInvoices.toString() ?? "0"}
-              icon={FileText}
-            />
-            <StatCard
-              title="Unpaid Invoices"
-              value={
-                adminDashboardOverviewData.unpaidInvoices.toString() ?? "0"
-              }
-              icon={CircleX}
-            />
-            <StatCard
-              title="Due Invoices"
-              value={adminDashboardOverviewData.dueInvoices.toString() ?? "0"}
-              icon={ClockAlert}
-            />
-          </div>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            <Card className="col-span-3">
-              <CardHeader>
-                <CardTitle>Recent Orders</CardTitle>
-                <CardDescription>
-                  Your most recent order activity
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <RecentOrders
-                  data={adminDashboardOverviewData.recentOrders ?? []}
-                />
-              </CardContent>
-              <CardFooter className="flex justify-center">
-                <Link href="/admin/orders" passHref>
-                  <Button className="w-full sm:w-auto">View All Orders</Button>
-                </Link>
-              </CardFooter>
-            </Card>
-          </div>
-        </TabsContent>
-        {/* Analytics Tab View */}
-        <TabsContent value="analytics" className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            <Card className="col-span-3">
-              <CardHeader>
-                <CardTitle>Order Overview</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {/* <Overview data={filteredOverviewData} /> */}
-                <Overview data={adminDashboardAnalyticsData.overviewData} />
-              </CardContent>
-            </Card>
-            <Card className="col-span-3 md:col-span-2">
+      );
+    }
+
+    switch (activeTab) {
+      case "overview":
+        return (
+          <>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+              <StatCard
+                title="Total Revenue"
+                value={`$${adminDashboardOverviewData.totalRevenue.toLocaleString('en-US', { maximumFractionDigits: 2 }) ?? "0.00"
+                  }`}
+                icon={DollarSign}
+              />
+              <StatCard
+                title="Total Orders"
+                value={adminDashboardOverviewData.totalOrders.toString() ?? "0"}
+                icon={CreditCard}
+              />
+              <StatCard
+                title="Unverified Orders"
+                value={
+                  adminDashboardOverviewData.unverifiedOrders.toString() ?? "0"
+                }
+                icon={TriangleAlert}
+              />
+              <StatCard
+                title="Pending Orders"
+                value={adminDashboardOverviewData.pendingOrders.toString() ?? "0"}
+                icon={ClockArrowUp}
+              />
+            </div>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              <StatCard
+                title="Total Invoices"
+                value={adminDashboardOverviewData.totalInvoices.toString() ?? "0"}
+                icon={FileText}
+              />
+              <StatCard
+                title="Unpaid Invoices"
+                value={
+                  adminDashboardOverviewData.unpaidInvoices.toString() ?? "0"
+                }
+                icon={CircleX}
+              />
+              <StatCard
+                title="Due Invoices"
+                value={adminDashboardOverviewData.dueInvoices.toString() ?? "0"}
+                icon={ClockAlert}
+              />
+            </div>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              <Card className="col-span-3">
+                <CardHeader>
+                  <CardTitle>Recent Orders</CardTitle>
+                  <CardDescription>
+                    Your most recent order activity
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <RecentOrders
+                    data={adminDashboardOverviewData.recentOrders ?? []}
+                  />
+                </CardContent>
+                <CardFooter className="flex justify-center">
+                  <Link href="/admin/orders" passHref>
+                    <Button className="w-full sm:w-auto bg-[#fd9e1d]">
+                      View All Orders
+                    </Button>
+                  </Link>
+                </CardFooter>
+              </Card>
+            </div>
+          </>
+        );
+
+      case "performance":
+        return (
+          <div className="grid gap-4">
+            <Card className="col-span-full">
               <CardHeader>
                 <CardTitle>Revenue Growth</CardTitle>
               </CardHeader>
-              <CardContent>
-                {/* <RevenueGrowth data={filteredRevenueData} /> */}
+              <CardContent className="h-[400px] sm:h-[450px] md:h-[500px]">
                 <RevenueGrowth
-                  data={adminDashboardAnalyticsData.revenueGrowthData}
+                  data={adminDashboardPerformanceData.revenueGrowthData}
                 />
               </CardContent>
             </Card>
-            <Card className="col-span-3 md:col-span-1">
+            <Card className="col-span-full">
               <CardHeader>
                 <CardTitle>Product Performance</CardTitle>
               </CardHeader>
-              <CardContent>
-                {/* <ProductPerformance data={filteredProductData} /> */}
+              <CardContent className="h-[400px] sm:h-[450px] md:h-[500px]">
                 <ProductPerformance
-                  data={adminDashboardAnalyticsData.productPerformanceData}
+                  data={adminDashboardPerformanceData.productPerformanceData}
                 />
               </CardContent>
             </Card>
           </div>
-        </TabsContent>
-        {/* Report Tab View */}
-        <TabsContent value="reports" className="space-y-4">
+        );
+
+      case "analytics":
+        return (
+          <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+            <Card className="col-span-1 md:col-span-2 lg:col-span-3">
+              <CardHeader>
+                <CardTitle>Year Revenue Progress</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <SettingsProgress
+                  value={
+                    (adminDashboardAnalyticsData.yearlyRevenueData.actual /
+                      adminDashboardAnalyticsData.yearlyRevenueData.projected) *
+                    100
+                  }
+                />
+                <p className="text-sm text-gray-500">
+                  {adminDashboardAnalyticsData.yearlyRevenueData.actual &&
+                    adminDashboardAnalyticsData.yearlyRevenueData.projected ? (
+                    <>
+                      {(
+                        (adminDashboardAnalyticsData.yearlyRevenueData.actual /
+                          adminDashboardAnalyticsData.yearlyRevenueData.projected) *
+                        100
+                      ).toFixed(2)}
+                      % of yearly target ($
+                      {adminDashboardAnalyticsData.yearlyRevenueData.actual.toLocaleString()}{" "}
+                      / $
+                      {adminDashboardAnalyticsData.yearlyRevenueData.projected.toLocaleString()}
+                      )
+                    </>
+                  ) : (
+                    "No revenue data available"
+                  )}
+                </p>
+              </CardContent>
+            </Card>
+            <Card className="col-span-1 md:col-span-2 lg:col-span-3">
+              <CardHeader>
+                <CardTitle>Month Revenue Performance</CardTitle>
+              </CardHeader>
+              <CardContent className="h-[300px] sm:h-[350px] lg:h-[400px]">
+                <AnalyticsPieChart
+                  variant="Revenue"
+                  data={adminDashboardAnalyticsData.monthlyRevenueData}
+                />
+              </CardContent>
+            </Card>
+
+            <Card className="col-span-1 md:col-span-1">
+              <CardHeader>
+                <CardTitle>Expense Chart</CardTitle>
+              </CardHeader>
+              <CardContent className="h-[300px] sm:h-[350px] lg:h-[400px]">
+                <AnalyticsPieChart
+                  variant="Expense"
+                  data={adminDashboardAnalyticsData.expenseData}
+                />
+              </CardContent>
+            </Card>
+
+            <Card className="col-span-1 md:col-span-1">
+              <CardHeader>
+                <CardTitle>Income Chart</CardTitle>
+              </CardHeader>
+              <CardContent className="h-[300px] sm:h-[350px] lg:h-[400px]">
+                <AnalyticsPieChart
+                  variant="Income"
+                  data={adminDashboardAnalyticsData.incomeData}
+                />
+              </CardContent>
+            </Card>
+
+            <Card className="col-span-1 md:col-span-1">
+              <CardHeader>
+                <CardTitle>Profit Chart</CardTitle>
+              </CardHeader>
+              <CardContent className="h-[300px] sm:h-[350px] lg:h-[400px]">
+                <AnalyticsPieChart
+                  variant="Profit"
+                  data={adminDashboardAnalyticsData.profitData}
+                />
+              </CardContent>
+            </Card>
+          </div>
+        );
+
+      case "reports":
+        return (
           <Card>
             <CardHeader>
               <CardTitle>Reports</CardTitle>
@@ -510,6 +690,32 @@ export default function AdminDashboard() {
               <ReportsSection data={adminDashboardReportData} />
             </CardContent>
           </Card>
+        );
+
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <div className="flex-1 space-y-4 p-8 pt-6">
+      <div className="flex flex-col sm:flex-row items-center justify-between space-y-2 sm:space-y-0">
+        <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
+        <div className="flex items-center space-x-2">{renderDatePicker()}</div>
+      </div>
+      <Tabs
+        defaultValue="overview"
+        className="space-y-4"
+        onValueChange={setActiveTab}
+      >
+        <TabsList className="w-full">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="performance">Performance</TabsTrigger>
+          <TabsTrigger value="analytics">Analytics</TabsTrigger>
+          <TabsTrigger value="reports">Reports</TabsTrigger>
+        </TabsList>
+        <TabsContent value={activeTab} className="space-y-4">
+          {renderTabContent()}
         </TabsContent>
       </Tabs>
     </div>
