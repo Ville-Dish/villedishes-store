@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -13,6 +13,7 @@ model Product {
   description     String
   price           Float
   image           String
+  assetId         String?
   category        String?
   rating          Float?
   OrderProduct    OrderProduct[]

@@ -9,7 +9,6 @@ import { Rabbit } from "lucide-react";
 import { Banner } from "@/components/custom/banner";
 
 import { useEffect, useState } from "react";
-import { useLoading } from "@/context/LoadingContext";
 
 const ProductPage = () => {
   const [products, setProducts] = useState<MenuItem[]>([]);
@@ -53,6 +52,33 @@ const ProductPage = () => {
     setFilteredItems(filtered);
   }, [searchQuery, activeCategory, products]);
 
+
+  //function to render No products
+  const renderNoProductsFound = () => (
+    <div className="flex flex-col items-center justify-center py-12">
+      <Rabbit className="w-16 h-16 mb-4 text-gray-400" />
+      <p className="text-xl font-semibold text-gray-600">No products found</p>
+      {products.length > 0 ? (
+        <>
+          <p className="text-gray-500 mt-2 text-center">
+            Try adjusting your search or filter to find what you&apos;re looking for.
+          </p>
+          <Button
+            className="mt-4"
+            onClick={() => {
+              setSearchQuery("")
+              setActiveCategory("All")
+            }}
+          >
+            Clear filters
+          </Button>
+        </>
+      ) : (
+        <p className="text-gray-500 mt-2">Check back later.</p>
+      )}
+    </div>
+  )
+
   return (
     <div className="flex flex-col min-h-screen">
       <main className="flex-1">
@@ -77,33 +103,19 @@ const ProductPage = () => {
                   Loading Products...
                 </p>
               </div>
-            ) : filteredItems.length > 0 ? (
-              <ProductCard
-                categories={categories}
-                items={filteredItems}
-                activeCategory={activeCategory}
-                onCategoryChange={setActiveCategory}
-              />
+            ) : products.length > 0 ? (
+              filteredItems.length > 0 ? (
+                <ProductCard
+                  categories={categories}
+                  items={filteredItems}
+                  activeCategory={activeCategory}
+                  onCategoryChange={setActiveCategory}
+                />
+              ) : (
+                renderNoProductsFound()
+              )
             ) : (
-              <div className="flex flex-col items-center justify-center py-12">
-                <Rabbit className="w-16 h-16 mb-4 text-gray-400" />
-                <p className="text-xl font-semibold text-gray-600">
-                  No products found
-                </p>
-                <p className="text-gray-500 mt-2">
-                  Try adjusting your search or filter to find what you&apos;re
-                  looking for.
-                </p>
-                <Button
-                  className="mt-4"
-                  onClick={() => {
-                    setSearchQuery("");
-                    setActiveCategory("All");
-                  }}
-                >
-                  Clear filters
-                </Button>
-              </div>
+              renderNoProductsFound()
             )}
           </div>
         </section>

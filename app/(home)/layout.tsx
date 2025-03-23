@@ -14,9 +14,11 @@ export default function HomeLayout({
 }>) {
   return (
     <>
-      <div className="min-h-screen">
+      <div className="min-h-screen flex flex-col justify-between overflow-auto">
         <Header show />
+        <div className="flex-1">
         {children}
+        </div>
         <Footer />
       </div>
     </>

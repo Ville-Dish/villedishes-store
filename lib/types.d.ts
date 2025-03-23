@@ -5,6 +5,7 @@ type MenuItem = {
   price: number;
   category: string;
   image: string;
+  assetId?: string;
   stock?: number;
   rating?: number;
   reviews?: { id: string; rating: number; comment: string; author: string }[];

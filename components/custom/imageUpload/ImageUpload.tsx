@@ -5,27 +5,53 @@ import { Plus, Trash } from "lucide-react";
 import { CldUploadWidget } from "next-cloudinary";
 import Image from "next/image";
 
+// Use the type provided by Cloudinary for the upload widget result
+import { CloudinaryUploadWidgetResults } from "next-cloudinary";
+
 interface ImageUploadProps {
   value: string;
-  onChange: (url: string) => void;
+  assetId?: string;
+  onChange: (url: string, assetId: string) => void;
   onRemove: () => void;
   onRemoveError?: (error: string) => void;
 }
 
-// Use the type provided by Cloudinary for the upload widget result
-import { CloudinaryUploadWidgetResults } from "next-cloudinary";
-
 const ImageUpload: React.FC<ImageUploadProps> = ({
   value,
+  assetId,
   onChange,
   onRemove,
   onRemoveError,
 }) => {
-  const onUpload = (result: CloudinaryUploadWidgetResults) => {
+  const onUpload = async (result: CloudinaryUploadWidgetResults) => {
+    // Delete the old asset it its exists
+    if (assetId) {
+      try {
+        const response = await fetch("/api/cloudinary/delete", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ assetId }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response
+            .json()
+            .catch(() => ({ message: "Unknown error" }));
+          console.error("Error deleting Cloudinary resource:", errorData);
+        } else {
+          const data = await response
+            .json()
+            .catch(() => ({ message: "Success" }));
+          console.log("Deleted old asset:", data);
+        }
+      } catch (error) {
+        console.error("Error calling delete API:", error);
+      }
+    }
     const info = result.info;
     // Check if 'info' is of type CloudinaryUploadWidgetInfo and has 'secure_url'
     if (info && typeof info !== "string" && "secure_url" in info) {
-      onChange(info.secure_url);
+      onChange(info.secure_url, info.asset_id);
       if (onRemoveError) {
         onRemoveError("");
       }
