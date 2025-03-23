@@ -33,9 +33,8 @@ import {
 } from "@/components/ui/select";
 import { useLoading } from "@/context/LoadingContext";
 
-type SortField = 'name' | 'price' | 'category' | null;
-type SortDirection = 'asc' | 'desc' | null;
-
+type SortField = "name" | "price" | "category" | null;
+type SortDirection = "asc" | "desc" | null;
 
 export default function AdminProductsPage() {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
@@ -73,15 +72,15 @@ export default function AdminProductsPage() {
   const handleSort = (field: SortField) => {
     if (sortField === field) {
       // Cycle through: asc -> desc -> null
-      if (sortDirection === 'asc') {
-        setSortDirection('desc');
-      } else if (sortDirection === 'desc') {
+      if (sortDirection === "asc") {
+        setSortDirection("desc");
+      } else if (sortDirection === "desc") {
         setSortDirection(null);
         setSortField(null);
       }
     } else {
       setSortField(field);
-      setSortDirection('asc');
+      setSortDirection("asc");
     }
   };
 
@@ -89,16 +88,16 @@ export default function AdminProductsPage() {
   useEffect(() => {
     // Update URL when page changes (only for pages > 1)
     if (currentPage > 1) {
-      window.history.pushState({}, '', `?page=${currentPage}`);
+      window.history.pushState({}, "", `?page=${currentPage}`);
     } else {
-      window.history.pushState({}, '', window.location.pathname);
+      window.history.pushState({}, "", window.location.pathname);
     }
   }, [currentPage]);
 
   // Add this effect to handle initial page from URL
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const page = parseInt(params.get('page') || '1');
+    const page = parseInt(params.get("page") || "1");
     setCurrentPage(page);
   }, []);
 
@@ -107,7 +106,6 @@ export default function AdminProductsPage() {
     setCurrentPage(newPage);
     window.scrollTo(0, 0);
   };
-
 
   // Fetch products from the API
   useEffect(() => {
@@ -133,7 +131,7 @@ export default function AdminProductsPage() {
     };
 
     fetchProducts();
-  }, [itemsPerPage]);
+  }, [itemsPerPage, setIsLoading]);
 
   useEffect(() => {
     const uniqueCategories = Array.from(
@@ -277,7 +275,7 @@ export default function AdminProductsPage() {
       filtered.sort((a, b) => {
         const aValue = a[sortField];
         const bValue = b[sortField];
-        if (sortDirection === 'asc') {
+        if (sortDirection === "asc") {
           return aValue > bValue ? 1 : -1;
         } else {
           return aValue < bValue ? 1 : -1;
@@ -289,7 +287,16 @@ export default function AdminProductsPage() {
     setTotalPages(Math.ceil(filtered.length / itemsPerPage));
 
     setCurrentPage(1);
-  }, [searchTerm, categoryFilter, ratingFilter, priceFilter, menuItems, sortField, sortDirection, itemsPerPage]);
+  }, [
+    searchTerm,
+    categoryFilter,
+    ratingFilter,
+    priceFilter,
+    menuItems,
+    sortField,
+    sortDirection,
+    itemsPerPage,
+  ]);
 
   useEffect(() => {
     applyFiltersAndSearch();
@@ -301,7 +308,6 @@ export default function AdminProductsPage() {
     menuItems,
     applyFiltersAndSearch,
   ]);
-
 
   return (
     <div className="flex-1 space-y-4 p-8 pt-6">
@@ -391,81 +397,95 @@ export default function AdminProductsPage() {
           <TableHeader>
             <TableRow>
               <TableHead>S/N</TableHead>
-              <TableHead onClick={() => handleSort('name')} className="cursor-pointer">
-                Name {sortField === 'name' && (sortDirection === 'asc' ? '↑' : '↓')}
+              <TableHead
+                onClick={() => handleSort("name")}
+                className="cursor-pointer"
+              >
+                Name{" "}
+                {sortField === "name" && (sortDirection === "asc" ? "↑" : "↓")}
               </TableHead>
-              <TableHead onClick={() => handleSort('price')} className="cursor-pointer">
-                Price {sortField === 'price' && (sortDirection === 'asc' ? '↑' : '↓')}
+              <TableHead
+                onClick={() => handleSort("price")}
+                className="cursor-pointer"
+              >
+                Price{" "}
+                {sortField === "price" && (sortDirection === "asc" ? "↑" : "↓")}
               </TableHead>
-              <TableHead onClick={() => handleSort('category')} className="cursor-pointer">
-                Category {sortField === 'category' && (sortDirection === 'asc' ? '↑' : '↓')}
+              <TableHead
+                onClick={() => handleSort("category")}
+                className="cursor-pointer"
+              >
+                Category{" "}
+                {sortField === "category" &&
+                  (sortDirection === "asc" ? "↑" : "↓")}
               </TableHead>
               <TableHead>Rating</TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {
-              loading ? (
-                <TableRow>
-                  <TableCell colSpan={8} className="h-24 text-center">
-                    <div className="flex justify-center items-center">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ) :
-                filteredProducts.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={8} className="h-24 text-center">
-                      <p className="text-lg text-muted-foreground">
-                        {searchTerm
-                          ? "No matching products found"
-                          : "There are no products yet"}
-                      </p>
+            {loading ? (
+              <TableRow>
+                <TableCell colSpan={8} className="h-24 text-center">
+                  <div className="flex justify-center items-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ) : filteredProducts.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={8} className="h-24 text-center">
+                  <p className="text-lg text-muted-foreground">
+                    {searchTerm
+                      ? "No matching products found"
+                      : "There are no products yet"}
+                  </p>
+                </TableCell>
+              </TableRow>
+            ) : (
+              filteredProducts
+                .slice(
+                  (currentPage - 1) * itemsPerPage,
+                  currentPage * itemsPerPage
+                )
+                .map((item, index) => (
+                  <TableRow key={item.id}>
+                    <TableCell>
+                      {(currentPage - 1) * itemsPerPage + index + 1}
+                    </TableCell>
+                    <TableCell>{item.name}</TableCell>
+                    <TableCell>${item.price.toFixed(2)}</TableCell>
+                    <TableCell>{item.category}</TableCell>
+                    <TableCell>
+                      {item.rating ? `${item.rating.toFixed(1)} / 5` : "0.0/5"}
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleEditItem(item)}
+                      >
+                        <Eye className="h-4 w-4" color="#fe9e1d" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteItem(item.id)}
+                      >
+                        <Trash className="h-4 w-4" color="#da281c" />
+                      </Button>
                     </TableCell>
                   </TableRow>
-                ) :
-
-                  filteredProducts
-                    .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
-                    .map((item, index) => (
-                      <TableRow key={item.id}>
-                        <TableCell>{((currentPage - 1) * itemsPerPage) + index + 1}</TableCell>
-                        <TableCell>{item.name}</TableCell>
-                        <TableCell>${item.price.toFixed(2)}</TableCell>
-                        <TableCell>{item.category}</TableCell>
-                        <TableCell>
-                          {item.rating ? `${item.rating.toFixed(1)} / 5` : "0.0/5"}
-                        </TableCell>
-                        <TableCell>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleEditItem(item)}
-                          >
-                            <Eye className="h-4 w-4" color="#fe9e1d" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDeleteItem(item.id)}
-                          >
-                            <Trash className="h-4 w-4" color="#da281c" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    )
-                    )}
+                ))
+            )}
           </TableBody>
         </Table>
 
         {/* Add pagination controls */}
-        {
-          !loading &&
+        {!loading && (
           <div className="flex items-center justify-between px-4 py-4 border-t">
             <div className="text-sm text-muted-foreground">
-              Showing {((currentPage - 1) * itemsPerPage) + 1} to{" "}
+              Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
               {Math.min(currentPage * itemsPerPage, filteredProducts.length)} of{" "}
               {filteredProducts.length} entries
             </div>
@@ -487,7 +507,9 @@ export default function AdminProductsPage() {
                 Previous
               </Button>
               <div className="flex items-center space-x-1">
-                <span className="text-sm font-medium">Page {currentPage} of {totalPages}</span>
+                <span className="text-sm font-medium">
+                  Page {currentPage} of {totalPages}
+                </span>
               </div>
               <Button
                 variant="outline"
@@ -507,7 +529,7 @@ export default function AdminProductsPage() {
               </Button>
             </div>
           </div>
-        }
+        )}
       </div>
 
       {editingItem && (
