@@ -162,6 +162,31 @@ export default function AdminProductsPage() {
         setMenuItems((items) =>
           items.map((item) => (item.id === editingItem.id ? editingItem : item))
         );
+        const assetId = editingItem.assetId;
+        // Delete the old asset it its exists
+        if (assetId) {
+          try {
+            const response = await fetch("/api/cloudinary/delete", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ assetId }),
+            });
+
+            if (!response.ok) {
+              const errorData = await response
+                .json()
+                .catch(() => ({ message: "Unknown error" }));
+              console.error("Error deleting Cloudinary resource:", errorData);
+            } else {
+              const data = await response
+                .json()
+                .catch(() => ({ message: "Success" }));
+              console.log("Deleted old asset:", data);
+            }
+          } catch (error) {
+            console.error("Error calling delete API:", error);
+          }
+        }
         applyFiltersAndSearch();
         toast.success(`Product updated successfully`);
         setEditingItem(null);
