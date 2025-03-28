@@ -36,7 +36,6 @@ import { SettingsProgress } from "@/components/custom/settings/progress";
 import { AnalyticsPieChart } from "@/components/custom/dashboard/pie-chart";
 import { useLoading } from "@/context/LoadingContext";
 
-
 type revenue = {
   month: string;
   revenue: number;
@@ -177,13 +176,13 @@ export default function AdminDashboard() {
   >([]);
 
   //get quarter
-  const getQuarter = (month: number) => {
-    return Math.min(Math.floor((month - 1) / 3) + 1, 4);
-  };
+  // const getQuarter = (month: number) => {
+  //   return Math.min(Math.floor((month - 1) / 3) + 1, 4);
+  // };
 
   const fetchOverviewData = useCallback(async () => {
     if (!dateRange?.from || !dateRange?.to) return;
-    setIsFetchingData(true)
+    setIsFetchingData(true);
 
     const fromDate = format(dateRange.from, "yyyy-MM-dd");
     const toDate = format(dateRange.to, "yyyy-MM-dd");
@@ -413,14 +412,15 @@ export default function AdminDashboard() {
         await fetchReportData();
       }
       setIsLoading(false);
-    }
+    };
     initializeData();
   }, [
     activeTab,
     fetchOverviewData,
     fetchAnalyticsData,
     fetchPerformanceData,
-    fetchReportData
+    fetchReportData,
+    setIsLoading,
   ]);
 
   //Figure out why data is slow to display when YearPicker value changes
@@ -501,8 +501,12 @@ export default function AdminDashboard() {
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
               <StatCard
                 title="Total Revenue"
-                value={`$${adminDashboardOverviewData.totalRevenue.toLocaleString('en-US', { maximumFractionDigits: 2 }) ?? "0.00"
-                  }`}
+                value={`$${
+                  adminDashboardOverviewData.totalRevenue.toLocaleString(
+                    "en-US",
+                    { maximumFractionDigits: 2 }
+                  ) ?? "0.00"
+                }`}
                 icon={DollarSign}
               />
               <StatCard
@@ -519,14 +523,18 @@ export default function AdminDashboard() {
               />
               <StatCard
                 title="Pending Orders"
-                value={adminDashboardOverviewData.pendingOrders.toString() ?? "0"}
+                value={
+                  adminDashboardOverviewData.pendingOrders.toString() ?? "0"
+                }
                 icon={ClockArrowUp}
               />
             </div>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               <StatCard
                 title="Total Invoices"
-                value={adminDashboardOverviewData.totalInvoices.toString() ?? "0"}
+                value={
+                  adminDashboardOverviewData.totalInvoices.toString() ?? "0"
+                }
                 icon={FileText}
               />
               <StatCard
@@ -610,11 +618,12 @@ export default function AdminDashboard() {
                 />
                 <p className="text-sm text-gray-500">
                   {adminDashboardAnalyticsData.yearlyRevenueData.actual &&
-                    adminDashboardAnalyticsData.yearlyRevenueData.projected ? (
+                  adminDashboardAnalyticsData.yearlyRevenueData.projected ? (
                     <>
                       {(
                         (adminDashboardAnalyticsData.yearlyRevenueData.actual /
-                          adminDashboardAnalyticsData.yearlyRevenueData.projected) *
+                          adminDashboardAnalyticsData.yearlyRevenueData
+                            .projected) *
                         100
                       ).toFixed(2)}
                       % of yearly target ($

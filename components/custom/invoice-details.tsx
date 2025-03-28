@@ -28,7 +28,7 @@ import {
 
 import { Trash2, Edit, Loader } from "lucide-react";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { adminEmail } from "@/lib/constantData";
 import { formattedCurrency } from "@/lib/helper";
@@ -43,11 +43,13 @@ export const InvoiceDetails = ({
 }: InvoiceDetailsProps) => {
   const [updatedInvoice, setUpdatedInvoice] = useState<Invoice>(invoice);
 
-  const [newProducts, setNewProducts] = useState<Array<{
-    id: string;
-    quantity: number;
-    discount: number;
-  }>>([{ id: "", quantity: 1, discount: 0 }]);
+  const [newProducts, setNewProducts] = useState<
+    Array<{
+      id: string;
+      quantity: number;
+      discount: number;
+    }>
+  >([{ id: "", quantity: 1, discount: 0 }]);
 
   const [isAddProductDialogOpen, setIsAddProductDialogOpen] = useState(false);
   const [editingProductIndex, setEditingProductIndex] = useState<number | null>(
@@ -206,27 +208,31 @@ export const InvoiceDetails = ({
     setUpdatedInvoice((prev) => ({ ...prev, products: updatedProducts }));
   };
 
-
   const addProduct = () => {
-    const validProducts = newProducts.filter(product => product.id !== "");
+    const validProducts = newProducts.filter((product) => product.id !== "");
 
     // Create a copy of the current products array
-    let updatedProducts = updatedInvoice.products ? [...updatedInvoice.products] : [];
-    
-    validProducts.forEach(newProduct => {
-      const selectedProduct = availableProducts.find(p => p.id === newProduct.id);
+    const updatedProducts = updatedInvoice.products
+      ? [...updatedInvoice.products]
+      : [];
+
+    validProducts.forEach((newProduct) => {
+      const selectedProduct = availableProducts.find(
+        (p) => p.id === newProduct.id
+      );
       if (selectedProduct) {
         // const updatedProducts = updatedInvoice.products ? [...updatedInvoice.products] : [];
-  
+
         const existingProductIndex = updatedProducts.findIndex(
-          p => p.id === selectedProduct.id
+          (p) => p.id === selectedProduct.id
         );
         if (existingProductIndex !== -1) {
           updatedProducts[existingProductIndex].quantity += newProduct.quantity;
-          updatedProducts[existingProductIndex].discount = productDiscount[existingProductIndex];
-          updatedProducts[existingProductIndex].price = 
-            updatedProducts[existingProductIndex].basePrice * 
-            updatedProducts[existingProductIndex].quantity * 
+          updatedProducts[existingProductIndex].discount =
+            productDiscount[existingProductIndex];
+          updatedProducts[existingProductIndex].price =
+            updatedProducts[existingProductIndex].basePrice *
+            updatedProducts[existingProductIndex].quantity *
             (1 - updatedProducts[existingProductIndex].discount / 100);
         } else {
           updatedProducts.push({
@@ -234,14 +240,15 @@ export const InvoiceDetails = ({
             name: selectedProduct.name,
             basePrice: selectedProduct.basePrice,
             quantity: newProduct.quantity,
-            price: selectedProduct.basePrice * newProduct.quantity * (1 - 0 / 100),
+            price:
+              selectedProduct.basePrice * newProduct.quantity * (1 - 0 / 100),
             discount: 0,
           });
         }
       }
     });
-    
-    setUpdatedInvoice(prev => ({ ...prev, products: updatedProducts }));
+
+    setUpdatedInvoice((prev) => ({ ...prev, products: updatedProducts }));
     resetProductDialog();
   };
 
@@ -251,7 +258,7 @@ export const InvoiceDetails = ({
       ? [...updatedInvoice.products]
       : [];
     updatedProducts.splice(index, 1);
-    
+
     // Update the invoice state with new products array
     await setUpdatedInvoice((prev) => {
       const newState = { ...prev, products: updatedProducts };
@@ -259,7 +266,7 @@ export const InvoiceDetails = ({
     });
 
     // Update product discounts array to stay in sync
-    setProductDiscount(prevDiscounts => {
+    setProductDiscount((prevDiscounts) => {
       const newDiscounts = [...prevDiscounts];
       newDiscounts.splice(index, 1);
       return newDiscounts;
@@ -270,18 +277,24 @@ export const InvoiceDetails = ({
     if (updatedInvoice.products) {
       setEditingProductIndex(index);
       const productToEdit = updatedInvoice.products[index];
-      setNewProducts([{
-        id: productToEdit.id,
-        quantity: productToEdit.quantity,
-        discount: productToEdit.discount,
-      }]);
+      setNewProducts([
+        {
+          id: productToEdit.id,
+          quantity: productToEdit.quantity,
+          discount: productToEdit.discount,
+        },
+      ]);
       setIsAddProductDialogOpen(true);
     }
   };
 
   const saveEditedProduct = () => {
     // Check that we have a valid editing index and valid product data
-    if (editingProductIndex === null || !newProducts?.length || !newProducts[0]?.id) {
+    if (
+      editingProductIndex === null ||
+      !newProducts?.length ||
+      !newProducts[0]?.id
+    ) {
       toast.error("Invalid product data");
       return;
     }
@@ -291,7 +304,10 @@ export const InvoiceDetails = ({
       : [];
 
     // Ensure the editing index is within bounds
-    if (editingProductIndex >= 0 && editingProductIndex < updatedProducts.length) {
+    if (
+      editingProductIndex >= 0 &&
+      editingProductIndex < updatedProducts.length
+    ) {
       updatedProducts[editingProductIndex] = {
         ...updatedProducts[editingProductIndex],
         quantity: newProducts[0].quantity,
@@ -308,7 +324,7 @@ export const InvoiceDetails = ({
     }
   };
 
-  const calculateSubtotal = () => {
+  const calculateSubtotal = useCallback(() => {
     return updatedInvoice.products?.reduce(
       (sum, product) =>
         sum +
@@ -317,14 +333,28 @@ export const InvoiceDetails = ({
           (1 - (product.discount || 0) / 100),
       0
     );
-  };
+  }, [updatedInvoice]);
 
-  const calculateTotal = () => {
+  const calculateTotal = useCallback(() => {
     const subtotal = calculateSubtotal() || 0;
     const discountAmount = subtotal * (discountPercentage / 100);
     const taxAmount = subtotal * (taxRate / 100);
-    return subtotal - discountAmount + taxAmount + shippingFee + serviceCharge + miscellaneous;
-  };
+    return (
+      subtotal -
+      discountAmount +
+      taxAmount +
+      shippingFee +
+      serviceCharge +
+      miscellaneous
+    );
+  }, [
+    calculateSubtotal,
+    discountPercentage,
+    miscellaneous,
+    serviceCharge,
+    shippingFee,
+    taxRate,
+  ]);
 
   const handleUpdateInvoice = async () => {
     try {
@@ -332,10 +362,14 @@ export const InvoiceDetails = ({
       const total = calculateTotal();
 
       // Get the latest products state
-      const currentProducts = updatedInvoice.products?.map(product => ({
-        ...product,
-        price: product.basePrice * product.quantity * (1 - (product.discount || 0) / 100)
-      })) || [];
+      const currentProducts =
+        updatedInvoice.products?.map((product) => ({
+          ...product,
+          price:
+            product.basePrice *
+            product.quantity *
+            (1 - (product.discount || 0) / 100),
+        })) || [];
 
       const updatedInvoiceData = {
         ...updatedInvoice,
@@ -347,7 +381,7 @@ export const InvoiceDetails = ({
         shippingFee,
         serviceCharge,
         miscellaneous,
-        products: currentProducts
+        products: currentProducts,
       };
 
       await onUpdate(updatedInvoiceData);
@@ -381,7 +415,8 @@ export const InvoiceDetails = ({
     shippingFee,
     serviceCharge,
     miscellaneous,
-    amountPaid
+    amountPaid,
+    calculateTotal,
   ]);
 
   const handleSendInvoiceEmail = async () => {
@@ -418,7 +453,6 @@ export const InvoiceDetails = ({
   };
 
   const subTotal = calculateSubtotal() || 0;
-
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
@@ -676,11 +710,20 @@ export const InvoiceDetails = ({
                 <ScrollArea className="max-h-[400px] pr-4">
                   <div className="space-y-4">
                     {newProducts.map((product, index) => (
-                      <div key={index} className={cn("space-y-4 border-b border-input py-4", newProducts.length === 1 && "pr-2")}>
+                      <div
+                        key={index}
+                        className={cn(
+                          "space-y-4 border-b border-input py-4",
+                          newProducts.length === 1 && "pr-2"
+                        )}
+                      >
                         <div className="flex justify-between items-start">
                           <div className="flex-1 space-y-2">
                             <div className="grid grid-cols-4 items-center gap-4">
-                              <Label htmlFor={`product-${index}`} className="text-right">
+                              <Label
+                                htmlFor={`product-${index}`}
+                                className="text-right"
+                              >
                                 Product {index + 1}
                               </Label>
                               <Select
@@ -698,7 +741,9 @@ export const InvoiceDetails = ({
                                   <Input
                                     type="text"
                                     value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    onChange={(e) =>
+                                      setSearchTerm(e.target.value)
+                                    }
                                     placeholder="Filter Product"
                                   />
                                   {filteredProducts.map((p) => (
@@ -710,7 +755,10 @@ export const InvoiceDetails = ({
                               </Select>
                             </div>
                             <div className="grid grid-cols-4 items-center gap-4">
-                              <Label htmlFor={`quantity-${index}`} className="text-right">
+                              <Label
+                                htmlFor={`quantity-${index}`}
+                                className="text-right"
+                              >
                                 Quantity
                               </Label>
                               <Input
@@ -719,7 +767,9 @@ export const InvoiceDetails = ({
                                 value={product.quantity}
                                 onChange={(e) => {
                                   const updated = [...newProducts];
-                                  updated[index].quantity = parseInt(e.target.value);
+                                  updated[index].quantity = parseInt(
+                                    e.target.value
+                                  );
                                   setNewProducts(updated);
                                 }}
                                 className="col-span-3"
@@ -732,7 +782,9 @@ export const InvoiceDetails = ({
                               variant="ghost"
                               size="sm"
                               onClick={() => {
-                                const updated = newProducts.filter((_, i) => i !== index);
+                                const updated = newProducts.filter(
+                                  (_, i) => i !== index
+                                );
                                 setNewProducts(updated);
                               }}
                               className="ml-2 hover:bg-transparent"
@@ -745,21 +797,30 @@ export const InvoiceDetails = ({
                     ))}
                   </div>
                 </ScrollArea>
-                
+
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => setNewProducts([...newProducts, { id: "", quantity: 1, discount: 0 }])}
+                  onClick={() =>
+                    setNewProducts([
+                      ...newProducts,
+                      { id: "", quantity: 1, discount: 0 },
+                    ])
+                  }
                 >
                   Add Another Product
                 </Button>
               </div>
-            <Button
-              onClick={editingProductIndex !== null ? saveEditedProduct : addProduct}
-              variant={editingProductIndex !== null ? "submit" : "create"}
-            >
-              {editingProductIndex !== null ? "Save Changes" : "Add to Invoice"}
-            </Button>
+              <Button
+                onClick={
+                  editingProductIndex !== null ? saveEditedProduct : addProduct
+                }
+                variant={editingProductIndex !== null ? "submit" : "create"}
+              >
+                {editingProductIndex !== null
+                  ? "Save Changes"
+                  : "Add to Invoice"}
+              </Button>
             </DialogContent>
           </Dialog>
         </CardContent>
