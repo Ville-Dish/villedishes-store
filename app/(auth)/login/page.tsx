@@ -32,7 +32,16 @@ export default function LoginPage() {
         email,
         password
       );
-      const token = await userCredential.user.getIdToken();
+      // New token refresh logic
+      const user = userCredential.user;
+      const currentUser = auth.currentUser;
+
+      let token = await user.getIdToken();
+
+      // Force refresh token if possible
+      if (currentUser) {
+        token = await currentUser.getIdToken(true); // Force refresh
+      }
 
       // Send the token to the server-side route
       const response = await fetch("/api/set-token", {
@@ -44,7 +53,10 @@ export default function LoginPage() {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to set authentication token");
+        const errorData = await response.json();
+        throw new Error(
+          errorData.error || "Failed to set authentication token"
+        );
       }
 
       // Redirect the user to the dashboard
