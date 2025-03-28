@@ -112,7 +112,9 @@ export default function AdminProductsPage() {
     const fetchProducts = async () => {
       setLoading(true);
       try {
-        const response = await fetch("/api/products", { method: "GET" });
+        const response = await fetch("/api/products", {
+          next: { tags: ["products"] },
+        });
         const data = await response.json();
 
         if (response.ok) {
@@ -144,6 +146,30 @@ export default function AdminProductsPage() {
     setEditingItem(item);
   };
 
+  const handleCloudinaryAssetDelete = async (assetId: string) => {
+    try {
+      const response = await fetch("/api/cloudinary/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ assetId }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response
+          .json()
+          .catch(() => ({ message: "Unknown error" }));
+        console.error("Error deleting Cloudinary resource:", errorData);
+      } else {
+        const data = await response
+          .json()
+          .catch(() => ({ message: "Success" }));
+        console.log("Deleted old asset:", data);
+      }
+    } catch (error) {
+      console.error("Error calling delete API:", error);
+    }
+  };
+
   const handleUpdateItem = async (updatedItem: Omit<MenuItem, "id">) => {
     setIsProdLoading(true);
     try {
@@ -164,28 +190,8 @@ export default function AdminProductsPage() {
         );
         const assetId = editingItem.assetId;
         // Delete the old asset it its exists
-        if (assetId) {
-          try {
-            const response = await fetch("/api/cloudinary/delete", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ assetId }),
-            });
-
-            if (!response.ok) {
-              const errorData = await response
-                .json()
-                .catch(() => ({ message: "Unknown error" }));
-              console.error("Error deleting Cloudinary resource:", errorData);
-            } else {
-              const data = await response
-                .json()
-                .catch(() => ({ message: "Success" }));
-              console.log("Deleted old asset:", data);
-            }
-          } catch (error) {
-            console.error("Error calling delete API:", error);
-          }
+        if (assetId && itemToUpdate.assetId !== assetId) {
+          await handleCloudinaryAssetDelete(assetId);
         }
         applyFiltersAndSearch();
         toast.success(`Product updated successfully`);
@@ -201,6 +207,16 @@ export default function AdminProductsPage() {
     } finally {
       setIsProdLoading(false);
     }
+  };
+
+  const handleUpdateCancel = async (
+    newAssetId?: string,
+    oldAssetId?: string
+  ) => {
+    if (newAssetId && oldAssetId && newAssetId !== oldAssetId) {
+      await handleCloudinaryAssetDelete(newAssetId);
+    }
+    setEditingItem(null);
   };
 
   const handleDeleteItem = async (itemId: string) => {
@@ -574,7 +590,7 @@ export default function AdminProductsPage() {
               product={editingItem}
               categories={categories}
               onSubmit={handleUpdateItem}
-              onCancel={() => setEditingItem(null)}
+              onCancel={handleUpdateCancel}
               isLoading={isProdLoading}
             />
           </DialogContent>

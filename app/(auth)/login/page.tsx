@@ -7,7 +7,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Separator } from "@/components/ui/separator";
 import Image from "next/image";
 
-
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
@@ -62,14 +61,16 @@ export default function LoginPage() {
   return (
     <div className="h-screen w-full flex flex-col items-center justify-center bg-gray-100">
       <Image
-        src="https://res.cloudinary.com/dxt7vk5dg/image/upload/v1737565949/ville-logo_f41qet.png"
+        src="https://res.cloudinary.com/dxt7vk5dg/image/upload/v1743187728/ville-logo_u98blv.png"
         alt="Logo"
         width={200}
         height={200}
         className="mb-4"
       />
       <div className="border px-8 py-6 shadow-lg flex flex-col space-y-6 w-full max-w-md rounded-lg bg-white">
-        <h1 className="text-2xl font-semibold text-center text-gray-800">Admin Login</h1>
+        <h1 className="text-2xl font-semibold text-center text-gray-800">
+          Admin Login
+        </h1>
         <Separator className="bg-gray-200" />
         <div className="space-y-4">
           <div className="relative">

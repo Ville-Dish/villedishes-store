@@ -21,6 +21,7 @@ export default function Home() {
     const fetchProducts = async () => {
       try {
         const response = await fetch("/api/menu?limit=8", { method: "GET" });
+
         const data = await response.json();
 
         if (response.ok) {
@@ -77,7 +78,7 @@ export default function Home() {
         <p className="text-gray-500 mt-2">Check back later.</p>
       )}
     </div>
-  )
+  );
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -87,7 +88,7 @@ export default function Home() {
           subtitle="Experience the rich flavors of Nigeria with our delicious meals and desserts"
           ctaText="Order Now"
           ctaLink="/products"
-          backgroundImage="https://res.cloudinary.com/dxt7vk5dg/image/upload/v1737565949/banner-bg_do18g3.png"
+          backgroundImage="https://res.cloudinary.com/dxt7vk5dg/image/upload/v1743187545/banner-bg_zsu5gn.png"
         />
         <section className="w-full py-12 md:py-24 lg:py-32 bg-gray-100">
           <div className="container mx-auto grid grid-cols-1 gap-6 lg:grid-cols-3 lg:gap-12 px-4 md:px-6">
@@ -144,27 +145,27 @@ export default function Home() {
               <div className="flex justify-center items-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
               </div>
-            ) : 
-            popularProducts.length > 0 ? (
+            ) : popularProducts.length > 0 ? (
               filteredItems.length > 0 ? (
                 <>
-                <div className="text-center mt-12">
-              <ProductCard
-                categories={categories}
-                items={filteredItems}
-                activeCategory={activeCategory}
-                onCategoryChange={setActiveCategory}
-              />
-                <Button asChild className="mt-4">
-                  <Link href="/products">View Full Menu</Link>
-                </Button>
-              </div>
+                  <div className="text-center mt-12">
+                    <ProductCard
+                      categories={categories}
+                      items={filteredItems}
+                      activeCategory={activeCategory}
+                      onCategoryChange={setActiveCategory}
+                    />
+                    <Button asChild className="mt-4">
+                      <Link href="/products">View Full Menu</Link>
+                    </Button>
+                  </div>
                 </>
               ) : (
                 renderNoProductsFound()
               )
-            ):  (renderNoProductsFound())
-          }
+            ) : (
+              renderNoProductsFound()
+            )}
           </div>
         </section>
         <section className="w-full py-12 md:py-24 lg:py-32 bg-gray-100">

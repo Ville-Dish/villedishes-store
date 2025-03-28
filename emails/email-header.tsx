@@ -4,7 +4,7 @@ export const EmailHeader = () => {
   return (
     <Section style={header}>
       <Img
-        src="https://res.cloudinary.com/dxt7vk5dg/image/upload/v1737565949/ville-logo_f41qet.png"
+        src="https://res.cloudinary.com/dxt7vk5dg/image/upload/v1743187728/ville-logo_u98blv.png"
         alt="VilleDishes Logo"
         width={50}
         height={50}

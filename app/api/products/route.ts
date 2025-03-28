@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma/client";
 import cloudinary from "@/lib/cloudinary";
+import { revalidateTag } from "next/cache";
 
 // POST method to create a new product
 export async function POST(req: Request) {
@@ -92,6 +93,8 @@ export async function PATCH(req: Request) {
       where: { id },
       data: updateData,
     });
+
+    revalidateTag("products");
 
     return NextResponse.json({
       data: updatedProduct,

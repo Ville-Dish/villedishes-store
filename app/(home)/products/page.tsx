@@ -52,7 +52,6 @@ const ProductPage = () => {
     setFilteredItems(filtered);
   }, [searchQuery, activeCategory, products]);
 
-
   //function to render No products
   const renderNoProductsFound = () => (
     <div className="flex flex-col items-center justify-center py-12">
@@ -61,13 +60,14 @@ const ProductPage = () => {
       {products.length > 0 ? (
         <>
           <p className="text-gray-500 mt-2 text-center">
-            Try adjusting your search or filter to find what you&apos;re looking for.
+            Try adjusting your search or filter to find what you&apos;re looking
+            for.
           </p>
           <Button
             className="mt-4"
             onClick={() => {
-              setSearchQuery("")
-              setActiveCategory("All")
+              setSearchQuery("");
+              setActiveCategory("All");
             }}
           >
             Clear filters
@@ -77,7 +77,7 @@ const ProductPage = () => {
         <p className="text-gray-500 mt-2">Check back later.</p>
       )}
     </div>
-  )
+  );
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -87,7 +87,7 @@ const ProductPage = () => {
           subtitle="Explore our delicious Nigerian dishes"
           ctaText="Place Order"
           ctaLink="#product-items"
-          backgroundImage="https://res.cloudinary.com/dxt7vk5dg/image/upload/v1737565949/product-banner-bg_crzxsm.png"
+          backgroundImage="https://res.cloudinary.com/dxt7vk5dg/image/upload/v1743187546/product-banner-bg_qzyrx1.png"
         />
         <section id="product-items" className="w-full py-12 md:py-24 lg:py-32">
           <div className="px-4 md:px-6">

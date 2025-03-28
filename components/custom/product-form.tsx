@@ -18,7 +18,7 @@ interface ProductFormProps {
   product: Omit<MenuItem, "id"> & { id?: string };
   categories: string[];
   onSubmit: (product: Omit<MenuItem, "id">) => void;
-  onCancel: () => void;
+  onCancel: (newAssetId?: string, oldAssetId?: string) => void;
   isLoading: boolean;
 }
 
@@ -177,7 +177,17 @@ export const ProductForm: React.FC<ProductFormProps> = ({
         </div>
       </div>
       <div className="flex justify-end space-x-4">
-        <Button type="button" variant="cancel" onClick={onCancel}>
+        <Button
+          type="button"
+          variant="cancel"
+          onClick={() => {
+            if (product.id) {
+              onCancel(formData.assetId, product.assetId);
+            } else {
+              onCancel();
+            }
+          }}
+        >
           Cancel
         </Button>
         <Button
