@@ -4,11 +4,13 @@ import prisma from "@/lib/prisma/client";
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
+
     const limitParam = searchParams.get("limit");
 
     let limit: number | undefined;
     if (limitParam) {
       limit = Number.parseInt(limitParam, 10);
+
       if (isNaN(limit) || limit <= 0) {
         return NextResponse.json(
           { message: "Invalid limit parameter" },
@@ -24,11 +26,10 @@ export async function GET(request: Request) {
       ...(limit ? { take: limit } : {}),
     });
 
-    return NextResponse.json({
-      data: products,
-      message: "Products retrieved successfully",
-      status: 200,
-    });
+    return NextResponse.json(
+      { data: products, message: "Products retrieved successfully" },
+      { status: 200 }
+    );
   } catch (error) {
     console.error("Error retrieving products:", error);
     return NextResponse.json(

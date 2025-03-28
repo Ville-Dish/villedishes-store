@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,7 +18,7 @@ interface ProductFormProps {
   product: Omit<MenuItem, "id"> & { id?: string };
   categories: string[];
   onSubmit: (product: Omit<MenuItem, "id">) => void;
-  onCancel: () => void;
+  onCancel: (newAssetId?: string, oldAssetId?: string) => void;
   isLoading: boolean;
 }
 
@@ -33,6 +33,19 @@ export const ProductForm: React.FC<ProductFormProps> = ({
     Omit<MenuItem, "id"> & { id?: string }
   >(product);
   const [searchTerm, setSearchTerm] = React.useState("");
+  const [isFormChanged, setIsFormChanged] = React.useState(false);
+  const [initialData, setInitialData] = React.useState(JSON.stringify(product));
+
+  // Check if form data has changed from initial state
+  useEffect(() => {
+    const currentData = JSON.stringify(formData);
+    setIsFormChanged(currentData !== initialData);
+  }, [formData, initialData]);
+
+  useEffect(() => {
+    setInitialData(JSON.stringify(product));
+    setFormData(product);
+  }, [product]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -45,7 +58,6 @@ export const ProductForm: React.FC<ProductFormProps> = ({
   };
 
   const handleImageChange = (url: string, assetId: string) => {
-    console.log("Assets Id:", assetId);
     setFormData((prev) => ({ ...prev, image: url, assetId }));
   };
 
@@ -158,7 +170,6 @@ export const ProductForm: React.FC<ProductFormProps> = ({
             <Label>Image</Label>
             <ImageUpload
               value={formData.image}
-              assetId={formData.assetId}
               onChange={handleImageChange}
               onRemove={() => setFormData((prev) => ({ ...prev, image: "" }))}
             />
@@ -166,12 +177,22 @@ export const ProductForm: React.FC<ProductFormProps> = ({
         </div>
       </div>
       <div className="flex justify-end space-x-4">
-        <Button type="button" variant="cancel" onClick={onCancel}>
+        <Button
+          type="button"
+          variant="cancel"
+          onClick={() => {
+            if (product.id) {
+              onCancel(formData.assetId, product.assetId);
+            } else {
+              onCancel();
+            }
+          }}
+        >
           Cancel
         </Button>
         <Button
           type="submit"
-          disabled={isLoading}
+          disabled={isLoading || !isFormChanged}
           variant={product.id ? "submit" : "create"}
         >
           {isLoading
