@@ -1,7 +1,7 @@
-import { Header } from "@/components/custom/header";
 import { AuthProvider } from "@/context/AuthContext";
 import { LoadingProvider } from "@/context/LoadingContext";
 import type { Metadata } from "next";
+import { AdminLayoutContent } from "./admin-layout-content";
 
 export const metadata: Metadata = {
   title: "VilleDishes- Admin",
@@ -17,10 +17,7 @@ export default function AdminLayout({
   return (
     <LoadingProvider>
       <AuthProvider>
-        <div className="min-h-screen">
-          <Header show={false} />
-          {children}
-        </div>
+        <AdminLayoutContent>{children}</AdminLayoutContent>
       </AuthProvider>
     </LoadingProvider>
   );

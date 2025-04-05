@@ -240,7 +240,6 @@ export default function AdminDashboard() {
       }
 
       const data = await response.json();
-      console.log({ data });
 
       const transformedRevenueGrowthData = (data.revenueGrowthData || [])
         .map((item: revenue) => ({
