@@ -213,7 +213,6 @@ export default function CheckoutPage() {
       shippingInfo: { ...values },
       status: undefined,
     };
-    console.log("ORDER DEETS", orderDetails);
 
     if (!payment) {
       await addOrder(orderDetails);
