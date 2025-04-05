@@ -1,5 +1,22 @@
 import React from "react";
 import { PageHeader } from "../../page-header";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: `Payments and Refunds | VilleDishes`,
+  description:
+    "Authentic Nigerian Food Delivered to Your Door. Experience the rich flavors of Nigeria with our delicious meals and desserts",
+  openGraph: {
+    title: `Payments and Refunds | VilleDishes`,
+    description:
+      "Authentic Nigerian Food Delivered to Your Door. Experience the rich flavors of Nigeria with our delicious meals and desserts",
+    url: "https://villedishes.com",
+    siteName: "VilleDishes",
+    images: [
+      "https://res.cloudinary.com/dxt7vk5dg/image/upload/v1743187545/banner-bg_zsu5gn.png",
+    ],
+  },
+};
 
 const PaymentPolicy = () => {
   return (

@@ -10,24 +10,27 @@ export const AdminLayoutContent = ({
 }: {
   children: React.ReactNode;
 }) => {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
     // If no user is found, redirect to login page
-    if (user === null) {
+    if (!loading && user === null) {
       router.push("/login");
     }
-  }, [user, router]);
+  }, [user, loading, router]);
 
   // Don't render children until we know the user is authenticated
-  // You could also show a loading state here
-  if (user === null) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p>Checking authentication...</p>
+        <p>Loading authentication...</p>
       </div>
     );
+  }
+
+  if (user === null) {
+    return null;
   }
 
   return (

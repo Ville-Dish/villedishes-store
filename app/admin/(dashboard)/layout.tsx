@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import { AdminLayoutContent } from "./admin-layout-content";
 
 export const metadata: Metadata = {
-  title: "VilleDishes- Admin",
+  title: "VilleDishes - Admin",
   description: "Admin Dashboard",
 };
 export const runtime = "nodejs";

@@ -7,6 +7,23 @@ import {
 } from "@/components/ui/accordion";
 import { faqItems } from "@/lib/faq";
 import { PageHeader } from "../page-header";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: `FAQ | VilleDishes`,
+  description:
+    "Authentic Nigerian Cuisine Delivered to Your Door. Experience the rich flavors of Nigeria with our delicious meals and desserts",
+  openGraph: {
+    title: `FAQ | VilleDishes`,
+    description:
+      "Authentic Nigerian Cuisine Delivered to Your Door. Experience the rich flavors of Nigeria with our delicious meals and desserts",
+    url: "https://villedishes.com",
+    siteName: "VilleDishes",
+    images: [
+      "https://res.cloudinary.com/dxt7vk5dg/image/upload/v1743187546/product-banner-bg_qzyrx1.png",
+    ],
+  },
+};
 
 const FAQ = () => {
   return (

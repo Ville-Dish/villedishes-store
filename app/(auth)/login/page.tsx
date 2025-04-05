@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "@/config/firebase";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Separator } from "@/components/ui/separator";
 import Image from "next/image";
 
-export default function LoginPage() {
+const LoginForm = () => {
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -60,7 +60,6 @@ export default function LoginPage() {
       }
 
       // Redirect the user to the dashboard
-      // router.push("/admin/dashboard");
       router.push(from || "/admin/dashboard");
     } catch (error) {
       console.error("Login failed:", error);
@@ -133,4 +132,22 @@ export default function LoginPage() {
       </div>
     </div>
   );
-}
+};
+
+const LoginLoading = () => {
+  return (
+    <div className="h-screen w-full flex flex-col items-center justify-center bg-gray-100">
+      <p className="text-gray-600">Loading login page...</p>
+    </div>
+  );
+};
+
+const LoginPage = () => {
+  return (
+    <Suspense fallback={<LoginLoading />}>
+      <LoginForm />
+    </Suspense>
+  );
+};
+
+export default LoginPage;
