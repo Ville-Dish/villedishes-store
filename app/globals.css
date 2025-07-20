@@ -1,6 +1,4 @@
-@import 'tailwindcss';
-
-@custom-variant dark (&:is(.dark *));
+@import "tailwindcss";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -237,7 +235,7 @@
 }
 
 .half-star::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
