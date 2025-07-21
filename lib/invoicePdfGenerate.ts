@@ -1,7 +1,7 @@
 import { jsPDF } from "jspdf";
-import "jspdf-autotable";
-import { logoImageData } from "./imageData";
+import autoTable, { UserOptions } from "jspdf-autotable";
 import { formattedCurrency } from "./helper";
+import { logoImageData } from "./imageData";
 
 export const createInvoicePDF = (data: Invoice): Promise<Uint8Array> => {
   return new Promise((resolve, reject) => {
@@ -163,7 +163,7 @@ export const createInvoicePDF = (data: Invoice): Promise<Uint8Array> => {
           ).toFixed(2),
         ]);
 
-        doc.autoTable({
+        const tableOptions: UserOptions = {
           head: [tableColumn],
           body: tableRows,
           startY: yPosition + 20,
@@ -176,32 +176,42 @@ export const createInvoicePDF = (data: Invoice): Promise<Uint8Array> => {
             fontStyle: "bold",
           },
           margin: { top: 20, right: 30, bottom: 40, left: 30 },
-        });
+        };
 
-        yPosition = doc.autoTable.previous?.finalY
-          ? doc.autoTable.previous.finalY + 10
-          : yPosition;
+        // (doc as any).autoTable({
+        autoTable(doc, tableOptions);
+
+        // yPosition = (doc as any).autoTable.previous?.finalY
+        //   ? (doc as any).autoTable.previous.finalY + 10
+        //   : yPosition;
+        yPosition = (doc as any).lastAutoTable?.finalY
+          ? (doc as any).lastAutoTable.finalY + 10
+          : yPosition + 200; // fallback
       }
 
       // Invoice Summary (optimized)
+      // Replace the Invoice Summary section with this fixed version:
       addCard(
         "Invoice Summary",
         () => {
-          const subtotal = data.products
-            ? data.products.reduce(
-                (sum, product) =>
-                  sum +
-                  product.basePrice *
-                    product.quantity *
-                    (1 - product.discount / 100),
-                0
-              )
-            : 0;
-          const discountAmount =
-            subtotal * ((data.discountPercentage || 0) / 100);
-          const taxAmount = subtotal * ((data.taxRate || 0) / 100);
-          const total =
-            subtotal - discountAmount + taxAmount + (data.shippingFee || 0);
+          // Add null checks and default values
+          const products = data.products || [];
+          const subtotal = products.reduce((sum, product) => {
+            // Add safety checks for product properties
+            const basePrice = product?.basePrice || 0;
+            const quantity = product?.quantity || 0;
+            const discount = product?.discount || 0;
+
+            return sum + basePrice * quantity * (1 - discount / 100);
+          }, 0);
+
+          const discountPercentage = data.discountPercentage || 0;
+          const taxRate = data.taxRate || 0;
+          const shippingFee = data.shippingFee || 0;
+
+          const discountAmount = subtotal * (discountPercentage / 100);
+          const taxAmount = subtotal * (taxRate / 100);
+          const total = subtotal - discountAmount + taxAmount + shippingFee;
 
           const addSummaryRow = (
             label: string,
@@ -228,14 +238,15 @@ export const createInvoicePDF = (data: Invoice): Promise<Uint8Array> => {
             yPosition + 40 + lineHeight * 2
           );
           addSummaryRow(
-            "Shipping Fee",
-            `$${(data.shippingFee || 0).toFixed(2)}`,
+            "Shipping Fee:",
+            `$${shippingFee.toFixed(2)}`,
             yPosition + 40 + lineHeight * 3
           );
           addSummaryRow(
-            "Total",
+            "Total:",
             `$${total.toFixed(2)}`,
-            yPosition + 40 + lineHeight * 4
+            yPosition + 40 + lineHeight * 4,
+            true
           );
         },
         pageWidth - 60,
@@ -251,7 +262,7 @@ export const createInvoicePDF = (data: Invoice): Promise<Uint8Array> => {
       });
 
       // Return optimized PDF data as Uint8Array
-      const pdfOutput = doc.output("arraybuffer");
+      const pdfOutput = doc.output("arraybuffer") as ArrayBuffer;
       resolve(new Uint8Array(pdfOutput));
     } catch (error) {
       reject(error);
@@ -265,8 +276,12 @@ export const createInvoicePDFPreview = async (
   try {
     const pdfData = await createInvoicePDF(data);
 
+    // ✅ Create a new Uint8Array backed by a proper ArrayBuffer
+    const safePdfData = new Uint8Array(pdfData.length);
+    safePdfData.set(pdfData); // Copy content byte by byte
+
     // Create a Blob from the Uint8Array
-    const blob = new Blob([pdfData], { type: "application/pdf" });
+    const blob = new Blob([safePdfData], { type: "application/pdf" });
 
     // Create a data URL from the Blob
     return URL.createObjectURL(blob);
