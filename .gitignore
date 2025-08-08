@@ -59,4 +59,4 @@ app/admin/debug-invoicePDF/
 components/custom/PDFPreview.tsx
 
 # folders
-.vscode
+.vscode/
