@@ -1,16 +1,14 @@
-import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Label } from "@/components/ui/label";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -19,22 +17,24 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import Image from "next/image";
 
-import { Trash2, Edit, Loader } from "lucide-react";
+import { Edit, Loader, Trash2 } from "lucide-react";
 
-import { useCallback, useEffect, useState } from "react";
-import { toast } from "sonner";
 import { adminEmail } from "@/lib/constantData";
 import { formattedCurrency } from "@/lib/helper";
 import { InvoiceStatus, isValidInvoiceStatus } from "@/lib/invoiceUtils";
-import { ScrollArea } from "../ui/scroll-area";
 import { cn } from "@/lib/utils";
+import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
+import { ScrollArea } from "../ui/scroll-area";
 
 export const InvoiceDetails = ({
   invoice,
@@ -56,15 +56,17 @@ export const InvoiceDetails = ({
     null
   );
   const [discountPercentage, setDiscountPercentage] = useState(
-    invoice.discountPercentage || 0
+    String(invoice.discountPercentage || 0)
   );
-  const [productDiscount, setProductDiscount] = useState<number[]>(
-    invoice?.products?.map((p) => p.discount) || []
+  const [productDiscount, setProductDiscount] = useState<string[]>(
+    invoice?.products?.map((p) => String(p.discount)) || []
   );
   const [sending, setSending] = useState(false);
   const [updating, setUpdating] = useState(false);
-  const [taxRate, setTaxRate] = useState(invoice.taxRate || 0); // Default tax rate
-  const [shippingFee, setShippingFee] = useState(invoice.shippingFee || 0); // Default shipping fee
+  const [taxRate, setTaxRate] = useState(String(invoice.taxRate || 0)); // Default tax rate
+  const [shippingFee, setShippingFee] = useState(
+    String(invoice.shippingFee || 0)
+  ); // Default shipping fee
   const [invoiceAmount, setInvoiceAmount] = useState(invoice.amount || 0);
   const [amountPaid, setAmountPaid] = useState(invoice.amountPaid || 0);
   const [amountDue, setAmountDue] = useState(
@@ -74,22 +76,22 @@ export const InvoiceDetails = ({
   const [searchTerm, setSearchTerm] = useState("");
 
   const [serviceCharge, setServiceCharge] = useState(
-    invoice.serviceCharge || 0
+    String(invoice.serviceCharge || 0)
   );
   const [miscellaneous, setMiscellaneous] = useState(
-    invoice.miscellaneous || 0
+    String(invoice.miscellaneous || 0)
   );
 
   useEffect(() => {
     setUpdatedInvoice(invoice);
     setAmountPaid(invoice.amountPaid || 0);
     setAmountDue(invoice.amountDue || 0);
-    setDiscountPercentage(invoice.discountPercentage || 0);
-    setTaxRate(invoice.taxRate || 0);
-    setShippingFee(invoice.shippingFee || 0);
-    setServiceCharge(invoice.serviceCharge || 0);
-    setMiscellaneous(invoice.miscellaneous || 0);
-    setProductDiscount(invoice.products?.map((p) => p.discount) || []);
+    setDiscountPercentage(String(invoice.discountPercentage || 0));
+    setTaxRate(String(invoice.taxRate || 0));
+    setShippingFee(String(invoice.shippingFee || 0));
+    setServiceCharge(String(invoice.serviceCharge || 0));
+    setMiscellaneous(String(invoice.miscellaneous || 0));
+    setProductDiscount(invoice.products?.map((p) => String(p.discount)) || []);
   }, [invoice]);
 
   useEffect(() => {
@@ -110,29 +112,29 @@ export const InvoiceDetails = ({
 
   const handleDiscountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseFloat(e.target.value);
-    setDiscountPercentage(isNaN(value) ? 0 : value);
+    setDiscountPercentage(isNaN(value) ? "" : String(value));
   };
   const handleTaxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseFloat(e.target.value);
-    setTaxRate(isNaN(value) ? 0 : value);
+    setTaxRate(isNaN(value) ? "" : String(value));
   };
   const handleShippingChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseFloat(e.target.value);
-    setShippingFee(isNaN(value) ? 0 : value);
+    setShippingFee(isNaN(value) ? "" : String(value));
   };
 
   const handleServiceChargeChange = (
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
     const value = parseFloat(e.target.value);
-    setServiceCharge(isNaN(value) ? 0 : value);
+    setServiceCharge(isNaN(value) ? "" : String(value));
   };
 
   const handleMiscellaneousChange = (
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
     const value = parseFloat(e.target.value);
-    setMiscellaneous(isNaN(value) ? 0 : value);
+    setMiscellaneous(isNaN(value) ? "" : String(value));
   };
 
   const handleStatusChange = (value: string) => {
@@ -190,17 +192,22 @@ export const InvoiceDetails = ({
         };
       }
     } else if (field === "discount") {
+      const numValue = parseFloat(String(value)) || 0;
+      const clamped = Math.max(0, Math.min(100, numValue));
+
       setProductDiscount((prev) => {
-        return prev.map((p, i) => (i === index ? Number(value) : Number(p)));
+        const updated = [...prev];
+        updated[index] = String(clamped);
+        return updated;
       });
 
       updatedProducts[index] = {
         ...updatedProducts[index],
-        discount: Number(value),
+        discount: clamped,
         price:
           updatedProducts[index].basePrice *
           updatedProducts[index].quantity *
-          (1 - Number(value) / 100),
+          (1 - clamped / 100),
       };
     } else {
       updatedProducts[index] = { ...updatedProducts[index], [field]: value };
@@ -228,8 +235,9 @@ export const InvoiceDetails = ({
         );
         if (existingProductIndex !== -1) {
           updatedProducts[existingProductIndex].quantity += newProduct.quantity;
-          updatedProducts[existingProductIndex].discount =
-            productDiscount[existingProductIndex];
+          updatedProducts[existingProductIndex].discount = Number(
+            productDiscount[existingProductIndex]
+          );
           updatedProducts[existingProductIndex].price =
             updatedProducts[existingProductIndex].basePrice *
             updatedProducts[existingProductIndex].quantity *
@@ -311,11 +319,11 @@ export const InvoiceDetails = ({
       updatedProducts[editingProductIndex] = {
         ...updatedProducts[editingProductIndex],
         quantity: newProducts[0].quantity,
-        discount: productDiscount[editingProductIndex],
+        discount: Number(productDiscount[editingProductIndex]),
         price:
           updatedProducts[editingProductIndex].basePrice *
           newProducts[0].quantity *
-          (1 - productDiscount[editingProductIndex] / 100),
+          (1 - Number(productDiscount[editingProductIndex]) / 100),
       };
       setUpdatedInvoice((prev) => ({ ...prev, products: updatedProducts }));
       resetProductDialog();
@@ -337,15 +345,15 @@ export const InvoiceDetails = ({
 
   const calculateTotal = useCallback(() => {
     const subtotal = calculateSubtotal() || 0;
-    const discountAmount = subtotal * (discountPercentage / 100);
-    const taxAmount = subtotal * (taxRate / 100);
+    const discountAmount = subtotal * ((Number(discountPercentage) || 0) / 100);
+    const taxAmount = subtotal * ((Number(taxRate) || 0) / 100);
     return (
       subtotal -
       discountAmount +
       taxAmount +
-      shippingFee +
-      serviceCharge +
-      miscellaneous
+      (Number(shippingFee) || 0) +
+      (Number(serviceCharge) || 0) +
+      (Number(miscellaneous) || 0)
     );
   }, [
     calculateSubtotal,
@@ -376,11 +384,11 @@ export const InvoiceDetails = ({
         amount: total,
         amountPaid: amountPaid,
         amountDue: amountDue,
-        discountPercentage,
-        taxRate,
-        shippingFee,
-        serviceCharge,
-        miscellaneous,
+        discountPercentage: Number(discountPercentage),
+        taxRate: Number(taxRate),
+        shippingFee: Number(shippingFee),
+        serviceCharge: Number(serviceCharge),
+        miscellaneous: Number(miscellaneous),
         products: currentProducts,
       };
 
@@ -462,7 +470,7 @@ export const InvoiceDetails = ({
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
               <Image
-                src="https://res.cloudinary.com/dxt7vk5dg/image/upload/v1737565949/ville-logo_nuigjy.svg"
+                src="https://res.cloudinary.com/dxt7vk5dg/image/upload/v1743187728/ville-logo_u98blv.png"
                 alt="Company Logo"
                 width={80}
                 height={80}
@@ -633,53 +641,55 @@ export const InvoiceDetails = ({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {updatedInvoice.products.map((product, index) => (
-                    <TableRow key={index}>
-                      <TableCell>{index + 1}</TableCell>
-                      <TableCell>{product.name}</TableCell>
-                      <TableCell>{product.basePrice.toFixed(2)}</TableCell>
-                      <TableCell>{product.quantity}</TableCell>
-                      <TableCell>
-                        <Input
-                          type="number"
-                          value={productDiscount[index] || 0}
-                          onChange={(e) =>
-                            handleProductChange(
-                              index,
-                              "discount",
-                              e.target.value
-                            )
-                          }
-                          className="w-16"
-                          min="0"
-                          max="100"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        {(
-                          product.basePrice *
-                          product.quantity *
-                          (1 - (product.discount || 0) / 100)
-                        ).toFixed(2)}
-                      </TableCell>
-                      <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => startEditingProduct(index)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => removeProduct(index)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {updatedInvoice.products.map((product, index) => {
+                    return (
+                      <TableRow key={index}>
+                        <TableCell>{index + 1}</TableCell>
+                        <TableCell>{product.name}</TableCell>
+                        <TableCell>{product.basePrice.toFixed(2)}</TableCell>
+                        <TableCell>{product.quantity}</TableCell>
+                        <TableCell>
+                          <Input
+                            type="number"
+                            value={productDiscount[index] || "0"}
+                            onChange={(e) =>
+                              handleProductChange(
+                                index,
+                                "discount",
+                                e.target.value
+                              )
+                            }
+                            className="w-16"
+                            min="0"
+                            max="100"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          {(
+                            product.basePrice *
+                            product.quantity *
+                            (1 - (product.discount || 0) / 100)
+                          ).toFixed(2)}
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => startEditingProduct(index)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeProduct(index)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </div>
@@ -847,10 +857,11 @@ export const InvoiceDetails = ({
                   className="w-20 mr-2"
                   min="0"
                   max="100"
+                  step={0.01}
                 />
                 <span>
                   {formattedCurrency.format(
-                    subTotal * (discountPercentage / 100)
+                    subTotal * (Number(discountPercentage) / 100)
                   )}
                 </span>
               </div>
@@ -864,10 +875,11 @@ export const InvoiceDetails = ({
                   value={taxRate}
                   className="w-20 mr-2"
                   min="0"
+                  step={0.01}
                   onChange={handleTaxChange}
                 />
                 <span>
-                  {formattedCurrency.format(subTotal * (taxRate / 100))}
+                  {formattedCurrency.format(subTotal * (Number(taxRate) / 100))}
                 </span>
               </div>
             </div>
@@ -884,7 +896,7 @@ export const InvoiceDetails = ({
                   step={0.05}
                   onChange={handleShippingChange}
                 />
-                <span>{formattedCurrency.format(shippingFee)}</span>
+                <span>{formattedCurrency.format(Number(shippingFee))}</span>
               </div>
             </div>
             <div className="flex justify-between">
@@ -899,7 +911,7 @@ export const InvoiceDetails = ({
                   step={0.05}
                   onChange={handleServiceChargeChange}
                 />
-                <span>{formattedCurrency.format(serviceCharge)}</span>
+                <span>{formattedCurrency.format(Number(serviceCharge))}</span>
               </div>
             </div>
             <div className="flex justify-between">
@@ -914,7 +926,7 @@ export const InvoiceDetails = ({
                   step={0.05}
                   onChange={handleMiscellaneousChange}
                 />
-                <span>{formattedCurrency.format(miscellaneous)}</span>
+                <span>{formattedCurrency.format(Number(miscellaneous))}</span>
               </div>
             </div>
             <div className="flex justify-between text-lg font-bold">

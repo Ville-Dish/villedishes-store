@@ -57,3 +57,6 @@ ville-dishes-firebase-adminsdk-srwmr-d4e93b106b.json
 # certain admin page
 app/admin/debug-invoicePDF/
 components/custom/PDFPreview.tsx
+
+# folders
+.vscode
