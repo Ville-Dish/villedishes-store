@@ -1,5 +1,17 @@
 "use client";
-import React, { useCallback, useEffect, useState } from "react";
+import { InvoiceDetails } from "@/components/custom/invoice-details";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Table,
   TableBody,
@@ -8,32 +20,29 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { CheckCheck, ChevronsRight, ChevronsLeft, CircleX, Download, Eye, Plus } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  CheckCheck,
+  ChevronsLeft,
+  ChevronsRight,
+  CircleX,
+  Download,
+  Eye,
+  Plus,
+} from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { InvoiceDetails } from "@/components/custom/invoice-details";
 
+import { createInvoicePDF } from "@/lib/invoicePdfGenerate";
 import { saveAs } from "file-saver";
 import "jspdf-autotable";
-import { createInvoicePDF } from "@/lib/invoicePdfGenerate";
 
+import { DatePickerWithRange } from "@/components/custom/date-range-picker";
 import {
   Select,
   SelectContent,
@@ -41,10 +50,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { DatePickerWithRange } from "@/components/custom/date-range-picker";
 import { Slider } from "@/components/ui/slider";
-import { cn } from "@/lib/utils";
 import { useLoading } from "@/context/LoadingContext";
+import { cn } from "@/lib/utils";
 
 type InvoiceProduct = {
   id: string;
@@ -52,8 +60,8 @@ type InvoiceProduct = {
   basePrice: number;
 };
 
-type SortField = 'customerName' | 'amount' | 'dueDate' | null;
-type SortDirection = 'asc' | 'desc' | null;
+type SortField = "customerName" | "amount" | "dueDate" | null;
+type SortDirection = "asc" | "desc" | null;
 
 export default function AdminInvoicesPage() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
@@ -70,7 +78,6 @@ export default function AdminInvoicesPage() {
     dueDate: "",
     status: "PENDING",
   });
-
 
   const { setIsLoading } = useLoading();
   const [loading, setLoading] = useState(false);
@@ -106,15 +113,15 @@ export default function AdminInvoicesPage() {
   const handleSort = (field: SortField) => {
     if (sortField === field) {
       // Cycle through: asc -> desc -> null
-      if (sortDirection === 'asc') {
-        setSortDirection('desc');
-      } else if (sortDirection === 'desc') {
+      if (sortDirection === "asc") {
+        setSortDirection("desc");
+      } else if (sortDirection === "desc") {
         setSortDirection(null);
         setSortField(null);
       }
     } else {
       setSortField(field);
-      setSortDirection('asc');
+      setSortDirection("asc");
     }
   };
 
@@ -122,16 +129,16 @@ export default function AdminInvoicesPage() {
   useEffect(() => {
     // Update URL when page changes (only for pages > 1)
     if (currentPage > 1) {
-      window.history.pushState({}, '', `?page=${currentPage}`);
+      window.history.pushState({}, "", `?page=${currentPage}`);
     } else {
-      window.history.pushState({}, '', window.location.pathname);
+      window.history.pushState({}, "", window.location.pathname);
     }
   }, [currentPage]);
 
   // Add this effect to handle initial page from URL
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const page = parseInt(params.get('page') || '1');
+    const page = parseInt(params.get("page") || "1");
     setCurrentPage(page);
   }, []);
 
@@ -224,22 +231,20 @@ export default function AdminInvoicesPage() {
     // Apply sorting
     if (sortField && sortDirection) {
       filtered.sort((a, b) => {
-        if (sortField === 'customerName') {
-          return sortDirection === 'asc'
+        if (sortField === "customerName") {
+          return sortDirection === "asc"
             ? a.customerName.localeCompare(b.customerName)
             : b.customerName.localeCompare(a.customerName);
         }
-        if (sortField === 'amount') {
-          return sortDirection === 'asc'
+        if (sortField === "amount") {
+          return sortDirection === "asc"
             ? a.amount - b.amount
             : b.amount - a.amount;
         }
-        if (sortField === 'dueDate') {
+        if (sortField === "dueDate") {
           const dateA = new Date(a.dueDate).getTime();
           const dateB = new Date(b.dueDate).getTime();
-          return sortDirection === 'asc'
-            ? dateA - dateB
-            : dateB - dateA;
+          return sortDirection === "asc" ? dateA - dateB : dateB - dateA;
         }
         return 0;
       });
@@ -254,7 +259,17 @@ export default function AdminInvoicesPage() {
     filtered = filtered.slice(startIndex, endIndex);
 
     setFilteredInvoices(filtered);
-  }, [searchTerm, statusFilter, dateRange, amountRange, invoices, currentPage, itemsPerPage, sortField, sortDirection]);
+  }, [
+    searchTerm,
+    statusFilter,
+    dateRange,
+    amountRange,
+    invoices,
+    currentPage,
+    itemsPerPage,
+    sortField,
+    sortDirection,
+  ]);
 
   // Add this pagination handler
   const handlePageChange = (newPage: number) => {
@@ -342,7 +357,7 @@ export default function AdminInvoicesPage() {
       // Ensure the returned data has all the necessary fields
       const updatedData = {
         ...result.data,
-        products: updatedInvoice.products // Preserve products if not returned from API
+        products: updatedInvoice.products, // Preserve products if not returned from API
       };
 
       // Update the invoices state
@@ -365,7 +380,6 @@ export default function AdminInvoicesPage() {
       }
 
       return updatedData; // Return the updated data
-
     } catch (error) {
       console.error("Error updating invoice:", error);
       toast.error("Failed to update invoice");
@@ -381,12 +395,26 @@ export default function AdminInvoicesPage() {
     try {
       toast.info(`Downloading Invoice ${invoice.invoiceNumber}`);
 
+      const invoiceName = (invoice.customerName || "")
+        .replace(/[^\w\s]/g, "") // remove special characters
+        .replace(/\s+/g, "_") // replaces all spaces (and tabs/newlines) with underscores
+        .slice(0, 20)
+        .toUpperCase(); // limit to 20 characters
+
       // Call createInvoicePDF to generate the PDF content as Uint8Array
       const pdfData = await createInvoicePDF(invoice);
 
+      // Create a new Uint8Array to ensure we have a proper ArrayBuffer
+      const uint8Array = new Uint8Array(pdfData);
+
       // Create a Blob from the Uint8Array and download it
-      const blob = new Blob([pdfData], { type: "application/pdf" });
-      saveAs(blob, `Invoice_${invoice.invoiceNumber}.pdf`);
+      const blob = new Blob([uint8Array], { type: "application/pdf" });
+      saveAs(
+        blob,
+        invoiceName
+          ? `${invoiceName}.pdf`
+          : `Invoice_${invoice.invoiceNumber}.pdf`
+      );
 
       toast.info(`Downloaded Invoice ${invoice.invoiceNumber} successfully`);
     } catch (error) {
@@ -398,7 +426,6 @@ export default function AdminInvoicesPage() {
   const getInvoiceIndex = (invoice: Invoice) => {
     return invoices.findIndex((inv) => inv.id === invoice.id);
   };
-
 
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 max-w-7xl mx-auto">
@@ -565,39 +592,39 @@ export default function AdminInvoicesPage() {
               <TableHead>Invoice Number</TableHead>
               <TableHead
                 className="cursor-pointer hover:bg-muted/50"
-                onClick={() => handleSort('customerName')}
+                onClick={() => handleSort("customerName")}
               >
                 <div className="flex items-center">
                   Customer
-                  {sortField === 'customerName' && (
+                  {sortField === "customerName" && (
                     <span className="ml-2">
-                      {sortDirection === 'asc' ? '↑' : '↓'}
+                      {sortDirection === "asc" ? "↑" : "↓"}
                     </span>
                   )}
                 </div>
               </TableHead>
               <TableHead
                 className="cursor-pointer hover:bg-muted/50"
-                onClick={() => handleSort('amount')}
+                onClick={() => handleSort("amount")}
               >
                 <div className="flex items-center">
                   Amount
-                  {sortField === 'amount' && (
+                  {sortField === "amount" && (
                     <span className="ml-2">
-                      {sortDirection === 'asc' ? '↑' : '↓'}
+                      {sortDirection === "asc" ? "↑" : "↓"}
                     </span>
                   )}
                 </div>
               </TableHead>
               <TableHead
                 className="cursor-pointer hover:bg-muted/50"
-                onClick={() => handleSort('dueDate')}
+                onClick={() => handleSort("dueDate")}
               >
                 <div className="flex items-center">
                   Due Date
-                  {sortField === 'dueDate' && (
+                  {sortField === "dueDate" && (
                     <span className="ml-2">
-                      {sortDirection === 'asc' ? '↑' : '↓'}
+                      {sortDirection === "asc" ? "↑" : "↓"}
                     </span>
                   )}
                 </div>
@@ -607,140 +634,136 @@ export default function AdminInvoicesPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {
-              loading ? (
-                <TableRow>
-                  <TableCell colSpan={7} className="h-24 text-center">
-                    <div className="flex justify-center items-center">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                    </div>
+            {loading ? (
+              <TableRow>
+                <TableCell colSpan={7} className="h-24 text-center">
+                  <div className="flex justify-center items-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ) : filteredInvoices.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={7} className="h-24 text-center">
+                  <p className="text-lg text-muted-foreground">
+                    {searchTerm
+                      ? "No matching invoices found"
+                      : "There are no invoices yet"}
+                  </p>
+                </TableCell>
+              </TableRow>
+            ) : (
+              filteredInvoices.map((invoice) => (
+                <TableRow key={invoice.id}>
+                  <TableCell>{getInvoiceIndex(invoice) + 1}</TableCell>
+                  <TableCell>{invoice.invoiceNumber}</TableCell>
+                  <TableCell>{invoice.customerName}</TableCell>
+                  <TableCell>${invoice.amount.toFixed(2)}</TableCell>
+                  <TableCell>{invoice.dueDate}</TableCell>
+                  <TableCell>
+                    <span
+                      className={cn(
+                        "font-medium border rounded-md px-3 py-1 text-white text-center inline-block cursor-default transition-colors",
+                        {
+                          "bg-[#d57771] border-[#d57771] hover:bg-[#d3736d]":
+                            invoice.status === "UNPAID",
+                          "bg-green-500 border-green-500 hover:bg-green-600":
+                            invoice.status === "PAID",
+                          "bg-[#da281c] border-[#da281c] hover:bg-[#b4443c]":
+                            invoice.status === "DUE",
+                          "bg-[#fe9e1d] border-[#fe9e1d] hover:bg-[#c6893a]":
+                            invoice.status === "PENDING",
+                        }
+                      )}
+                    >
+                      {invoice.status}
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleViewInvoice(invoice)}
+                          >
+                            <Eye className="h-4 w-4" color="#fe9e1d" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>View</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDownloadInvoice(invoice)}
+                          >
+                            <Download className="h-4 w-4" color="#c7c940" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Download</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() =>
+                              handleUpdateInvoice({
+                                ...invoice,
+                                status:
+                                  invoice.status === "PAID" ? "UNPAID" : "PAID",
+                                amountPaid:
+                                  invoice.status === "PAID"
+                                    ? invoice.amount
+                                    : invoice.amountPaid,
+                                amountDue:
+                                  invoice.status === "PAID"
+                                    ? 0
+                                    : invoice.amountDue,
+                              })
+                            }
+                          >
+                            {invoice.status === "PAID" ? (
+                              <CircleX className="h-4 w-4" color="#d57771" />
+                            ) : (
+                              <CheckCheck className="h-4 w-4" color="#107a47" />
+                            )}
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>
+                            {invoice.status === "PAID"
+                              ? "Mark as Unpaid"
+                              : "Mark as Paid"}
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   </TableCell>
                 </TableRow>
-              ) :
-
-                filteredInvoices.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={7} className="h-24 text-center">
-                      <p className="text-lg text-muted-foreground">
-                        {searchTerm
-                          ? "No matching invoices found"
-                          : "There are no invoices yet"}
-                      </p>
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filteredInvoices.map((invoice) => (
-                    <TableRow key={invoice.id}>
-                      <TableCell>{getInvoiceIndex(invoice) + 1}</TableCell>
-                      <TableCell>{invoice.invoiceNumber}</TableCell>
-                      <TableCell>{invoice.customerName}</TableCell>
-                      <TableCell>${invoice.amount.toFixed(2)}</TableCell>
-                      <TableCell>{invoice.dueDate}</TableCell>
-                      <TableCell>
-                        <span
-                          className={cn(
-                            "font-medium border rounded-md px-3 py-1 text-white text-center inline-block cursor-default transition-colors",
-                            {
-                              "bg-[#d57771] border-[#d57771] hover:bg-[#d3736d]":
-                                invoice.status === "UNPAID",
-                              "bg-green-500 border-green-500 hover:bg-green-600":
-                                invoice.status === "PAID",
-                              "bg-[#da281c] border-[#da281c] hover:bg-[#b4443c]":
-                                invoice.status === "DUE",
-                              "bg-[#fe9e1d] border-[#fe9e1d] hover:bg-[#c6893a]":
-                                invoice.status === "PENDING",
-                            }
-                          )}
-                        >
-                          {invoice.status}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleViewInvoice(invoice)}
-                              >
-                                <Eye className="h-4 w-4" color="#fe9e1d" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>View</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleDownloadInvoice(invoice)}
-                              >
-                                <Download className="h-4 w-4" color="#c7c940" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Download</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() =>
-                                  handleUpdateInvoice({
-                                    ...invoice,
-                                    status:
-                                      invoice.status === "PAID" ? "UNPAID" : "PAID",
-                                    amountPaid:
-                                      invoice.status === "PAID"
-                                        ? invoice.amount
-                                        : invoice.amountPaid,
-                                    amountDue:
-                                      invoice.status === "PAID"
-                                        ? 0
-                                        : invoice.amountDue,
-                                  })
-                                }
-                              >
-                                {invoice.status === "PAID" ? (
-                                  <CircleX className="h-4 w-4" color="#d57771" />
-                                ) : (
-                                  <CheckCheck className="h-4 w-4" color="#107a47" />
-                                )}
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>
-                                {invoice.status === "PAID"
-                                  ? "Mark as Unpaid"
-                                  : "Mark as Paid"}
-                              </p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
+              ))
+            )}
           </TableBody>
         </Table>
 
         {/* Add pagination controls */}
-        {
-          !loading &&
+        {!loading && (
           <div className="flex items-center justify-between px-4 py-4 border-t">
             <div className="text-sm text-muted-foreground">
-              Showing {((currentPage - 1) * itemsPerPage) + 1} to{" "}
+              Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
               {(currentPage - 1) * itemsPerPage + filteredInvoices.length} of{" "}
               {invoices.length} entries
             </div>
@@ -762,7 +785,9 @@ export default function AdminInvoicesPage() {
                 Previous
               </Button>
               <div className="flex items-center space-x-1">
-                <span className="text-sm font-medium">Page {currentPage} of {totalPages}</span>
+                <span className="text-sm font-medium">
+                  Page {currentPage} of {totalPages}
+                </span>
               </div>
               <Button
                 variant="outline"
@@ -782,7 +807,7 @@ export default function AdminInvoicesPage() {
               </Button>
             </div>
           </div>
-        }
+        )}
       </div>
 
       {selectedInvoice && (
