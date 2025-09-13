@@ -19,6 +19,10 @@ model Product {
   OrderProduct    OrderProduct[]
   InvoiceProducts InvoiceProducts[]
   invoiceId       String?
+
+  @@index([category])
+  @@index([price])
+  @@index([rating])
 }
 
 model Review {
@@ -45,6 +49,11 @@ model Order {
   status           String
   shippingInfo     ShippingInfo   @relation(fields: [shippingInfoId], references: [id])
   products         OrderProduct[]
+
+  @@index([status])
+  @@index([orderDate])
+  @@index([status, orderDate])
+  @@index([orderNumber])
 }
 
 model ShippingInfo {
@@ -78,7 +87,7 @@ model Invoice {
   amount             Float
   amountPaid         Float             @default(0)
   amountDue          Float             @default(0)
-  discountPercentage Int             @default(0)
+  discountPercentage Int               @default(0)
   taxRate            Int               @default(0)
   shippingFee        Int               @default(0)
   serviceCharge      Int               @default(0)
@@ -87,6 +96,12 @@ model Invoice {
   dueDate            String
   status             String
   InvoiceProducts    InvoiceProducts[] @relation("InvoiceProducts")
+
+  @@index([status])
+  @@index([dateCreated])
+  @@index([dueDate])
+  @@index([customerEmail])
+  @@index([status, dateCreated])
 }
 
 // Relation to  
