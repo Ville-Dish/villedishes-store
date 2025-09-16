@@ -167,7 +167,8 @@ export async function GET(req: Request) {
             quantity: true,
           },
           _count: {
-            orderId: true,
+            // orderId: true,
+            productId: true,
           },
         }),
         prisma.invoiceProducts.findMany({
@@ -194,7 +195,7 @@ export async function GET(req: Request) {
       orderProducts.forEach((item) => {
         productMap.set(item.productId, {
           unitsSold: (item._sum?.quantity || 0) as number,
-          sales: (item._count?.orderId || 0) as number,
+          sales: (item._count?.productId || 0) as number,
         });
       });
 
