@@ -1,7 +1,7 @@
 // api/invoices/route.ts
 
-import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma/client";
+import { NextResponse } from "next/server";
 
 const monthNames = [
   "January",
@@ -33,73 +33,110 @@ export async function GET(req: Request) {
       throw new Error("Invalid year or month parameter");
     }
 
-    const projectedRevenue = await prisma.revenue.findFirst({
-      where: {
-        year: year,
-      },
-      select: {
-        yearlyTarget: true,
-      },
-    });
+    const startDate = `${year}-${month.toString().padStart(2, "0")}-01`;
+    const endDate = `${year}-${month.toString().padStart(2, "0")}-31`;
 
-    const totalActualRevenue = await prisma.monthlyProjection.aggregate({
-      where: {
-        revenue: {
+    const [
+      projectedRevenue,
+      totalMonthlyRevenue,
+      monthlyRevenue,
+      aggregations,
+      incomeData,
+      expenseData,
+    ] = await Promise.all([
+      prisma.revenue.findFirst({
+        where: {
           year: year,
         },
-      },
-      _sum: {
-        actual: true,
-      },
-    });
+        select: {
+          yearlyTarget: true,
+        },
+      }),
+
+      prisma.monthlyProjection.findFirst({
+        where: {
+          month: monthNames[month],
+          revenue: {
+            year: year,
+          },
+        },
+        select: {
+          actual: true,
+        },
+      }),
+
+      prisma.monthlyProjection.findFirst({
+        where: {
+          month: monthNames[month - 1],
+          revenue: { year: year },
+        },
+        select: {
+          projection: true,
+          actual: true,
+        },
+      }),
+
+      prisma.$transaction([
+        prisma.monthlyProjection.aggregate({
+          where: {
+            revenue: {
+              year: year,
+            },
+          },
+          _sum: {
+            actual: true,
+          },
+        }),
+        prisma.expense.aggregate({
+          where: {
+            date: {
+              gte: startDate,
+              lte: endDate,
+            },
+          },
+          _sum: {
+            amount: true,
+          },
+        }),
+      ]),
+
+      prisma.income.groupBy({
+        by: ["category"],
+        where: {
+          date: {
+            gte: startDate,
+            lte: endDate,
+          },
+        },
+        _sum: {
+          amount: true,
+        },
+      }),
+      prisma.expense.groupBy({
+        by: ["category"],
+        where: {
+          date: {
+            gte: startDate,
+            lte: endDate,
+          },
+        },
+        _sum: {
+          amount: true,
+        },
+      }),
+    ]);
+
+    const [totalActualRevenue, totalMonthlyExpense] = aggregations;
 
     const yearlyRevenueData = {
       projected: projectedRevenue?.yearlyTarget || 0,
       actual: totalActualRevenue._sum.actual || 0,
     };
 
-    const totalMonthlyRevenue = await prisma.monthlyProjection.findFirst({
-      where: {
-        month: monthNames[month],
-        revenue: {
-          year: year,
-        },
-      },
-      select: {
-        actual: true,
-      },
-    });
-
-    const monthlyRevenue = await prisma.monthlyProjection.findFirst({
-      where: {
-        month: monthNames[month - 1],
-        revenue: { year: year },
-      },
-      select: {
-        projection: true,
-        actual: true,
-      },
-    });
-
     const monthlyRevenueData = {
       projected: monthlyRevenue?.projection || 0,
       actual: monthlyRevenue?.actual || 0,
     };
-
-    const startDate = `${year}-${month.toString().padStart(2, "0")}-01`;
-    const endDate = `${year}-${month.toString().padStart(2, "0")}-31`;
-
-    const totalMonthlyExpense = await prisma.expense.aggregate({
-      where: {
-        date: {
-          gte: startDate,
-          lte: endDate,
-        },
-      },
-      _sum: {
-        amount: true,
-      },
-    });
 
     const profit =
       (totalMonthlyRevenue?.actual || 0) -
@@ -109,32 +146,6 @@ export async function GET(req: Request) {
       totalRevenue: totalMonthlyRevenue?.actual,
       profit: profit,
     };
-
-    const incomeData = await prisma.income.groupBy({
-      by: ["category"],
-      where: {
-        date: {
-          gte: startDate,
-          lte: endDate,
-        },
-      },
-      _sum: {
-        amount: true,
-      },
-    });
-
-    const expenseData = await prisma.expense.groupBy({
-      by: ["category"],
-      where: {
-        date: {
-          gte: startDate,
-          lte: endDate,
-        },
-      },
-      _sum: {
-        amount: true,
-      },
-    });
 
     const response = {
       yearlyRevenueData: yearlyRevenueData,

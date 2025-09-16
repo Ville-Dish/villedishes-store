@@ -1,5 +1,5 @@
-import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma/client";
+import { NextResponse } from "next/server";
 
 // Define a type for the data structure
 type DataStructure = { [key: string]: unknown };
@@ -67,39 +67,41 @@ export async function GET(req: Request) {
       const startDate = `${year}-01-01`;
       const endDate = `${year}-12-31`;
 
-      const orderProducts = await prisma.orderProduct.groupBy({
-        by: ["productId"],
-        where: {
-          order: {
-            orderDate: {
-              gte: startDate,
-              lte: endDate,
-            },
-            status: {
-              in: ["PENDING", "FULFILLED"],
+      const [orderProducts, invoiceProducts] = await Promise.all([
+        prisma.orderProduct.groupBy({
+          by: ["productId"],
+          where: {
+            order: {
+              orderDate: {
+                gte: startDate,
+                lte: endDate,
+              },
+              status: {
+                in: ["PENDING", "FULFILLED"],
+              },
             },
           },
-        },
-        _sum: {
-          quantity: true,
-        },
-      });
+          _sum: {
+            quantity: true,
+          },
+        }),
 
-      // Fetch invoice products
-      const invoiceProducts = await prisma.invoiceProducts.findMany({
-        where: {
-          invoice: {
-            dateCreated: {
-              gte: startDate,
-              lte: endDate,
+        // Fetch invoice products
+        prisma.invoiceProducts.findMany({
+          where: {
+            invoice: {
+              dateCreated: {
+                gte: startDate,
+                lte: endDate,
+              },
+              status: "PAID",
             },
-            status: "PAID",
           },
-        },
-        include: {
-          Product: true,
-        },
-      });
+          include: {
+            Product: true,
+          },
+        }),
+      ]);
 
       const productQuantities = new Map<string, number>();
 
@@ -115,22 +117,20 @@ export async function GET(req: Request) {
         });
       });
 
-      const sortedProducts = Array.from(productQuantities.entries())
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 5);
+      const productsWithNames = await prisma.product.findMany({
+        where: {
+          id: { in: Array.from(productQuantities.keys()) },
+        },
+        select: { id: true, name: true },
+      });
 
-      productPerformance = await Promise.all(
-        sortedProducts.map(async ([productId, quantity]) => {
-          const product = await prisma.product.findUnique({
-            where: { id: productId },
-            select: { name: true },
-          });
-          return {
-            name: product?.name || "Unknown Product",
-            value: quantity,
-          };
-        })
-      );
+      productPerformance = productsWithNames
+        .map((product) => ({
+          name: product.name,
+          value: productQuantities.get(product.id) || 0,
+        }))
+        .sort((a, b) => b.value - a.value)
+        .slice(0, 5);
     } catch (queryError) {
       console.error("Error in product performance query:", queryError);
     }

@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
-import { ProductForm } from "@/components/custom/product-form";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+// import { ProductForm } from "@/components/custom/product-form";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -37,8 +38,14 @@ import {
   Plus,
   Trash,
 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+
+const ProductForm = lazy(() =>
+  import("@/components/custom/product-form").then((module) => ({
+    default: module.ProductForm,
+  }))
+);
 
 type SortField = "name" | "price" | "category" | null;
 type SortDirection = "asc" | "desc" | null;
@@ -399,13 +406,23 @@ export default function AdminProductsPage() {
                   Add New Product
                 </DialogDescription>
               </DialogHeader>
-              <ProductForm
-                product={newItem}
-                categories={categories}
-                onSubmit={handleAddItem}
-                onCancel={() => setDialogOpen(false)}
-                isLoading={isProdLoading}
-              />
+              <ErrorBoundary>
+                <Suspense
+                  fallback={
+                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center">
+                      <div className="bg-white p-6 rounded-lg">Loading...</div>
+                    </div>
+                  }
+                >
+                  <ProductForm
+                    product={newItem}
+                    categories={categories}
+                    onSubmit={handleAddItem}
+                    onCancel={() => setDialogOpen(false)}
+                    isLoading={isProdLoading}
+                  />
+                </Suspense>
+              </ErrorBoundary>
             </DialogContent>
           </Dialog>
         </div>
@@ -627,14 +644,24 @@ export default function AdminProductsPage() {
                 {editingItem.name}
               </DialogDescription>
             </DialogHeader>
-            <ProductForm
-              product={editingItem}
-              categories={categories}
-              onSubmit={handleUpdateItem}
-              onCancel={handleUpdateCancel}
-              isLoading={isProdLoading}
-              isCopy={isCopyMode}
-            />
+            <ErrorBoundary>
+              <Suspense
+                fallback={
+                  <div className="fixed inset-0 bg-black/50 flex items-center justify-center">
+                    <div className="bg-white p-6 rounded-lg">Loading...</div>
+                  </div>
+                }
+              >
+                <ProductForm
+                  product={editingItem}
+                  categories={categories}
+                  onSubmit={handleUpdateItem}
+                  onCancel={handleUpdateCancel}
+                  isLoading={isProdLoading}
+                  isCopy={isCopyMode}
+                />
+              </Suspense>
+            </ErrorBoundary>
           </DialogContent>
         </Dialog>
       )}

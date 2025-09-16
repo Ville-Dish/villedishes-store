@@ -1,29 +1,32 @@
-import React, { useCallback, useEffect, useState } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
-import { Button } from "../ui/button";
-import Image from "next/image";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-  CardFooter,
-} from "../ui/card";
 import {
   ChevronLeft,
   ChevronRight,
   Loader,
   ShoppingBasket,
 } from "lucide-react";
-import useCartStore from "@/stores/useCartStore";
+import Image from "next/image";
+import { useCallback, useEffect, useState } from "react";
+
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   Carousel,
   CarouselContent,
   CarouselItem,
   CarouselNext,
   CarouselPrevious,
-} from "../ui/carousel";
+} from "@/components/ui/carousel";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import RatingReview from "./rating-review";
+
+import { blurDataUrl } from "@/lib/imageData";
+import useCartStore from "@/stores/useCartStore";
 
 type ProductTabsProps = {
   categories: string[];
@@ -145,23 +148,33 @@ export const ProductCard = ({
           </div>
         ) : (
           <>
-            <div className={`grid gap-6 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 transition-opacity duration-300 ease-in-out ${isChanging ? 'opacity-0' : 'opacity-100'}`}>
-              {currentItems.map((item) => (
+            <div
+              className={`grid gap-6 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 transition-opacity duration-300 ease-in-out ${isChanging ? "opacity-0" : "opacity-100"}`}
+            >
+              {currentItems.map((item, index) => (
                 <Card
                   key={item.id}
                   className="flex flex-col justify-between overflow-hidden h-[250px] w-full md:w-[245px]"
                 >
                   <div className="relative w-full h-[120px]">
                     <Image
-                      src={item.image || "https://img.icons8.com/cute-clipart/64/no-image.png"}
+                      src={
+                        item.image ||
+                        "https://img.icons8.com/cute-clipart/64/no-image.png"
+                      }
                       alt={item.name || "No image"}
-                      layout="fill"
-                      objectFit="cover"
-                      className="absolute top-0 left-0 w-full h-full"
+                      fill
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+                      priority={index < 4}
+                      placeholder="blur"
+                      blurDataURL={blurDataUrl}
+                      className="absolute top-0 left-0 w-full h-full object-cover"
                     />
                   </div>
                   <CardHeader className="p-2">
-                    <CardTitle className="text-lg truncate">{item.name}</CardTitle>
+                    <CardTitle className="text-lg truncate">
+                      {item.name}
+                    </CardTitle>
                   </CardHeader>
                   <CardContent className="p-2 pt-0 flex-grow">
                     <p className="text-sm text-gray-600 line-clamp-2">
@@ -204,16 +217,18 @@ export const ProductCard = ({
                   <ChevronLeft className="w-4 h-4" />
                   <span className="sr-only">Previous page</span>
                 </Button>
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                  <Button
-                    key={page}
-                    variant={currentPage === page ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => handlePageChange(page)}
-                  >
-                    {page}
-                  </Button>
-                ))}
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                  (page) => (
+                    <Button
+                      key={page}
+                      variant={currentPage === page ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => handlePageChange(page)}
+                    >
+                      {page}
+                    </Button>
+                  )
+                )}
                 <Button
                   variant="outline"
                   size="sm"

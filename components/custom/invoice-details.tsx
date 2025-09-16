@@ -28,13 +28,13 @@ import Image from "next/image";
 
 import { Edit, Loader, Trash2 } from "lucide-react";
 
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { adminEmail } from "@/lib/constantData";
 import { formattedCurrency } from "@/lib/helper";
 import { InvoiceStatus, isValidInvoiceStatus } from "@/lib/invoiceUtils";
 import { cn } from "@/lib/utils";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { ScrollArea } from "../ui/scroll-area";
 
 export const InvoiceDetails = ({
   invoice,

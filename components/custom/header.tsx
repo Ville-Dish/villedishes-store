@@ -3,13 +3,13 @@
 import Image from "next/image";
 import Link from "next/link";
 
-import ShoppingCart from "./shopping-cart";
-import { NavbarMenu } from "./navbar_menu";
-import { AdminNavbarMenu } from "./admin_navbar_menu";
-import AdminAvatar from "./admin_avatar";
 import { Button } from "@/components/ui/button";
 import { Shield } from "lucide-react";
 import { useRouter } from "next/navigation";
+import AdminAvatar from "./admin_avatar";
+import { AdminNavbarMenu } from "./admin_navbar_menu";
+import { NavbarMenu } from "./navbar_menu";
+import ShoppingCart from "./shopping-cart";
 
 export const Header = ({ show }: { show: boolean }) => {
   const router = useRouter();
@@ -22,6 +22,8 @@ export const Header = ({ show }: { show: boolean }) => {
             alt="VilleDishes Logo"
             width={100}
             height={50}
+            priority
+            className="w-[100px] h-[50px]"
           />
         </Link>
       </div>

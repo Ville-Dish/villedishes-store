@@ -1,5 +1,5 @@
 "use client";
-import { InvoiceDetails } from "@/components/custom/invoice-details";
+
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -35,7 +35,7 @@ import {
   Eye,
   Plus,
 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { lazy, useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { createInvoicePDF } from "@/lib/invoicePdfGenerate";
@@ -53,6 +53,16 @@ import {
 import { Slider } from "@/components/ui/slider";
 import { useLoading } from "@/context/LoadingContext";
 import { cn } from "@/lib/utils";
+
+const InvoiceDetails = lazy(() =>
+  import("@/components/custom/invoice-details").then((module) => ({
+    default: module.InvoiceDetails,
+  }))
+);
+
+// const generatePDF = lazy(() => import("@/lib/invoicePdfGenerate").then(module => ({
+//   default: module.createInvoicePDF
+// })));
 
 type InvoiceProduct = {
   id: string;
@@ -402,6 +412,7 @@ export default function AdminInvoicesPage() {
         .toUpperCase(); // limit to 20 characters
 
       // Call createInvoicePDF to generate the PDF content as Uint8Array
+      // const pdfModule = await generatePDF
       const pdfData = await createInvoicePDF(invoice);
 
       // Create a new Uint8Array to ensure we have a proper ArrayBuffer

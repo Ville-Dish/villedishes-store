@@ -1,7 +1,7 @@
 // api/invoices/route.ts
 
-import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma/client";
+import { NextResponse } from "next/server";
 
 export async function GET(req: Request) {
   try {
@@ -25,54 +25,58 @@ export async function GET(req: Request) {
       },
     };
 
-    const totalInvoices = await prisma.invoice.count({
-      where: whereClause,
-    });
-
-    const unpaidInvoices = await prisma.invoice.count({
-      where: {
-        ...whereClause,
-        status: "UNPAID",
-      },
-    });
-
-    const dueInvoices = await prisma.invoice.count({
-      where: {
-        ...whereClause,
-        status: "DUE",
-      },
-    });
-
-    const paidInvoices = await prisma.invoice.count({
-      where: {
-        ...whereClause,
-        status: "PAID",
-      },
-    });
-
-    const pendingInvoices = await prisma.invoice.count({
-      where: {
-        ...whereClause,
-        status: "PENDING",
-      },
-    });
-
-    const totalInvoiceAmount = await prisma.invoice.aggregate({
-      where: whereClause,
-      _sum: {
-        amount: true,
-      },
-    });
-
-    const totalInvoiceRevenue = await prisma.invoice.aggregate({
-      where: {
-        ...whereClause,
-        status: "PAID",
-      },
-      _sum: {
-        amountPaid: true,
-      },
-    });
+    const [
+      totalInvoices,
+      unpaidInvoices,
+      dueInvoices,
+      paidInvoices,
+      pendingInvoices,
+      totalInvoiceAmount,
+      totalInvoiceRevenue,
+    ] = await prisma.$transaction([
+      prisma.invoice.count({
+        where: whereClause,
+      }),
+      prisma.invoice.count({
+        where: {
+          ...whereClause,
+          status: "UNPAID",
+        },
+      }),
+      prisma.invoice.count({
+        where: {
+          ...whereClause,
+          status: "DUE",
+        },
+      }),
+      prisma.invoice.count({
+        where: {
+          ...whereClause,
+          status: "PAID",
+        },
+      }),
+      prisma.invoice.count({
+        where: {
+          ...whereClause,
+          status: "PENDING",
+        },
+      }),
+      prisma.invoice.aggregate({
+        where: whereClause,
+        _sum: {
+          amount: true,
+        },
+      }),
+      prisma.invoice.aggregate({
+        where: {
+          ...whereClause,
+          status: "PAID",
+        },
+        _sum: {
+          amountPaid: true,
+        },
+      }),
+    ]);
 
     const response = {
       totalInvoices,

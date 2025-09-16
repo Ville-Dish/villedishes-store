@@ -1,6 +1,13 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
   Table,
@@ -10,23 +17,20 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import Link from "next/link";
-import { Minus, Plus, Trash2 } from "lucide-react";
 import { shippingFee, taxRate } from "@/lib/constantData";
-import useCartStore from "@/stores/useCartStore";
+import useCartStore, {
+  useCartSubtotal,
+  useCartTotal,
+} from "@/stores/useCartStore";
+import { Minus, Plus, Trash2 } from "lucide-react";
+import Link from "next/link";
 
 export default function CartPage() {
-  const { cartItems, subtotal, removeFromCart, updateCartItem, total } =
-    useCartStore();
+  const { cartItems, removeFromCart, updateCartItem } = useCartStore();
+  const subtotal = useCartSubtotal();
+  const total = useCartTotal();
 
-  const tax = (taxRate / 100) * subtotal;
+  const tax = subtotal * (taxRate / 100);
   const shipping = shippingFee;
 
   return (

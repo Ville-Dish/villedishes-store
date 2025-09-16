@@ -1,21 +1,13 @@
 //components/custom/dashboard/report-accordion.tsx
 "use client";
 
-import React, { useState } from "react";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -25,10 +17,31 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { MonthlySalesReport } from "./monthly-sales-report";
-import { QuarterlyFinancialStatement } from "./quarterly-financial";
-import { AnnualPerformanceReview } from "./annual-performance";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { lazy, Suspense, useState } from "react";
+import { MonthlySalesReport } from "./monthly-sales-report";
+
+const QuarterlyFinancialStatement = lazy(() =>
+  import("@/components/custom/dashboard/quarterly-financial").then(
+    (module) => ({
+      default: module.QuarterlyFinancialStatement,
+    })
+  )
+);
+
+const AnnualPerformanceReview = lazy(() =>
+  import("@/components/custom/dashboard/annual-performance").then((module) => ({
+    default: module.AnnualPerformanceReview,
+  }))
+);
 
 type MonthlySales = {
   week: string;
@@ -134,7 +147,9 @@ export const ReportsSection = ({ data }: AdminReportProps) => {
   if (!data || data.length === 0) {
     return (
       <div className="flex justify-center items-center p-8">
-        <p className="text-muted-foreground text-lg">No reports available at this time</p>
+        <p className="text-muted-foreground text-lg">
+          No reports available at this time
+        </p>
       </div>
     );
   }
@@ -146,7 +161,7 @@ export const ReportsSection = ({ data }: AdminReportProps) => {
           <AccordionTrigger>{report.type}</AccordionTrigger>
           <AccordionContent>
             {report.type === "Quarterly Financials Report" &&
-              report.items[0]?.quarterlyReport ? (
+            report.items[0]?.quarterlyReport ? (
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -233,17 +248,28 @@ export const ReportsSection = ({ data }: AdminReportProps) => {
                                 </DialogHeader>
                                 <ScrollArea className="max-h-[calc(90vh-100px)] pr-4">
                                   <div className="mt-4">
-                                    <QuarterlyFinancialStatement
-                                      monthlyData={[quarter]}
-                                      expenseBreakdown={[
-                                        report.items[0].quarterlyReport?.expenseBreakdown.find(
-                                          (e) => e.quarter === quarter.quarter
-                                        ) || {
-                                          quarter: quarter.quarter,
-                                          data: [],
-                                        },
-                                      ]}
-                                    />
+                                    <ErrorBoundary>
+                                      <Suspense
+                                        fallback={
+                                          <div className="h-full flex items-center justify-center">
+                                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                                          </div>
+                                        }
+                                      >
+                                        <QuarterlyFinancialStatement
+                                          monthlyData={[quarter]}
+                                          expenseBreakdown={[
+                                            report.items[0].quarterlyReport?.expenseBreakdown.find(
+                                              (e) =>
+                                                e.quarter === quarter.quarter
+                                            ) || {
+                                              quarter: quarter.quarter,
+                                              data: [],
+                                            },
+                                          ]}
+                                        />
+                                      </Suspense>
+                                    </ErrorBoundary>
                                   </div>
                                 </ScrollArea>
                               </DialogContent>
@@ -305,16 +331,26 @@ export const ReportsSection = ({ data }: AdminReportProps) => {
                                   <strong>Date:</strong> {item.date}
                                 </p>
                                 {report.type === "Monthly Sales Report" &&
-                                  item.monthlySalesReport ? (
+                                item.monthlySalesReport ? (
                                   <MonthlySalesReport
                                     {...item.monthlySalesReport}
                                   />
                                 ) : report.type ===
-                                  "Annual Performance Report" &&
+                                    "Annual Performance Report" &&
                                   item.annualPerformance ? (
-                                  <AnnualPerformanceReview
-                                    {...item.annualPerformance}
-                                  />
+                                  <ErrorBoundary>
+                                    <Suspense
+                                      fallback={
+                                        <div className="h-full flex items-center justify-center">
+                                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                                        </div>
+                                      }
+                                    >
+                                      <AnnualPerformanceReview
+                                        {...item.annualPerformance}
+                                      />
+                                    </Suspense>
+                                  </ErrorBoundary>
                                 ) : (
                                   <p>No data available for this report.</p>
                                 )}

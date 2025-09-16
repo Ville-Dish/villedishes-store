@@ -1,6 +1,7 @@
 "use client";
 
 import { auth } from "@/config/firebase";
+import { setupTokenRefresh } from "@/lib/tokenRefresh";
 import { onAuthStateChanged, signOut, User } from "firebase/auth";
 import { createContext, useContext, useEffect, useState } from "react";
 
@@ -17,6 +18,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const unSubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
+
+      if (user) {
+        setupTokenRefresh();
+      }
     });
 
     return () => {

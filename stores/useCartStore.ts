@@ -1,6 +1,6 @@
+import { shippingFee, taxRate } from "@/lib/constantData";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { shippingFee, taxRate } from "@/lib/constantData";
 
 interface CartItem {
   id: string;
@@ -11,13 +11,15 @@ interface CartItem {
 
 interface CartState {
   cartItems: CartItem[];
-  subtotal: number;
-  total: number;
-  totalQuantity: number;
+
   addToCart: (item: CartItem) => void;
   removeFromCart: (id: string) => void;
   updateCartItem: (id: string, quantity: number) => void;
   clearCart: () => void;
+
+  getSubtotal: () => number;
+  getTotal: () => number;
+  getTotalQuantity: () => number;
 }
 
 const TAX_RATE = taxRate / 100; // Example tax rate
@@ -28,9 +30,6 @@ const useCartStore = create<CartState>()(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     (set, get) => ({
       cartItems: [],
-      subtotal: 0,
-      total: 0,
-      totalQuantity: 0,
 
       addToCart: (item) =>
         set((state) => {
@@ -118,19 +117,40 @@ const useCartStore = create<CartState>()(
           };
         }),
 
-      clearCart: () =>
-        set({ cartItems: [], subtotal: 0, total: 0, totalQuantity: 0 }),
+      clearCart: () => set({ cartItems: [] }),
+
+      // Computed selectors
+      getSubtotal: () => {
+        const { cartItems } = get();
+        return cartItems.reduce(
+          (sum, item) => sum + item.price * item.quantity,
+          0
+        );
+      },
+
+      getTotal: () => {
+        const subtotal = get().getSubtotal();
+        return subtotal + subtotal * TAX_RATE + SHIPPING_FEE;
+      },
+
+      getTotalQuantity: () => {
+        const { cartItems } = get();
+        return cartItems.reduce((sum, item) => sum + item.quantity, 0);
+      },
     }),
     {
       name: "cart-storage", // unique name for localStorage key
       partialize: (state) => ({
         cartItems: state.cartItems,
-        subtotal: state.subtotal,
-        total: state.total,
-        totalQuantity: state.totalQuantity,
       }), // choose what to store
     }
   )
 );
 
+// Create selectors for components to use
+export const useCartSubtotal = () =>
+  useCartStore((state) => state.getSubtotal());
+export const useCartTotal = () => useCartStore((state) => state.getTotal());
+export const useCartQuantity = () =>
+  useCartStore((state) => state.getTotalQuantity());
 export default useCartStore;
