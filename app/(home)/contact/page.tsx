@@ -16,9 +16,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Earth, Mail, Phone } from "lucide-react";
+import { Earth, Mail, MapPin, Phone } from "lucide-react";
 import { PageHeader } from "../page-header";
 import { testEmail } from "@/lib/constantData";
+import Image from "next/image";
+import Link from "next/link";
 
 interface ContactDetails {
   subject?: string;
@@ -120,12 +122,20 @@ const Contact = () => {
             </h1>
             <div className="grid gap-6 lg:grid-cols-2 lg:gap-12 items-start">
               <div className="space-y-4">
+                {/* Note */}
                 <p className="text-gray-500 dark:text-gray-400">
                   We&apos;d love to hear from you. Please fill out the form
                   below or reach out to us using the contact information
                   provided.
+                  <span>
+                    If you want to inquire about catering, click{" "}
+                    <Link href="/catering" className="text-blue-300">
+                      here
+                    </Link>
+                  </span>
                 </p>
-                <div className="space-y-2">
+                {/* Contact Details */}
+                <div className="grid grid-cols-2">
                   <div className="flex items-center">
                     <Phone className="h-5 w-5 mr-2  text-[#fd9e1d]" />
                     <p>+1 234 567 8900</p>
@@ -138,6 +148,19 @@ const Contact = () => {
                     <Earth className="h-5 w-5 mr-2 text-[#fd9e1d]" />
                     <p>www.villedishes.com</p>
                   </div>
+                  <div className="flex items-center">
+                    <MapPin className="h-5 w-5 mr-2 text-[#fd9e1d]" />
+                    <p>No walk in yet</p>
+                  </div>
+                </div>
+                {/* Image */}
+                <div>
+                  <Image
+                    src="https://res.cloudinary.com/dxt7vk5dg/image/upload/v1760664836/CalgaryMapquest_pdfx9n.jpg"
+                    alt="Map View"
+                    width={350}
+                    height={50}
+                  />
                 </div>
               </div>
 
