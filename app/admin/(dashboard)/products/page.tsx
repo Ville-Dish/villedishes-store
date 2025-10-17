@@ -1,17 +1,8 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
-import React, { useCallback, useEffect, useState } from "react";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { ProductForm } from "@/components/custom/product-form";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
@@ -20,10 +11,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { ChevronsLeft, ChevronsRight, Eye, Plus, Trash } from "lucide-react";
-import { toast } from "sonner";
-import { ProductForm } from "@/components/custom/product-form";
-import { Slider } from "@/components/ui/slider";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -31,7 +19,26 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Slider } from "@/components/ui/slider";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { useLoading } from "@/context/LoadingContext";
+import {
+  ChevronsLeft,
+  ChevronsRight,
+  Copy,
+  Eye,
+  Plus,
+  Trash,
+} from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
 
 type SortField = "name" | "price" | "category" | null;
 type SortDirection = "asc" | "desc" | null;
@@ -54,6 +61,8 @@ export default function AdminProductsPage() {
   const { setIsLoading } = useLoading();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [isProdLoading, setIsProdLoading] = useState(false);
+
+  const [isCopyMode, setIsCopyMode] = useState(false);
 
   //Filter state
   const [categoryFilter, setCategoryFilter] = useState<string>("");
@@ -146,6 +155,12 @@ export default function AdminProductsPage() {
     setEditingItem(item);
   };
 
+  const handleCopyItem = (item: MenuItem) => {
+    const modifiedItem = { ...item, name: `${item.name} - copy` };
+    setEditingItem(modifiedItem);
+    setIsCopyMode(true);
+  };
+
   const handleCloudinaryAssetDelete = async (assetId: string) => {
     try {
       const response = await fetch("/api/cloudinary/delete", {
@@ -176,6 +191,13 @@ export default function AdminProductsPage() {
       if (!editingItem) {
         throw new Error("No item selected for editing");
       }
+
+      // If in copy mode, create new product instead of updating
+      if (isCopyMode) {
+        await handleAddItem(updatedItem);
+        return;
+      }
+
       const itemToUpdate = { ...updatedItem, id: editingItem.id };
       const response = await fetch(`/api/products`, {
         method: "PATCH",
@@ -217,6 +239,7 @@ export default function AdminProductsPage() {
       await handleCloudinaryAssetDelete(newAssetId);
     }
     setEditingItem(null);
+    setIsCopyMode(false);
   };
 
   const handleDeleteItem = async (itemId: string) => {
@@ -504,6 +527,7 @@ export default function AdminProductsPage() {
                       <Button
                         variant="ghost"
                         size="sm"
+                        title="Edit"
                         onClick={() => handleEditItem(item)}
                       >
                         <Eye className="h-4 w-4" color="#fe9e1d" />
@@ -511,6 +535,15 @@ export default function AdminProductsPage() {
                       <Button
                         variant="ghost"
                         size="sm"
+                        title="Copy Product"
+                        onClick={() => handleCopyItem(item)}
+                      >
+                        <Copy className="h-4 w-4" color="#6FD68B" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        title="Delete"
                         onClick={() => handleDeleteItem(item.id)}
                       >
                         <Trash className="h-4 w-4" color="#da281c" />
@@ -576,14 +609,22 @@ export default function AdminProductsPage() {
       {editingItem && (
         <Dialog
           open={!!editingItem}
-          onOpenChange={(open) => !open && setEditingItem(null)}
+          onOpenChange={(open) => {
+            if (!open) {
+              setEditingItem(null);
+              setIsCopyMode(false); // Reset copy mode when dialog closes
+            }
+          }}
           modal={false}
         >
           <DialogContent onInteractOutside={(event) => event.preventDefault()}>
             <DialogHeader>
-              <DialogTitle>Edit Menu Item</DialogTitle>
+              <DialogTitle>
+                {isCopyMode ? "Copy Product" : "Edit Menu Item"}
+              </DialogTitle>
               <DialogDescription className="sr-only">
-                Edit menu item {editingItem.name}
+                {isCopyMode ? "Copy product" : "Edit menu item"}{" "}
+                {editingItem.name}
               </DialogDescription>
             </DialogHeader>
             <ProductForm
@@ -592,6 +633,7 @@ export default function AdminProductsPage() {
               onSubmit={handleUpdateItem}
               onCancel={handleUpdateCancel}
               isLoading={isProdLoading}
+              isCopy={isCopyMode}
             />
           </DialogContent>
         </Dialog>

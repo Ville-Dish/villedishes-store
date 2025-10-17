@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useEffect } from "react";
+import ImageUpload from "@/components/custom/imageUpload/ImageUpload";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import ImageUpload from "@/components/custom/imageUpload/ImageUpload";
+import React, { useEffect } from "react";
 import {
   Select,
   SelectContent,
@@ -20,6 +20,7 @@ interface ProductFormProps {
   onSubmit: (product: Omit<MenuItem, "id">) => void;
   onCancel: (newAssetId?: string, oldAssetId?: string) => void;
   isLoading: boolean;
+  isCopy?: boolean;
 }
 
 export const ProductForm: React.FC<ProductFormProps> = ({
@@ -28,6 +29,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
   onSubmit,
   onCancel,
   isLoading,
+  isCopy = false,
 }) => {
   const [formData, setFormData] = React.useState<
     Omit<MenuItem, "id"> & { id?: string }
@@ -63,7 +65,9 @@ export const ProductForm: React.FC<ProductFormProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(formData);
+    // Remove id when copying to ensure a new product is created
+    const submitData = isCopy ? { ...formData, id: undefined } : formData;
+    onSubmit(submitData);
   };
 
   return (
@@ -132,7 +136,9 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                             name: "category",
                             value: value,
                           },
-                        } as React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>);
+                        } as React.ChangeEvent<
+                          HTMLInputElement | HTMLTextAreaElement
+                        >);
                       }
                     }}
                   />
@@ -181,7 +187,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
           type="button"
           variant="cancel"
           onClick={() => {
-            if (product.id) {
+            if (product.id && !isCopy) {
               onCancel(formData.assetId, product.assetId);
             } else {
               onCancel();
@@ -192,14 +198,16 @@ export const ProductForm: React.FC<ProductFormProps> = ({
         </Button>
         <Button
           type="submit"
-          disabled={isLoading || !isFormChanged}
-          variant={product.id ? "submit" : "create"}
+          disabled={isLoading || (!isCopy && !isFormChanged)}
+          variant={product.id && !isCopy ? "submit" : "create"}
         >
           {isLoading
             ? "Saving..."
-            : product.id
-            ? "Update Product"
-            : "Create Product"}
+            : isCopy
+              ? "Create Copy"
+              : product.id
+                ? "Update Product"
+                : "Create Product"}
         </Button>
       </div>
     </form>

@@ -78,7 +78,7 @@ model Invoice {
   amount             Float
   amountPaid         Float             @default(0)
   amountDue          Float             @default(0)
-  discountPercentage Int               @default(0)
+  discountPercentage Int             @default(0)
   taxRate            Int               @default(0)
   shippingFee        Int               @default(0)
   serviceCharge      Int               @default(0)
@@ -89,7 +89,7 @@ model Invoice {
   InvoiceProducts    InvoiceProducts[] @relation("InvoiceProducts")
 }
 
-// Relation to Invoice
+// Relation to  
 model InvoiceProducts {
   id        String    @id @unique @default(uuid())
   basePrice Float
