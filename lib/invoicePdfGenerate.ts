@@ -69,7 +69,7 @@ export const createInvoicePDF = async (data: Invoice): Promise<Uint8Array> => {
     doc.setDrawColor(200);
     doc.setFillColor(250, 250, 250);
     doc.roundedRect(30, yPosition, cardWidth, 130, 3, 3, "FD");
-    doc.roundedRect(45 + cardWidth, yPosition, cardWidth, 130, 3, 3, "FD");
+    doc.roundedRect(45 + cardWidth, yPosition, cardWidth + 15, 130, 3, 3, "FD");
 
     // Bill From card
     doc.setFont("helvetica", "bold");
@@ -80,11 +80,11 @@ export const createInvoicePDF = async (data: Invoice): Promise<Uint8Array> => {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
     addBoldText("Company Name:", 40, yPosition + 50);
-    doc.text("VilleDishes", 130, yPosition + 50);
+    doc.text("VilleDishes", 160, yPosition + 50);
     addBoldText("Company Email:", 40, yPosition + 65);
-    doc.text("villedishes@gmail.com", 130, yPosition + 65);
+    doc.text("villedishes@gmail.com", 160, yPosition + 65);
     addBoldText("Company Phone:", 40, yPosition + 80);
-    doc.text("587-984-4409", 130, yPosition + 80);
+    doc.text("587-984-4409", 160, yPosition + 80);
     doc.text("Pay via Interac using:", 40, yPosition + 95);
     addBoldText("villedishes@gmail.com", 160, yPosition + 95);
 
@@ -94,12 +94,42 @@ export const createInvoicePDF = async (data: Invoice): Promise<Uint8Array> => {
       align: "center",
     });
     doc.setFont("helvetica", "normal");
-    addBoldText("Customer Name:", 55 + cardWidth, yPosition + 50);
-    doc.text(data.customerName, 145 + cardWidth, yPosition + 50);
-    addBoldText("Customer Email:", 55 + cardWidth, yPosition + 85);
-    doc.text(data.customerEmail, 145 + cardWidth, yPosition + 85);
-    addBoldText("Customer Phone:", 55 + cardWidth, yPosition + 120);
-    doc.text(data.customerPhone, 145 + cardWidth, yPosition + 120);
+    // addBoldText("Customer Name:", 55 + cardWidth, yPosition + 50);
+    // doc.text(data.customerName, 145 + cardWidth, yPosition + 50);
+    // addBoldText("Customer Email:", 55 + cardWidth, yPosition + 85);
+    // doc.text(data.customerEmail, 145 + cardWidth, yPosition + 85);
+    // addBoldText("Customer Phone:", 55 + cardWidth, yPosition + 120);
+    // doc.text(data.customerPhone, 145 + cardWidth, yPosition + 120);
+
+    // define width available inside the card
+    const billToContentX = 55 + cardWidth;
+    const billToValueX = 145 + cardWidth;
+    const contentMaxWidth = cardWidth - 100; // adjust for padding
+
+    // helper to wrap text
+    const writeWrappedText = (label: string, value: string, startY: number) => {
+      addBoldText(label, billToContentX, startY);
+
+      const wrapped = doc.splitTextToSize(value || "", contentMaxWidth);
+      doc.text(wrapped, billToValueX, startY);
+
+      // return height used
+      return wrapped.length * 12; // approx line height
+    };
+
+    let billToY = yPosition + 50;
+
+    // Name
+    billToY +=
+      writeWrappedText("Customer Name:", data.customerName, billToY) + 10;
+
+    // Email
+    billToY +=
+      writeWrappedText("Customer Email:", data.customerEmail, billToY) + 10;
+
+    // Phone
+    billToY +=
+      writeWrappedText("Customer Phone:", data.customerPhone, billToY) + 10;
 
     yPosition += 140;
 
@@ -156,18 +186,30 @@ export const createInvoicePDF = async (data: Invoice): Promise<Uint8Array> => {
         ...(allDiscountsZero ? [] : ["Discount (%)"]),
         "Total ($)",
       ];
-      const tableRows = data.products.map((product, index) => [
-        index + 1,
-        product.name,
-        product.basePrice.toFixed(2),
-        product.quantity,
-        ...(allDiscountsZero ? [] : [product.discount]),
-        (
+      const tableRows = data.products.map((product, index) => {
+        const hasDiscount = product.discount > 0;
+
+        const originalTotal = (product.basePrice * product.quantity).toFixed(2);
+        const discountedTotal = (
           product.basePrice *
           product.quantity *
           (1 - product.discount / 100)
-        ).toFixed(2),
-      ]);
+        ).toFixed(2);
+
+        const totalCell = discountedTotal;
+
+        return [
+          index + 1,
+          product.name,
+          product.basePrice.toFixed(2),
+          product.quantity,
+          ...(allDiscountsZero ? [] : [product.discount]),
+          totalCell,
+          originalTotal,
+        ];
+      });
+
+      const totalColumnIndex = tableColumn.length - 1;
 
       const tableOptions: UserOptions = {
         head: [tableColumn],
@@ -182,6 +224,62 @@ export const createInvoicePDF = async (data: Invoice): Promise<Uint8Array> => {
           fontStyle: "bold",
         },
         margin: { top: 20, right: 30, bottom: 40, left: 30 },
+        columnStyles: {
+          [tableColumn.length]: { cellWidth: 0, halign: "left" }, // hides last column
+        },
+        didDrawCell: function (data) {
+          const cell = data.cell;
+
+          const totalColumnIndex = tableColumn.length - 1; // displayed
+          const originalColumnIndex = tableColumn.length; // hidden
+
+          // Only affect the TOTAL column cells
+          if (data.column.index !== totalColumnIndex) return;
+
+          const hasDiscount =
+            typeof (data.row.raw as any)[originalColumnIndex] !== "undefined" &&
+            (data.row.raw as any)[originalColumnIndex] !== data.cell.text[0];
+
+          if (!hasDiscount) return;
+
+          const doc = data.doc;
+          const originalTotal = (data.row.raw as any)[originalColumnIndex];
+
+          // discounted text position
+          const pos = cell.getTextPos();
+          const discountedX = pos.x;
+          const discountedY = pos.y;
+
+          // calculate where to place the original price
+          const discountedWidth = doc.getTextWidth(cell.text[0]);
+          const padding = 6; // space between numbers
+          const verticalOffset = 7;
+
+          const originalX = discountedX + discountedWidth + padding;
+          const originalY = discountedY + verticalOffset;
+
+          // draw smaller original total
+          doc.setFontSize(9);
+          doc.setTextColor(150);
+          doc.text(originalTotal, originalX, originalY);
+
+          // compute width for strike-through
+          const originalWidth = doc.getTextWidth(originalTotal);
+
+          // draw strike-through
+          doc.setDrawColor(150);
+          doc.setLineWidth(0.6);
+          doc.line(
+            originalX,
+            originalY - 3,
+            originalX + originalWidth,
+            originalY - 3
+          );
+
+          // restore styles
+          doc.setFontSize(10);
+          doc.setTextColor(50);
+        },
       };
 
       // (doc as any).autoTable({

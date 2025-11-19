@@ -5,6 +5,7 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -33,6 +34,7 @@ import {
   CircleX,
   Download,
   Eye,
+  Pencil,
   Plus,
 } from "lucide-react";
 import { lazy, useCallback, useEffect, useState } from "react";
@@ -92,6 +94,10 @@ export default function AdminInvoicesPage() {
   const { setIsLoading } = useLoading();
   const [loading, setLoading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
+
+  // PDF Preview
+  const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
+  const [pdfPreviewOpen, setPdfPreviewOpen] = useState(false);
 
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
 
@@ -434,6 +440,24 @@ export default function AdminInvoicesPage() {
     }
   };
 
+  const handlePreviewInvoice = async (invoice: Invoice) => {
+    try {
+      const pdfData = await createInvoicePDF(invoice);
+
+      // Create a new Uint8Array to ensure we have a proper ArrayBuffer
+      const uint8Array = new Uint8Array(pdfData);
+
+      const blob = new Blob([uint8Array], { type: "application/pdf" });
+      const url = URL.createObjectURL(blob);
+
+      setPdfPreviewUrl(url); // store in state
+      setPdfPreviewOpen(true); // open dialog/modal
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to load PDF preview");
+    }
+  };
+
   const getInvoiceIndex = (invoice: Invoice) => {
     return invoices.findIndex((inv) => inv.id === invoice.id);
   };
@@ -697,13 +721,14 @@ export default function AdminInvoicesPage() {
                           <Button
                             variant="ghost"
                             size="sm"
+                            className="cursor-pointer"
                             onClick={() => handleViewInvoice(invoice)}
                           >
-                            <Eye className="h-4 w-4" color="#fe9e1d" />
+                            <Pencil className="size-4" color="#fe9e1d" />
                           </Button>
                         </TooltipTrigger>
                         <TooltipContent>
-                          <p>View</p>
+                          <p>Edit Invoice</p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
@@ -714,9 +739,28 @@ export default function AdminInvoicesPage() {
                           <Button
                             variant="ghost"
                             size="sm"
+                            className="cursor-pointer"
+                            onClick={() => handlePreviewInvoice(invoice)}
+                          >
+                            <Eye className="size-4 text-blue-500" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>View Invoice</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="cursor-pointer"
                             onClick={() => handleDownloadInvoice(invoice)}
                           >
-                            <Download className="h-4 w-4" color="#c7c940" />
+                            <Download className="size-4" color="#c7c940" />
                           </Button>
                         </TooltipTrigger>
                         <TooltipContent>
@@ -731,6 +775,7 @@ export default function AdminInvoicesPage() {
                           <Button
                             variant="ghost"
                             size="sm"
+                            className="cursor-pointer"
                             onClick={() =>
                               handleUpdateInvoice({
                                 ...invoice,
@@ -748,9 +793,9 @@ export default function AdminInvoicesPage() {
                             }
                           >
                             {invoice.status === "PAID" ? (
-                              <CircleX className="h-4 w-4" color="#d57771" />
+                              <CircleX className="size-4" color="#d57771" />
                             ) : (
-                              <CheckCheck className="h-4 w-4" color="#107a47" />
+                              <CheckCheck className="size-4" color="#107a47" />
                             )}
                           </Button>
                         </TooltipTrigger>
@@ -843,6 +888,33 @@ export default function AdminInvoicesPage() {
           </DialogContent>
         </Dialog>
       )}
+
+      <Dialog open={pdfPreviewOpen} onOpenChange={setPdfPreviewOpen}>
+        <DialogContent className="max-w-5xl w-full h-[90vh] p-0 flex flex-col">
+          <DialogHeader className="p-4 border-b">
+            <DialogTitle>PDF Preview</DialogTitle>
+            <DialogDescription>
+              Preview your Invoice before downloading or sending it to customer
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex-1 overflow-hidden">
+            {pdfPreviewUrl ? (
+              <iframe src={pdfPreviewUrl} className="w-full h-full" />
+            ) : (
+              <p>Loading PDF...</p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button
+              className="mt-4 cursor-pointer"
+              onClick={() => saveAs(pdfPreviewUrl!, "invoice.pdf")}
+            >
+              Download Invoice
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
