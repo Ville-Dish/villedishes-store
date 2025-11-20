@@ -3,9 +3,10 @@ import { Search as SearchIcon } from "lucide-react";
 
 interface SearchProps {
   onSearch: (query: string) => void;
+  value: string;
 }
 
-export default function Search({ onSearch }: SearchProps) {
+export default function Search({ onSearch, value }: SearchProps) {
   return (
     <div className="relative">
       <SearchIcon className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400" />
@@ -13,6 +14,7 @@ export default function Search({ onSearch }: SearchProps) {
         type="search"
         placeholder="Search dishes..."
         className="pl-10 w-full"
+        value={value}
         onChange={(e) => onSearch(e.target.value)}
       />
     </div>

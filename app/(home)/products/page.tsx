@@ -1,22 +1,26 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import Search from "@/components/custom/search";
 import { ProductCard } from "@/components/custom/product-card";
+import Search from "@/components/custom/search";
+import { Button } from "@/components/ui/button";
 
 import { Rabbit } from "lucide-react";
 
 import { Banner } from "@/components/custom/banner";
 
+import { useSearch } from "@/hooks/use-search";
+import { useSearchParams } from "@/hooks/use-search-params";
 import { useEffect, useState } from "react";
 
 const ProductPage = () => {
   const [products, setProducts] = useState<MenuItem[]>([]);
   const [activeCategory, setActiveCategory] = useState("All");
-  const [searchQuery, setSearchQuery] = useState("");
   const [filteredItems, setFilteredItems] = useState<MenuItem[]>([]);
 
   const [loading, setLoading] = useState<boolean>(true);
+
+  const [params, setParams] = useSearchParams();
+  const { searchValue, onSearchChange } = useSearch({ params, setParams });
 
   // Fetch products from the API
   useEffect(() => {
@@ -46,11 +50,21 @@ const ProductPage = () => {
   useEffect(() => {
     const filtered = products.filter(
       (item) =>
-        item.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
+        item.name.toLowerCase().includes(searchValue.toLowerCase()) &&
         (activeCategory === "All" || item.category === activeCategory)
     );
     setFilteredItems(filtered);
-  }, [searchQuery, activeCategory, products]);
+  }, [searchValue, activeCategory, products]);
+
+  useEffect(() => {
+    // Reset to page 1 when search or category changes
+    if (searchValue || activeCategory !== "All") {
+      setParams({
+        ...params,
+        page: 1,
+      });
+    }
+  }, [searchValue, activeCategory]);
 
   //function to render No products
   const renderNoProductsFound = () => (
@@ -66,7 +80,7 @@ const ProductPage = () => {
           <Button
             className="mt-4"
             onClick={() => {
-              setSearchQuery("");
+              onSearchChange("");
               setActiveCategory("All");
             }}
           >
@@ -95,7 +109,7 @@ const ProductPage = () => {
               Delicious Nigerian Cuisine
             </h2>
             <div className="mb-8">
-              <Search onSearch={setSearchQuery} />
+              <Search onSearch={onSearchChange} value={searchValue} />
             </div>
             {loading ? (
               <div className="flex justify-center items-center h-64">
