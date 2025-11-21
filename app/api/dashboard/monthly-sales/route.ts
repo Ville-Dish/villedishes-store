@@ -1,6 +1,6 @@
 // app/api/dashboard/monthly-sales/route.ts
-import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma/client";
+import { NextResponse } from "next/server";
 
 // Define the type for a single week's sales data
 type WeeklySalesData = {
@@ -149,41 +149,43 @@ export async function GET(req: Request) {
 
     let topProducts: TopProductsData[] = [];
     try {
-      const orderProducts = await prisma.orderProduct.groupBy({
-        by: ["productId"],
-        where: {
-          order: {
-            orderDate: {
-              gte: startDate.toISOString(),
-              lte: endDate.toISOString(),
-            },
-            status: {
-              in: ["PENDING", "FULFILLED"],
+      const [orderProducts, invoiceProducts] = await Promise.all([
+        prisma.orderProduct.groupBy({
+          by: ["productId"],
+          where: {
+            order: {
+              orderDate: {
+                gte: startDate.toISOString(),
+                lte: endDate.toISOString(),
+              },
+              status: {
+                in: ["PENDING", "FULFILLED"],
+              },
             },
           },
-        },
-        _sum: {
-          quantity: true,
-        },
-        _count: {
-          orderId: true,
-        },
-      });
-
-      const invoiceProducts = await prisma.invoiceProducts.findMany({
-        where: {
-          invoice: {
-            dateCreated: {
-              gte: startDate.toISOString(),
-              lte: endDate.toISOString(),
-            },
-            status: "PAID",
+          _sum: {
+            quantity: true,
           },
-        },
-        include: {
-          Product: true,
-        },
-      });
+          _count: {
+            // orderId: true,
+            productId: true,
+          },
+        }),
+        prisma.invoiceProducts.findMany({
+          where: {
+            invoice: {
+              dateCreated: {
+                gte: startDate.toISOString(),
+                lte: endDate.toISOString(),
+              },
+              status: "PAID",
+            },
+          },
+          include: {
+            Product: true,
+          },
+        }),
+      ]);
 
       const productMap = new Map<
         string,
@@ -193,7 +195,7 @@ export async function GET(req: Request) {
       orderProducts.forEach((item) => {
         productMap.set(item.productId, {
           unitsSold: (item._sum?.quantity || 0) as number,
-          sales: (item._count?.orderId || 0) as number,
+          sales: (item._count?.productId || 0) as number,
         });
       });
 
@@ -245,12 +247,12 @@ export async function GET(req: Request) {
       topProducts: topProducts,
     };
 
-    if (weeklySales.length === 0 && topProducts.length === 0) {
-      return NextResponse.json(
-        { message: "No data found for the specified period" },
-        { status: 404 }
-      );
-    }
+    // if (weeklySales.length === 0 && topProducts.length === 0) {
+    //   return NextResponse.json(
+    //     { message: "No data found for the specified period" },
+    //     { status: 404 }
+    //   );
+    // }
 
     return NextResponse.json(response);
   } catch (error) {
