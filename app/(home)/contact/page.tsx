@@ -1,11 +1,6 @@
 "use client";
 
-import React from "react";
-
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { useForm } from "react-hook-form";
-import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
@@ -15,12 +10,15 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
-import { Earth, Mail, MapPin, Phone } from "lucide-react";
-import { PageHeader } from "../page-header";
 import { testEmail } from "@/lib/constantData";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Earth, Mail, MapPin, Phone } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { useForm } from "react-hook-form";
+import { toast } from "sonner";
+import { z } from "zod";
+import { PageHeader } from "../page-header";
 
 interface ContactDetails {
   subject?: string;
@@ -160,6 +158,7 @@ const Contact = () => {
                     alt="Map View"
                     width={350}
                     height={50}
+                    className="w-[350px] h-[50px]"
                   />
                 </div>
               </div>
