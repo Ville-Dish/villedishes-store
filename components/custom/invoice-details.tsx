@@ -1,6 +1,14 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -9,6 +17,11 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -26,15 +39,21 @@ import {
 } from "@/components/ui/table";
 import Image from "next/image";
 
-import { Edit, Loader, Trash2 } from "lucide-react";
+import {
+  CheckIcon,
+  ChevronsUpDownIcon,
+  Edit,
+  Loader,
+  Trash2,
+} from "lucide-react";
 
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { adminEmail } from "@/lib/constantData";
 import { formattedCurrency } from "@/lib/helper";
 import { InvoiceStatus, isValidInvoiceStatus } from "@/lib/invoiceUtils";
 import { cn } from "@/lib/utils";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { ScrollArea } from "../ui/scroll-area";
 
 export const InvoiceDetails = ({
   invoice,
@@ -52,6 +71,12 @@ export const InvoiceDetails = ({
   >([{ id: "", quantity: 1, discount: 0 }]);
 
   const [isAddProductDialogOpen, setIsAddProductDialogOpen] = useState(false);
+
+  const [isOpen, setIsOpen] = useState(false);
+  const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
+  const [selectedProductIndex, setSelectedProductIndex] = useState<
+    number | null
+  >(null);
   const [editingProductIndex, setEditingProductIndex] = useState<number | null>(
     null
   );
@@ -93,6 +118,19 @@ export const InvoiceDetails = ({
     setMiscellaneous(String(invoice.miscellaneous || 0));
     setProductDiscount(invoice.products?.map((p) => String(p.discount)) || []);
   }, [invoice]);
+
+  // Initialize selectedProductIds when dialog opens or when editing
+  useEffect(() => {
+    if (isAddProductDialogOpen) {
+      if (editingProductIndex !== null) {
+        // When editing, set the selected product for that specific row
+        setSelectedProductIds([newProducts[0]?.id || ""]);
+      } else {
+        // When adding new, initialize with empty strings for each new product
+        setSelectedProductIds(newProducts.map((p) => p.id || ""));
+      }
+    }
+  }, [isAddProductDialogOpen, editingProductIndex, newProducts]);
 
   useEffect(() => {
     setAmountDue(invoiceAmount - amountPaid);
@@ -167,6 +205,7 @@ export const InvoiceDetails = ({
     setEditingProductIndex(null);
     setIsAddProductDialogOpen(false);
     setSearchTerm(""); // Clear search term
+    setSelectedProductIds([]);
   };
 
   const handleProductChange = (
@@ -736,33 +775,89 @@ export const InvoiceDetails = ({
                               >
                                 Product {index + 1}
                               </Label>
-                              <Select
-                                onValueChange={(value) => {
-                                  const updated = [...newProducts];
-                                  updated[index].id = value;
-                                  setNewProducts(updated);
+                              <Popover
+                                open={isOpen && selectedProductIndex === index}
+                                onOpenChange={(open) => {
+                                  setIsOpen(open);
+                                  if (open) {
+                                    setSelectedProductIndex(index);
+                                  } else {
+                                    setSelectedProductIndex(null);
+                                  }
                                 }}
-                                value={product.id}
                               >
-                                <SelectTrigger className="col-span-3">
-                                  <SelectValue placeholder="Select product" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <Input
-                                    type="text"
-                                    value={searchTerm}
-                                    onChange={(e) =>
-                                      setSearchTerm(e.target.value)
+                                <PopoverTrigger asChild className="col-span-3">
+                                  <Button
+                                    variant="outline"
+                                    role="combobox"
+                                    aria-expanded={
+                                      isOpen && selectedProductIndex === index
                                     }
-                                    placeholder="Filter Product"
-                                  />
-                                  {filteredProducts.map((p) => (
-                                    <SelectItem key={p.id} value={p.id}>
-                                      {p.name} - ${p.basePrice.toFixed(2)}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
+                                    className="w-full justify-between"
+                                  >
+                                    {(selectedProductIds[index] &&
+                                      filteredProducts.find(
+                                        (p) =>
+                                          p.id === selectedProductIds[index]
+                                      )?.name) ||
+                                      "Select a product"}
+                                    <ChevronsUpDownIcon className="opacity-30" />
+                                  </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-full p-0">
+                                  <Command>
+                                    <CommandInput
+                                      placeholder="Filter products"
+                                      value={searchTerm}
+                                      onValueChange={setSearchTerm}
+                                    />
+
+                                    <CommandList>
+                                      <CommandEmpty>
+                                        No product found.
+                                      </CommandEmpty>
+                                      <CommandGroup>
+                                        {filteredProducts.map((product) => (
+                                          <CommandItem
+                                            key={product.id}
+                                            value={product.name}
+                                            className="cursor-pointer justify-between"
+                                            onSelect={() => {
+                                              // Update the newProducts array with selected product
+                                              const updated = [...newProducts];
+                                              updated[index].id = product.id;
+                                              setNewProducts(updated);
+
+                                              // Update selectedProductIds for display
+                                              const updatedIds = [
+                                                ...selectedProductIds,
+                                              ];
+                                              updatedIds[index] = product.id;
+                                              setSelectedProductIds(updatedIds);
+
+                                              setSearchTerm("");
+                                              setIsOpen(false);
+                                              setSelectedProductIndex(null);
+                                            }}
+                                          >
+                                            {product.name} - $
+                                            {product.basePrice.toFixed(2)}
+                                            <CheckIcon
+                                              className={cn(
+                                                "size-4",
+                                                selectedProductIds[index] ===
+                                                  product.id
+                                                  ? "opacity-100"
+                                                  : "opacity-0"
+                                              )}
+                                            />
+                                          </CommandItem>
+                                        ))}
+                                      </CommandGroup>
+                                    </CommandList>
+                                  </Command>
+                                </PopoverContent>
+                              </Popover>
                             </div>
                             <div className="grid grid-cols-4 items-center gap-4">
                               <Label
@@ -796,6 +891,12 @@ export const InvoiceDetails = ({
                                   (_, i) => i !== index
                                 );
                                 setNewProducts(updated);
+
+                                // Also remove from selectedProductIds
+                                const updatedIds = selectedProductIds.filter(
+                                  (_, i) => i !== index
+                                );
+                                setSelectedProductIds(updatedIds);
                               }}
                               className="ml-2 hover:bg-transparent"
                             >
@@ -811,12 +912,13 @@ export const InvoiceDetails = ({
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() =>
+                  onClick={() => {
                     setNewProducts([
                       ...newProducts,
                       { id: "", quantity: 1, discount: 0 },
-                    ])
-                  }
+                    ]);
+                    setSelectedProductIds([...selectedProductIds, ""]);
+                  }}
                 >
                   Add Another Product
                 </Button>

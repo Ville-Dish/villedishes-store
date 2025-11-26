@@ -177,8 +177,8 @@ export async function GET(req: Request) {
 }
  */
 
-import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma/client";
+import { NextResponse } from "next/server";
 
 interface MonthlyData {
   month: number;
@@ -212,67 +212,69 @@ export async function GET(req: Request) {
     const startDate = new Date(year, 0, 1).toISOString();
     const endDate = new Date(year, 11, 31).toISOString();
 
-    // Fetch orders
-    const orders = await prisma.order.groupBy({
-      by: ["orderDate"],
-      where: {
-        orderDate: {
-          gte: startDate,
-          lte: endDate,
+    const [orders, invoices, income, expenses] = await Promise.all([
+      // Fetch orders
+      prisma.order.groupBy({
+        by: ["orderDate"],
+        where: {
+          orderDate: {
+            gte: startDate,
+            lte: endDate,
+          },
+          status: {
+            in: ["PENDING", "FULFILLED"],
+          },
         },
-        status: {
-          in: ["PENDING", "FULFILLED"],
+        _sum: {
+          total: true,
+          tax: true,
         },
-      },
-      _sum: {
-        total: true,
-        tax: true,
-      },
-    });
+      }),
 
-    // Fetch invoices
-    const invoices = await prisma.invoice.findMany({
-      where: {
-        dateCreated: {
-          gte: startDate,
-          lte: endDate,
+      // Fetch invoices
+      prisma.invoice.findMany({
+        where: {
+          dateCreated: {
+            gte: startDate,
+            lte: endDate,
+          },
+          status: "PAID",
         },
-        status: "PAID",
-      },
-      select: {
-        dateCreated: true,
-        amount: true,
-        taxRate: true,
-      },
-    });
+        select: {
+          dateCreated: true,
+          amount: true,
+          taxRate: true,
+        },
+      }),
 
-    // Fetch income
-    const income = await prisma.income.groupBy({
-      by: ["date"],
-      where: {
-        date: {
-          gte: startDate,
-          lte: endDate,
+      // Fetch income
+      prisma.income.groupBy({
+        by: ["date"],
+        where: {
+          date: {
+            gte: startDate,
+            lte: endDate,
+          },
         },
-      },
-      _sum: {
-        amount: true,
-      },
-    });
+        _sum: {
+          amount: true,
+        },
+      }),
 
-    // Fetch expenses
-    const expenses = await prisma.expense.groupBy({
-      by: ["date", "category"],
-      where: {
-        date: {
-          gte: startDate,
-          lte: endDate,
+      // Fetch expenses
+      prisma.expense.groupBy({
+        by: ["date", "category"],
+        where: {
+          date: {
+            gte: startDate,
+            lte: endDate,
+          },
         },
-      },
-      _sum: {
-        amount: true,
-      },
-    });
+        _sum: {
+          amount: true,
+        },
+      }),
+    ]);
 
     // Process data
     const monthlyData: { [key: number]: MonthlyData } = {};
@@ -339,12 +341,15 @@ export async function GET(req: Request) {
       data: Object.entries(
         Object.entries(expenseBreakdown)
           .filter(([month]) => Math.ceil(parseInt(month) / 3) === quarter)
-          .reduce((acc, [, monthExpenses]) => {
-            Object.entries(monthExpenses).forEach(([category, amount]) => {
-              acc[category] = (acc[category] || 0) + amount;
-            });
-            return acc;
-          }, {} as { [key: string]: number })
+          .reduce(
+            (acc, [, monthExpenses]) => {
+              Object.entries(monthExpenses).forEach(([category, amount]) => {
+                acc[category] = (acc[category] || 0) + amount;
+              });
+              return acc;
+            },
+            {} as { [key: string]: number }
+          )
       ).map(([category, amount]) => ({
         category,
         amount: Number(amount.toFixed(2)),

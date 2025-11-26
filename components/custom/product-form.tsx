@@ -2,17 +2,25 @@
 
 import ImageUpload from "@/components/custom/imageUpload/ImageUpload";
 import { Button } from "@/components/ui/button";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import React, { useEffect } from "react";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../ui/select";
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
+import { CheckIcon, ChevronsUpDownIcon, PlusCircleIcon } from "lucide-react";
+import React, { useEffect } from "react";
 
 interface ProductFormProps {
   product: Omit<MenuItem, "id"> & { id?: string };
@@ -36,6 +44,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
   >(product);
   const [searchTerm, setSearchTerm] = React.useState("");
   const [isFormChanged, setIsFormChanged] = React.useState(false);
+  const [isOpen, setIsOpen] = React.useState(false);
   const [initialData, setInitialData] = React.useState(JSON.stringify(product));
 
   // Check if form data has changed from initial state
@@ -110,54 +119,94 @@ export const ProductForm: React.FC<ProductFormProps> = ({
         <div className="space-y-4">
           <div>
             <Label htmlFor="category">Category</Label>
-            <Select
-              value={formData.category}
-              onValueChange={(value) =>
-                handleChange({
-                  target: { name: "category", value },
-                } as React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>)
-              }
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select a category" />
-              </SelectTrigger>
-              <SelectContent>
-                <div className="flex items-center px-3 pb-2">
-                  <Input
-                    placeholder="Search or add new category..."
-                    className="h-8"
+
+            <Popover open={isOpen} onOpenChange={setIsOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={isOpen}
+                  className="w-full justify-between"
+                >
+                  {formData.category || "Select a category"}
+                  <ChevronsUpDownIcon className="opacity-30" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-full p-0">
+                <Command>
+                  <CommandInput
+                    placeholder="Search or add new category"
                     value={searchTerm}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      setSearchTerm(value);
-                      if (!categories.includes(value) && value) {
-                        handleChange({
-                          target: {
-                            name: "category",
-                            value: value,
-                          },
-                        } as React.ChangeEvent<
-                          HTMLInputElement | HTMLTextAreaElement
-                        >);
-                      }
+                    onValueChange={(search) => {
+                      setSearchTerm(search);
                     }}
                   />
-                </div>
-                {categories
-                  .filter((cat) =>
-                    cat.toLowerCase().includes(searchTerm.toLowerCase())
-                  )
-                  .map((category) => (
-                    <SelectItem key={category} value={category}>
-                      {category}
-                    </SelectItem>
-                  ))}
-                {searchTerm && !categories.includes(searchTerm) && (
-                  <SelectItem value={searchTerm}>Add {searchTerm}</SelectItem>
-                )}
-              </SelectContent>
-            </Select>
+
+                  <CommandList>
+                    <CommandEmpty>No category found.</CommandEmpty>
+                    <CommandGroup>
+                      {categories
+                        .filter((cat) =>
+                          cat.toLowerCase().includes(searchTerm.toLowerCase())
+                        )
+                        .map((category) => (
+                          <CommandItem
+                            key={category}
+                            value={category}
+                            className="cursor-pointer justify-between"
+                            onSelect={(currentValue) => {
+                              setFormData((prev) => ({
+                                ...prev,
+                                category: currentValue,
+                              }));
+                              setSearchTerm("");
+                              setIsOpen(false);
+                            }}
+                          >
+                            {category}
+                            <CheckIcon
+                              className={cn(
+                                "size-4",
+                                formData.category === category
+                                  ? "opacity-100"
+                                  : "opacity-0"
+                              )}
+                            />
+                          </CommandItem>
+                        ))}
+
+                      {/* Add new item */}
+                      {searchTerm &&
+                        !categories.some(
+                          (cat) =>
+                            cat.toLowerCase() === searchTerm.toLowerCase()
+                        ) && (
+                          <CommandItem
+                            key="add-new"
+                            value={searchTerm}
+                            className="cursor-pointer text-primary"
+                            onSelect={(currentValue) => {
+                              setFormData((prev) => ({
+                                ...prev,
+                                category: currentValue,
+                              }));
+                              setIsOpen(false);
+                              setSearchTerm("");
+                            }}
+                          >
+                            <span className="font-medium">
+                              Add "{searchTerm}"
+                            </span>
+                            <PlusCircleIcon className="ml-auto size-4" />
+                          </CommandItem>
+                        )}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
           </div>
+
           <div>
             <Label htmlFor="rating">Rating</Label>
             <Input

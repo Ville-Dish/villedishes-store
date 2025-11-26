@@ -1,4 +1,5 @@
 import { useSearchParams } from "@/hooks/use-search-params";
+import { blurDataUrl } from "@/lib/imageData";
 import useCartStore from "@/stores/useCartStore";
 import {
   ChevronLeft,
@@ -193,7 +194,7 @@ export const ProductCard = ({
             <div
               className={`grid gap-6 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 transition-opacity duration-300 ease-in-out ${isChanging ? "opacity-0" : "opacity-100"}`}
             >
-              {currentItems.map((item) => (
+              {currentItems.map((item, index) => (
                 <Card
                   key={item.id}
                   className="flex flex-col justify-between overflow-hidden h-[250px] w-full md:w-[245px]"
@@ -206,6 +207,10 @@ export const ProductCard = ({
                       }
                       alt={item.name || "No image"}
                       fill
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+                      priority={index < 4}
+                      placeholder="blur"
+                      blurDataURL={blurDataUrl}
                       className="absolute top-0 left-0 w-full h-full object-cover"
                     />
                   </div>

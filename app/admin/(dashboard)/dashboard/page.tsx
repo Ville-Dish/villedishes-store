@@ -1,24 +1,28 @@
 //app/admin/(dashboard)/dashboard/page.tsx
 "use client";
 
-import Link from "next/link";
 import {
-  DollarSign,
-  CreditCard,
-  FileText,
-  ClockArrowUp,
-  TriangleAlert,
-  ClockAlert,
   CircleX,
+  ClockAlert,
+  ClockArrowUp,
+  CreditCard,
+  DollarSign,
+  FileText,
+  TriangleAlert,
 } from "lucide-react";
+import Link from "next/link";
 
-import { RevenueGrowth } from "@/components/custom/dashboard/revenue-growth";
-import { ProductPerformance } from "@/components/custom/dashboard/product-performance";
-import { RecentOrders } from "@/components/custom/dashboard/recent-orders";
-import { ReportsSection } from "@/components/custom/dashboard/report-accordion";
-import { DatePickerWithRange } from "@/components/custom/date-range-picker";
-import { YearPicker } from "@/components/custom/dashboard/year-picker";
 import { MonthYearPicker } from "@/components/custom/dashboard/month-year-picker";
+// import { AnalyticsPieChart } from "@/components/custom/dashboard/pie-chart";
+// import { ProductPerformance } from "@/components/custom/dashboard/product-performance";
+// import { RecentOrders } from "@/components/custom/dashboard/recent-orders";
+// import { ReportsSection } from "@/components/custom/dashboard/report-accordion";
+// import { RevenueGrowth } from "@/components/custom/dashboard/revenue-growth";
+import { YearPicker } from "@/components/custom/dashboard/year-picker";
+import { DatePickerWithRange } from "@/components/custom/date-range-picker";
+import { SettingsProgress } from "@/components/custom/settings/progress";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -28,13 +32,41 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
-import { useCallback, useEffect, useState } from "react";
-import { DateRange } from "react-day-picker";
-import { subDays, format } from "date-fns";
-import { SettingsProgress } from "@/components/custom/settings/progress";
-import { AnalyticsPieChart } from "@/components/custom/dashboard/pie-chart";
 import { useLoading } from "@/context/LoadingContext";
+import { format } from "date-fns/format";
+import { subDays } from "date-fns/subDays";
+import { lazy, Suspense, useCallback, useEffect, useState } from "react";
+import { DateRange } from "react-day-picker";
+import { toast } from "sonner";
+
+// Lazy loading
+const RevenueGrowth = lazy(() =>
+  import("@/components/custom/dashboard/revenue-growth").then((module) => ({
+    default: module.RevenueGrowth,
+  }))
+);
+const ProductPerformance = lazy(() =>
+  import("@/components/custom/dashboard/product-performance").then(
+    (module) => ({
+      default: module.ProductPerformance,
+    })
+  )
+);
+const RecentOrders = lazy(() =>
+  import("@/components/custom/dashboard/recent-orders").then((module) => ({
+    default: module.RecentOrders,
+  }))
+);
+const ReportsSection = lazy(() =>
+  import("@/components/custom/dashboard/report-accordion").then((module) => ({
+    default: module.ReportsSection,
+  }))
+);
+const AnalyticsPieChart = lazy(() =>
+  import("@/components/custom/dashboard/pie-chart").then((module) => ({
+    default: module.AnalyticsPieChart,
+  }))
+);
 
 type revenue = {
   month: string;
@@ -333,7 +365,7 @@ export default function AdminDashboard() {
         !quarterlyFinancialsResponse.ok ||
         !annualPerformanceResponse.ok
       ) {
-        throw new Error("Failed to fetch reports data");
+        toast.error("Failed to fetch reports data");
       }
 
       const monthlySalesData = await monthlySalesResponse.json();
@@ -341,9 +373,9 @@ export default function AdminDashboard() {
         await quarterlyFinancialsResponse.json();
       const annualPerformanceData = await annualPerformanceResponse.json();
 
-      console.log({ monthlySalesData });
-      console.log({ quarterlyFinancialsData });
-      console.log({ annualPerformanceData });
+      // console.log({ monthlySalesData });
+      // console.log({ quarterlyFinancialsData });
+      // console.log({ annualPerformanceData });
 
       //get report status
       const getReportStatus = (date: string) => {
@@ -559,9 +591,17 @@ export default function AdminDashboard() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <RecentOrders
-                    data={adminDashboardOverviewData.recentOrders ?? []}
-                  />
+                  <ErrorBoundary>
+                    <Suspense
+                      fallback={
+                        <div className="h-full animate-pulse bg-gray-200 rounded" />
+                      }
+                    >
+                      <RecentOrders
+                        data={adminDashboardOverviewData.recentOrders ?? []}
+                      />
+                    </Suspense>
+                  </ErrorBoundary>
                 </CardContent>
                 <CardFooter className="flex justify-center">
                   <Link href="/admin/orders" passHref>
@@ -583,9 +623,17 @@ export default function AdminDashboard() {
                 <CardTitle>Revenue Growth</CardTitle>
               </CardHeader>
               <CardContent className="h-[400px] sm:h-[450px] md:h-[500px]">
-                <RevenueGrowth
-                  data={adminDashboardPerformanceData.revenueGrowthData}
-                />
+                <ErrorBoundary>
+                  <Suspense
+                    fallback={
+                      <div className="h-full animate-pulse bg-gray-200 rounded" />
+                    }
+                  >
+                    <RevenueGrowth
+                      data={adminDashboardPerformanceData.revenueGrowthData}
+                    />
+                  </Suspense>
+                </ErrorBoundary>
               </CardContent>
             </Card>
             <Card className="col-span-full">
@@ -593,9 +641,19 @@ export default function AdminDashboard() {
                 <CardTitle>Product Performance</CardTitle>
               </CardHeader>
               <CardContent className="h-[400px] sm:h-[450px] md:h-[500px]">
-                <ProductPerformance
-                  data={adminDashboardPerformanceData.productPerformanceData}
-                />
+                <ErrorBoundary>
+                  <Suspense
+                    fallback={
+                      <div className="h-full animate-pulse bg-gray-200 rounded" />
+                    }
+                  >
+                    <ProductPerformance
+                      data={
+                        adminDashboardPerformanceData.productPerformanceData
+                      }
+                    />
+                  </Suspense>
+                </ErrorBoundary>
               </CardContent>
             </Card>
           </div>
@@ -643,10 +701,18 @@ export default function AdminDashboard() {
                 <CardTitle>Month Revenue Performance</CardTitle>
               </CardHeader>
               <CardContent className="h-[300px] sm:h-[350px] lg:h-[400px]">
-                <AnalyticsPieChart
-                  variant="Revenue"
-                  data={adminDashboardAnalyticsData.monthlyRevenueData}
-                />
+                <ErrorBoundary>
+                  <Suspense
+                    fallback={
+                      <div className="h-full animate-pulse bg-gray-200 rounded" />
+                    }
+                  >
+                    <AnalyticsPieChart
+                      variant="Revenue"
+                      data={adminDashboardAnalyticsData.monthlyRevenueData}
+                    />
+                  </Suspense>
+                </ErrorBoundary>
               </CardContent>
             </Card>
 
@@ -696,7 +762,15 @@ export default function AdminDashboard() {
               <CardDescription>View and download your reports</CardDescription>
             </CardHeader>
             <CardContent>
-              <ReportsSection data={adminDashboardReportData} />
+              <ErrorBoundary>
+                <Suspense
+                  fallback={
+                    <div className="h-full animate-pulse bg-gray-200 rounded" />
+                  }
+                >
+                  <ReportsSection data={adminDashboardReportData} />
+                </Suspense>
+              </ErrorBoundary>
             </CardContent>
           </Card>
         );

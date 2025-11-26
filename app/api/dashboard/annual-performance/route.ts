@@ -1,6 +1,6 @@
 // app/api/dashboard/annual-performance/route.ts
-import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma/client";
+import { NextResponse } from "next/server";
 
 interface QuarterlyPerformance {
   quarter: number;
@@ -23,79 +23,76 @@ export async function GET(req: Request) {
     const startDate = new Date(year, 0, 1).toISOString();
     const endDate = new Date(year, 11, 31, 23, 59, 59).toISOString();
 
-    // Fetch revenue and monthly projections for the year
-    const revenueData = await prisma.revenue.findFirst({
-      where: { year },
-      include: { monthlyProjections: true },
-    });
-
-    if (!revenueData) {
-      throw new Error("No revenue data found for the specified year");
-    }
-
-    // Fetch orders
-    const orders = await prisma.order.groupBy({
-      by: ["orderDate"],
-      where: {
-        orderDate: {
-          gte: startDate,
-          lt: endDate,
+    // Combine related queries with Promise.all
+    const [
+      revenueData,
+      orders,
+      invoices,
+      income,
+      customerSatisfaction,
+      previousYearRevenue,
+    ] = await Promise.all([
+      // Revenue data
+      prisma.revenue.findFirst({
+        where: { year },
+        select: {
+          monthlyProjections: {
+            select: { month: true, projection: true, actual: true },
+          },
         },
-        status: {
-          in: ["PENDING", "FULFILLED"],
+      }),
+      // Orders query
+      prisma.order.groupBy({
+        by: ["orderDate"],
+        where: {
+          orderDate: { gte: startDate, lt: endDate },
+          status: { in: ["PENDING", "FULFILLED"] },
         },
-      },
+        _sum: { total: true },
+        _count: { id: true },
+      }),
 
-      _sum: {
-        total: true,
-      },
-
-      _count: {
-        id: true,
-      },
-    });
-
-    const invoices = await prisma.invoice.groupBy({
-      by: ["dateCreated"],
-      where: {
-        dateCreated: {
-          gte: startDate,
-          lt: endDate,
+      // Invoices query
+      prisma.invoice.groupBy({
+        by: ["dateCreated"],
+        where: {
+          dateCreated: { gte: startDate, lt: endDate },
+          status: "PAID",
         },
-        status: "PAID",
-      },
-      _sum: {
-        amount: true,
-      },
-      _count: {
-        id: true,
-      },
-    });
+        _sum: { amount: true },
+        _count: { id: true },
+      }),
 
-    // Fetch income
-    const income = await prisma.income.groupBy({
-      by: ["date"],
-      where: {
-        date: {
-          gte: startDate,
-          lte: endDate,
+      // Income query
+      prisma.income.groupBy({
+        by: ["date"],
+        where: {
+          date: { gte: startDate, lte: endDate },
         },
-      },
-      _sum: {
-        amount: true,
-      },
-      _count: {
-        id: true,
-      },
-    });
+        _sum: { amount: true },
+        _count: { id: true },
+      }),
 
-    // Fetch customer satisfaction (from Reviews)
-    const customerSatisfaction = await prisma.review.groupBy({
-      by: ["productId"],
-      _avg: {
-        rating: true,
-      },
-    });
+      // Customer satisfaction - no date filter needed
+      prisma.review.groupBy({
+        by: ["productId"],
+        _avg: { rating: true },
+      }),
+
+      // Previous year revenue
+      year > 1
+        ? prisma.revenue.findFirst({
+            where: { year: year - 1 },
+            select: {
+              monthlyProjections: {
+                select: { actual: true },
+              },
+            },
+          })
+        : Promise.resolve(null),
+    ]);
+
+    const monthlyProjections = revenueData?.monthlyProjections || [];
 
     // Process data
     const quarterlyData: { [key: number]: QuarterlyPerformance } = {
@@ -108,29 +105,14 @@ export async function GET(req: Request) {
     let totalSatisfaction = 0;
     let satisfactionCount = 0;
 
-    const monthNameToNumber: { [key: string]: number } = {
-      January: 0,
-      February: 1,
-      March: 2,
-      April: 3,
-      May: 4,
-      June: 5,
-      July: 6,
-      August: 7,
-      September: 8,
-      October: 9,
-      November: 10,
-      December: 11,
-    };
-
     // Initialize sales and target from monthly projections
-    if (
-      revenueData.monthlyProjections &&
-      revenueData.monthlyProjections.length > 0
-    ) {
-      revenueData.monthlyProjections.forEach((projection) => {
-        const month = monthNameToNumber[projection.month];
-        const quarter = Math.floor(month / 3) + 1;
+    if (monthlyProjections && monthlyProjections.length > 0) {
+      monthlyProjections.forEach((projection) => {
+        // const month = monthNameToNumber[projection.month];
+        const monthIndex = new Date(
+          Date.parse(projection.month + " 1, 2000")
+        ).getMonth();
+        const quarter = Math.floor(monthIndex / 3) + 1;
         if (quarterlyData[quarter]) {
           // quarterlyData[quarter].sales += projection.actual || 0;
           quarterlyData[quarter].target += projection.projection || 0;
@@ -183,19 +165,11 @@ export async function GET(req: Request) {
     );
     const avgCustomerSatisfaction = avgSatisfaction;
 
-    // Fetch previous year's total sales from Revenue model
-    const previousYear = year - 1;
-    const previousYearRevenue = await prisma.revenue.findFirst({
-      where: { year: previousYear },
-      include: { monthlyProjections: true },
-    });
-
-    const previousYearTotalSales = previousYearRevenue
-      ? previousYearRevenue.monthlyProjections.reduce(
-          (sum, month) => sum + month.actual,
-          0
-        )
-      : 0;
+    const previousYearTotalSales =
+      previousYearRevenue?.monthlyProjections.reduce(
+        (sum, month) => sum + month.actual,
+        0
+      ) || 0;
 
     const yearOverYearGrowth = previousYearTotalSales
       ? ((totalAnnualSales - previousYearTotalSales) / previousYearTotalSales) *

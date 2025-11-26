@@ -1,5 +1,5 @@
-import { NextResponse } from "next/server";
 import { adminAuth } from "@/config/firebaseAdmin";
+import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
   try {
@@ -18,9 +18,22 @@ export async function POST(req: Request) {
         return NextResponse.json({ valid: false, error: "Token expired" });
       }
 
-      return NextResponse.json({ uid: decodedToken.uid, valid: true });
-    } catch (verifyError) {
+      return NextResponse.json({
+        uid: decodedToken.uid,
+        valid: true,
+        exp: decodedToken.exp,
+      });
+    } catch (verifyError: any) {
       console.error("Token verification error:", verifyError);
+
+      // Check if it's an expiration error
+      if (verifyError.code === "auth/id-token-expired") {
+        return NextResponse.json(
+          { error: "Token expired", valid: false, expired: true },
+          { status: 401 }
+        );
+      }
+
       return NextResponse.json(
         { error: "Invalid token", valid: false },
         { status: 401 }

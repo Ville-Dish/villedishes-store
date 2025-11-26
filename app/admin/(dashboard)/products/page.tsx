@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
-import { ProductForm } from "@/components/custom/product-form";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+// import { ProductForm } from "@/components/custom/product-form";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -11,6 +12,14 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -33,12 +42,19 @@ import {
   ChevronsLeft,
   ChevronsRight,
   Copy,
-  Eye,
+  MoreVerticalIcon,
+  Pencil,
   Plus,
   Trash,
 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+
+const ProductForm = lazy(() =>
+  import("@/components/custom/product-form").then((module) => ({
+    default: module.ProductForm,
+  }))
+);
 
 type SortField = "name" | "price" | "category" | null;
 type SortDirection = "asc" | "desc" | null;
@@ -399,13 +415,23 @@ export default function AdminProductsPage() {
                   Add New Product
                 </DialogDescription>
               </DialogHeader>
-              <ProductForm
-                product={newItem}
-                categories={categories}
-                onSubmit={handleAddItem}
-                onCancel={() => setDialogOpen(false)}
-                isLoading={isProdLoading}
-              />
+              <ErrorBoundary>
+                <Suspense
+                  fallback={
+                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center">
+                      <div className="bg-white p-6 rounded-lg">Loading...</div>
+                    </div>
+                  }
+                >
+                  <ProductForm
+                    product={newItem}
+                    categories={categories}
+                    onSubmit={handleAddItem}
+                    onCancel={() => setDialogOpen(false)}
+                    isLoading={isProdLoading}
+                  />
+                </Suspense>
+              </ErrorBoundary>
             </DialogContent>
           </Dialog>
         </div>
@@ -524,30 +550,44 @@ export default function AdminProductsPage() {
                       {item.rating ? `${item.rating.toFixed(1)} / 5` : "0.0/5"}
                     </TableCell>
                     <TableCell>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        title="Edit"
-                        onClick={() => handleEditItem(item)}
-                      >
-                        <Eye className="h-4 w-4" color="#fe9e1d" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        title="Copy Product"
-                        onClick={() => handleCopyItem(item)}
-                      >
-                        <Copy className="h-4 w-4" color="#6FD68B" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        title="Delete"
-                        onClick={() => handleDeleteItem(item.id)}
-                      >
-                        <Trash className="h-4 w-4" color="#da281c" />
-                      </Button>
+                      <DropdownMenu modal={false}>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="outline"
+                            aria-label="Invoice Action"
+                            size="icon-sm"
+                            className="cursor-pointer"
+                          >
+                            <MoreVerticalIcon />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent className="w-64" align="end">
+                          <DropdownMenuLabel>Product Actions</DropdownMenuLabel>
+                          <DropdownMenuGroup>
+                            <DropdownMenuItem
+                              className="cursor-pointer text-sm"
+                              onSelect={() => handleEditItem(item)}
+                            >
+                              <Pencil className="size-4" color="#fe9e1d" />
+                              Edit Product - {item.name}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              className="cursor-pointer text-sm"
+                              onSelect={() => handleCopyItem(item)}
+                            >
+                              <Copy className="size-4" color="#6FD68B" />
+                              Make a copy
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              className="cursor-pointer text-sm focus:text-red-800 focus:bg-red-50"
+                              onSelect={() => handleDeleteItem(item.id)}
+                            >
+                              <Trash className="size-4" color="#da281c" />
+                              Delete - {item.name}
+                            </DropdownMenuItem>
+                          </DropdownMenuGroup>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </TableCell>
                   </TableRow>
                 ))
@@ -627,14 +667,24 @@ export default function AdminProductsPage() {
                 {editingItem.name}
               </DialogDescription>
             </DialogHeader>
-            <ProductForm
-              product={editingItem}
-              categories={categories}
-              onSubmit={handleUpdateItem}
-              onCancel={handleUpdateCancel}
-              isLoading={isProdLoading}
-              isCopy={isCopyMode}
-            />
+            <ErrorBoundary>
+              <Suspense
+                fallback={
+                  <div className="fixed inset-0 bg-black/50 flex items-center justify-center">
+                    <div className="bg-white p-6 rounded-lg">Loading...</div>
+                  </div>
+                }
+              >
+                <ProductForm
+                  product={editingItem}
+                  categories={categories}
+                  onSubmit={handleUpdateItem}
+                  onCancel={handleUpdateCancel}
+                  isLoading={isProdLoading}
+                  isCopy={isCopyMode}
+                />
+              </Suspense>
+            </ErrorBoundary>
           </DialogContent>
         </Dialog>
       )}

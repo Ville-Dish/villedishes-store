@@ -1,19 +1,20 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import Link from "next/link";
-import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
   SheetContent,
+  SheetDescription,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { usePathname } from "next/navigation";
 import { adminMenuItems } from "@/lib/constantData";
 import { cn } from "@/lib/utils";
+import { Menu } from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
 
 export const AdminNavbarMenu = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -68,6 +69,9 @@ export const AdminNavbarMenu = () => {
           <SheetContent>
             <SheetHeader>
               <SheetTitle>Menu</SheetTitle>
+              <SheetDescription className="sr-only">
+                Navigation for Smaller Screens
+              </SheetDescription>
             </SheetHeader>
             <nav className="flex flex-col gap-4 mt-4">
               {menuItems.map((item) => (

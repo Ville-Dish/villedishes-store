@@ -9,7 +9,11 @@ import {
 } from "@/components/ui/carousel";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
+import { SettingsForm } from "@/components/custom/settings/settings-form";
+import { SettingsTable } from "@/components/custom/settings/settings-table";
+import { YearlyRevenueAccordion } from "@/components/custom/settings/yearly-revenue-accordion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -21,11 +25,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import React, { useCallback, useEffect, useState } from "react";
-import { SettingsTable } from "@/components/custom/settings/settings-table";
-import { SettingsForm } from "@/components/custom/settings/settings-form";
-import { YearlyRevenueAccordion } from "@/components/custom/settings/yearly-revenue-accordion";
 import { toast } from "sonner";
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 
 const settingsValue = [
   { name: "General Settings", icon: Settings },
@@ -133,7 +133,7 @@ const AdminSetting = () => {
     };
 
     try {
-      const response = await fetch("/api/revenue", {
+      const response = await fetch("/api/admin/revenue", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -164,7 +164,7 @@ const AdminSetting = () => {
     if (!revenueToUpdate) return;
 
     try {
-      const response = await fetch("/api/revenue", {
+      const response = await fetch("/api/admin/revenue", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -323,8 +323,12 @@ const AdminSetting = () => {
           {isLargeScreen ? (
             <div className="flex justify-between w-full">
               {settingsValue.map((tab) => (
-                <TabsTrigger key={tab.name} value={tab.name} className="flex-1">
-                  <tab.icon className="mr-2 h-4 w-4" />
+                <TabsTrigger
+                  key={tab.name}
+                  value={tab.name}
+                  className="flex-1 flex items-center"
+                >
+                  <tab.icon className="mr-2 size-3" />
                   {tab.name}
                 </TabsTrigger>
               ))}
@@ -340,9 +344,9 @@ const AdminSetting = () => {
                     >
                       <TabsTrigger
                         value={tab.name}
-                        className="w-full px-2 py-2 text-xs md:text-sm"
+                        className="w-full px-2 py-2 text-xs md:text-sm "
                       >
-                        <tab.icon className="mb-1 h-4 w-4" />
+                        <tab.icon className="mr-1 size-3" />
                         <span className="truncate">{tab.name}</span>
                       </TabsTrigger>
                     </CarouselItem>

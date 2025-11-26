@@ -1,6 +1,13 @@
 "use client";
 
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
+import {
+  Cell,
+  Pie,
+  PieChart,
+  PieLabelRenderProps,
+  ResponsiveContainer,
+  Tooltip,
+} from "recharts";
 
 const COLORS = ["#FE9E1D", "#DA281C", "#AA8865", "#FFF1E2", "#1AA879"];
 
@@ -8,34 +15,63 @@ export const ProductPerformance = ({ data }: productPerformanceProps) => {
   if (!data || data.length === 0) {
     return (
       <div className="flex justify-center items-center h-full">
-        <p className="text-sm text-muted-foreground">No product performance data available</p>
+        <p className="text-sm text-muted-foreground">
+          No product performance data available
+        </p>
       </div>
     );
   }
 
-  const renderCustomizedLabel = ({
-    cx,
-    cy,
-    midAngle,
-    innerRadius,
-    outerRadius,
-    percent,
-    index,
-  }: {
-    cx: number;
-    cy: number;
-    midAngle: number;
-    innerRadius: number;
-    outerRadius: number;
-    percent: number;
-    index: number;
-  }) => {
-    const RADIAN = Math.PI / 180;
-    const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
-    const x = cx + radius * Math.cos(-midAngle * RADIAN);
-    const y = cy + radius * Math.sin(-midAngle * RADIAN);
+  // const renderCustomizedLabel = ({
+  //   cx,
+  //   cy,
+  //   midAngle,
+  //   innerRadius,
+  //   outerRadius,
+  //   percent,
+  //   index,
+  // }: {
+  //   cx: number;
+  //   cy: number;
+  //   midAngle: number;
+  //   innerRadius: number;
+  //   outerRadius: number;
+  //   percent: number;
+  //   index: number;
+  // }) => {
+  const renderCustomizedLabel = (props: PieLabelRenderProps) => {
+    const { cx, cy, midAngle, innerRadius, outerRadius, percent, index } =
+      props;
 
-    const percentValue = (percent * 100).toFixed(0);
+    if (
+      cx === null ||
+      cy === null ||
+      midAngle === null ||
+      innerRadius === null ||
+      outerRadius === null ||
+      percent === null ||
+      index === null
+    ) {
+      return null;
+    }
+
+    // Convert numbers safely
+    const cxNum = Number(cx);
+    const cyNum = Number(cy);
+    const innerRadiusNum = Number(innerRadius);
+    const outerRadiusNum =
+      typeof outerRadius === "function"
+        ? Number(outerRadius({}))
+        : Number(outerRadius);
+    const midAngleNum = Number(midAngle);
+    const percentNum = Number(percent);
+
+    const RADIAN = Math.PI / 180;
+    const radius = innerRadiusNum + (outerRadiusNum - innerRadiusNum) * 0.5;
+    const x = cxNum + radius * Math.cos(-midAngleNum * RADIAN);
+    const y = cyNum + radius * Math.sin(-midAngleNum * RADIAN);
+
+    const percentValue = (percentNum * 100).toFixed(0);
     const textColor =
       COLORS[index % COLORS.length] === "#FFF1E2" ? "#000000" : "#FFFFFF";
 

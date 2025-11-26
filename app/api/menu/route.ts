@@ -1,11 +1,25 @@
-import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma/client";
+import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
 
     const limitParam = searchParams.get("limit");
+    const category = searchParams.get("category");
+
+    // Get all unique categories (always needed for the filter tabs)
+    const categories = await prisma.product.findMany({
+      select: { category: true },
+      distinct: ["category"],
+      where: {
+        category: { not: null },
+      },
+    });
+
+    const uniqueCategories = categories
+      .map((c) => c.category as string)
+      .filter(Boolean);
 
     let limit: number | undefined;
     if (limitParam) {
@@ -19,7 +33,10 @@ export async function GET(request: Request) {
       }
     }
 
+    const whereClause = category ? { category } : {};
+
     const products = await prisma.product.findMany({
+      where: whereClause,
       include: {
         OrderProduct: true, // Assuming you want to include related order products
       },
@@ -27,7 +44,11 @@ export async function GET(request: Request) {
     });
 
     return NextResponse.json(
-      { data: products, message: "Products retrieved successfully" },
+      {
+        data: products,
+        categories: uniqueCategories,
+        message: "Products data retrieved successfully",
+      },
       { status: 200 }
     );
   } catch (error) {

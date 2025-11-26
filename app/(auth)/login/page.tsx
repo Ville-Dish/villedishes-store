@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "@/config/firebase";
-import { useRouter, useSearchParams } from "next/navigation";
 import { Separator } from "@/components/ui/separator";
+import { auth } from "@/config/firebase";
+import { signInWithEmailAndPassword } from "firebase/auth";
 import Image from "next/image";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
@@ -75,9 +75,10 @@ export default function LoginPage() {
       <Image
         src="https://res.cloudinary.com/dxt7vk5dg/image/upload/v1743187728/ville-logo_u98blv.png"
         alt="Logo"
+        priority
         width={200}
         height={200}
-        className="mb-4"
+        className="mb-4 size-[200px]"
       />
       <div className="border px-8 py-6 shadow-lg flex flex-col space-y-6 w-full max-w-md rounded-lg bg-white">
         <h1 className="text-2xl font-semibold text-center text-gray-800">

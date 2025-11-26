@@ -1,10 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Form,
   FormControl,
@@ -22,11 +19,17 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import useCartStore from "@/stores/useCartStore";
 import { adminEmail, shippingFee, taxRate } from "@/lib/constantData";
+import useCartStore, {
+  useCartSubtotal,
+  useCartTotal,
+} from "@/stores/useCartStore";
 import useOrderStore from "@/stores/useOrderStore";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
 import { toast } from "sonner";
+import * as z from "zod";
 
 const baseSchema = z.object({
   firstName: z.string().min(2, "First name is required"),
@@ -37,22 +40,26 @@ const baseSchema = z.object({
   city: z.string().min(1, "City is required"),
   postalCode: z.string().min(5, "Valid postal code is required"),
   orderNotes: z.string().optional(),
+  referenceNumber: z.optional(
+    z.string().min(1, "Reference number is required")
+  ),
 });
 
-type FormValues = z.infer<typeof baseSchema> & { referenceNumber?: string };
+type FormValues = z.infer<typeof baseSchema>;
 
 export default function CheckoutPage() {
   const [orderPlaced, setOrderPlaced] = useState(false);
   const [payment, setPayment] = useState(false);
   const [orderId, setOrderId] = useState<string>("");
 
-  const { cartItems, subtotal, total } = useCartStore();
+  const { cartItems, clearCart } = useCartStore();
+  const subtotal = useCartSubtotal();
+  const total = useCartTotal();
 
   const tax = subtotal * (taxRate / 100);
   const shipping = shippingFee;
 
   const { addOrder, updateOrder, clearOrder } = useOrderStore();
-  const { clearCart } = useCartStore();
 
   const [formSchema, setFormSchema] =
     useState<z.ZodType<FormValues>>(baseSchema);
@@ -76,7 +83,7 @@ export default function CheckoutPage() {
   }, [payment]);
 
   const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(baseSchema),
     defaultValues: {
       firstName: "",
       lastName: "",

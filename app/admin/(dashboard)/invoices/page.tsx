@@ -10,6 +10,14 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -22,18 +30,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import {
   CheckCheck,
   ChevronsLeft,
   ChevronsRight,
   CircleX,
   Download,
   Eye,
+  MoreVerticalIcon,
   Pencil,
   Plus,
 } from "lucide-react";
@@ -476,7 +479,7 @@ export default function AdminInvoicesPage() {
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
               <Button onClick={() => setDialogOpen(true)} variant="create">
-                <Plus className="mr-2 h-4 w-4" /> Create New Invoice
+                <Plus className="h-4 w-4" /> Create New Invoice
               </Button>
             </DialogTrigger>
             <DialogContent>
@@ -573,7 +576,7 @@ export default function AdminInvoicesPage() {
         </div>
       </div>
 
-      <div className="flex space-x-4 mb-4">
+      <div className="grid grid-cols-2 pr-8 md:grid-cols-3 gap-4">
         <Select onValueChange={(value) => setStatusFilter(value)}>
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Filter by Status" />
@@ -585,22 +588,23 @@ export default function AdminInvoicesPage() {
             <SelectItem value="DUE">Due</SelectItem>
           </SelectContent>
         </Select>
-        <DatePickerWithRange
-          date={{
-            from: dateRange.from,
-            to: dateRange.to,
-          }}
-          setDate={(newDateRange) => {
-            setDateRange({
-              from: newDateRange?.from || undefined,
-              to: newDateRange?.to || undefined,
-            });
-          }}
-        />
-        <div />
-        <div className="w-full md:w-2/4">
-          <Label htmlFor="amount-range">Amount Range</Label>
-          <div className="flex items-center space-x-2">
+        <div className="col-span-1">
+          <DatePickerWithRange
+            date={{
+              from: dateRange.from,
+              to: dateRange.to,
+            }}
+            setDate={(newDateRange) => {
+              setDateRange({
+                from: newDateRange?.from || undefined,
+                to: newDateRange?.to || undefined,
+              });
+            }}
+          />
+        </div>
+        <div className="w-full flex items-center gap-2 col-span-2 md:col-span-1">
+          <Label htmlFor="amount-range">Amount Range:</Label>
+          <div className="flex-1 flex items-center space-x-2">
             <span className="text-sm font-medium">${amountRange[0]}</span>
             <Slider
               id="amount-range"
@@ -617,6 +621,7 @@ export default function AdminInvoicesPage() {
             <span className="text-sm font-medium">${amountRange[1]}</span>
           </div>
         </div>
+        <div />
       </div>
 
       <div className="border rounded-lg overflow-hidden">
@@ -715,68 +720,44 @@ export default function AdminInvoicesPage() {
                     </span>
                   </TableCell>
                   <TableCell>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
+                    <DropdownMenu modal={false}>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="outline"
+                          aria-label="Invoice Action"
+                          size="icon-sm"
+                          className="cursor-pointer"
+                        >
+                          <MoreVerticalIcon />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent className="w-40" align="end">
+                        <DropdownMenuLabel>Invoice Actions</DropdownMenuLabel>
+                        <DropdownMenuGroup>
+                          <DropdownMenuItem
                             className="cursor-pointer"
-                            onClick={() => handleViewInvoice(invoice)}
+                            onSelect={() => handleViewInvoice(invoice)}
                           >
                             <Pencil className="size-4" color="#fe9e1d" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Edit Invoice</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
+                            Edit Invoice
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
                             className="cursor-pointer"
-                            onClick={() => handlePreviewInvoice(invoice)}
+                            onSelect={() => handlePreviewInvoice(invoice)}
                           >
                             <Eye className="size-4 text-blue-500" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>View Invoice</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
+                            View Invoice
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
                             className="cursor-pointer"
-                            onClick={() => handleDownloadInvoice(invoice)}
+                            onSelect={() => handleDownloadInvoice(invoice)}
                           >
                             <Download className="size-4" color="#c7c940" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Download</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
+                            Download
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
                             className="cursor-pointer"
-                            onClick={() =>
+                            onSelect={() =>
                               handleUpdateInvoice({
                                 ...invoice,
                                 status:
@@ -797,17 +778,13 @@ export default function AdminInvoicesPage() {
                             ) : (
                               <CheckCheck className="size-4" color="#107a47" />
                             )}
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>
                             {invoice.status === "PAID"
                               ? "Mark as Unpaid"
                               : "Mark as Paid"}
-                          </p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
+                          </DropdownMenuItem>
+                        </DropdownMenuGroup>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </TableCell>
                 </TableRow>
               ))

@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ShoppingBasket as CartIcon, X } from "lucide-react";
+import { useState } from "react";
 
 import {
   Sheet,
@@ -14,11 +14,18 @@ import {
 } from "@/components/ui/sheet";
 import Link from "next/link";
 
-import useCartStore from "@/stores/useCartStore";
+import useCartStore, {
+  useCartQuantity,
+  useCartSubtotal,
+} from "@/stores/useCartStore";
 
 export default function ShoppingCart() {
-  const { cartItems, removeFromCart, subtotal, totalQuantity } = useCartStore();
+  const { cartItems, removeFromCart } = useCartStore();
   const [sheetOpen, setSheetOpen] = useState(false);
+
+  const subtotal = useCartSubtotal();
+  const totalQuantity = useCartQuantity();
+
   return (
     <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
       <SheetTrigger asChild>

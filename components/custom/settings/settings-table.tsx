@@ -1,4 +1,4 @@
-import React from "react";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -7,8 +7,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
 import { Eye, Trash } from "lucide-react";
+import React from "react";
 
 export const SettingsTable: React.FC<SettingsTableProps> = ({
   variant,
@@ -63,7 +63,15 @@ export const SettingsTable: React.FC<SettingsTableProps> = ({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {data.map((item, index) => renderRow(item, index))}
+          {data.length > 0 ? (
+            data.map((item, index) => renderRow(item, index))
+          ) : (
+            <TableRow>
+              <TableCell colSpan={5} className="text-center">
+                No {variant} data found!
+              </TableCell>
+            </TableRow>
+          )}
         </TableBody>
       </Table>
     </div>
