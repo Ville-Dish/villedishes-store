@@ -22,6 +22,7 @@ const nextConfig: NextConfig = {
 
     return config;
   },
+  turbopack: {}, // enable experimental turbopack support
   images: {
     remotePatterns: [
       {
