@@ -1,13 +1,6 @@
 import z from "zod";
-import {
-  getPostalCodeValidationMessage,
-  isValidEmail,
-  isValidPhoneNumber,
-  isValidPostalCode,
-  passwordStrength,
-} from "../utils";
+import { isValidEmail, isValidPhoneNumber, passwordStrength } from "../utils";
 import { PASSWORD_LENGTH } from "../constantData";
-import { phoneNumber } from "better-auth/plugins";
 
 export const passwordResetSchema = z.object({
   email: z.email({

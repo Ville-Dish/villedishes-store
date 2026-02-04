@@ -58,16 +58,13 @@ import {
 import { Slider } from "@/components/ui/slider";
 import { useLoading } from "@/context/LoadingContext";
 import { cn } from "@/lib/utils";
+import { InvoiceForm } from "./invoice-form";
 
 const InvoiceDetails = lazy(() =>
   import("@/components/custom/invoices/invoice-details").then((module) => ({
     default: module.InvoiceDetails,
   }))
 );
-
-// const generatePDF = lazy(() => import("@/lib/invoicePdfGenerate").then(module => ({
-//   default: module.createInvoicePDF
-// })));
 
 type InvoiceProduct = {
   id: string;
@@ -78,7 +75,7 @@ type InvoiceProduct = {
 type SortField = "customerName" | "amount" | "dueDate" | null;
 type SortDirection = "asc" | "desc" | null;
 
-export default function AdminInvoicesPage() {
+export const InvoiceList = () => {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [filteredInvoices, setFilteredInvoices] = useState<Invoice[]>([]);
   const [newInvoice, setNewInvoice] = useState<
@@ -300,63 +297,6 @@ export default function AdminInvoicesPage() {
     applyFiltersAndSearch();
   }, [applyFiltersAndSearch]);
 
-  const handleCreateInvoice = async () => {
-    const { customerName, customerEmail, customerPhone, dueDate } = newInvoice;
-
-    // Client-side validation
-    if (
-      !customerName ||
-      customerName.trim() === "" ||
-      !customerEmail ||
-      customerEmail.trim() === "" ||
-      !customerPhone ||
-      customerPhone.trim() === "" ||
-      !dueDate
-    ) {
-      alert("Please fill out all fields with valid values.");
-      return;
-    }
-
-    try {
-      const response = await fetch("/api/invoices", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...newInvoice,
-          dateCreated: new Date().toISOString().split("T")[0],
-        }),
-      });
-
-      const result = await response.json();
-
-      if (response.ok) {
-        setInvoices((prev) => [...prev, result.data]);
-        applyFiltersAndSearch();
-        setNewInvoice({
-          customerName: "",
-          customerEmail: "",
-          customerPhone: "",
-          amount: 0,
-          amountPaid: 0,
-          amountDue: 0,
-          dueDate: "",
-          status: "PENDING",
-        });
-        // Close the dialog
-        setDialogOpen(false);
-
-        // Show a success message
-        toast.success("Invoice created successfully!");
-      } else {
-        toast.error(`Failed to create invoice: ${result.message}`);
-        console.error("Failed to create invoice:", result.message);
-      }
-    } catch (error) {
-      toast.error("An unexpected error occurred. Please try again.");
-      console.error("Error creating invoice:", error);
-    }
-  };
-
   const handleUpdateInvoice = async (updatedInvoice: Invoice) => {
     try {
       const response = await fetch(`/api/invoices`, {
@@ -486,91 +426,7 @@ export default function AdminInvoicesPage() {
               <DialogHeader>
                 <DialogTitle>Create New Invoice</DialogTitle>
               </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="customerName" className="text-right">
-                    Customer Name
-                  </Label>
-                  <Input
-                    id="customerName"
-                    value={newInvoice.customerName}
-                    onChange={(e) =>
-                      setNewInvoice({
-                        ...newInvoice,
-                        customerName: e.target.value,
-                      })
-                    }
-                    className="col-span-3"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="customerEmail" className="text-right">
-                    Customer Email
-                  </Label>
-                  <Input
-                    id="customerEmail"
-                    type="email"
-                    value={newInvoice.customerEmail}
-                    onChange={(e) =>
-                      setNewInvoice({
-                        ...newInvoice,
-                        customerEmail: e.target.value,
-                      })
-                    }
-                    className="col-span-3"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="customerPhone" className="text-right">
-                    Customer Phone
-                  </Label>
-                  <Input
-                    id="customerPhone"
-                    value={newInvoice.customerPhone}
-                    onChange={(e) =>
-                      setNewInvoice({
-                        ...newInvoice,
-                        customerPhone: e.target.value,
-                      })
-                    }
-                    className="col-span-3"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="amount" className="text-right">
-                    Amount
-                  </Label>
-                  <Input
-                    id="amount"
-                    type="number"
-                    value={newInvoice.amount}
-                    onChange={(e) =>
-                      setNewInvoice({
-                        ...newInvoice,
-                        amount: parseFloat(e.target.value),
-                      })
-                    }
-                    className="col-span-3"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="dueDate" className="text-right">
-                    Due Date
-                  </Label>
-                  <Input
-                    id="dueDate"
-                    type="date"
-                    value={newInvoice.dueDate}
-                    onChange={(e) =>
-                      setNewInvoice({ ...newInvoice, dueDate: e.target.value })
-                    }
-                    className="col-span-3"
-                  />
-                </div>
-              </div>
-              <Button onClick={handleCreateInvoice} variant="submit">
-                Create Invoice
-              </Button>
+              <InvoiceForm setDialog={setDialogOpen} />
             </DialogContent>
           </Dialog>
         </div>
@@ -894,4 +750,4 @@ export default function AdminInvoicesPage() {
       </Dialog>
     </div>
   );
-}
+};
