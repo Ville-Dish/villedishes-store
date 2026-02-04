@@ -17,8 +17,8 @@ import type * as Prisma from "./prismaNamespace"
 
 const config: runtime.GetPrismaClientConfig = {
   "previewFeatures": [],
-  "clientVersion": "7.0.1",
-  "engineVersion": "f09f2815f091dbba658cdcd2264306d88bb5bda6",
+  "clientVersion": "7.3.0",
+  "engineVersion": "9d6ad21cbbceab97458517b147a6a09ff43aa735",
   "activeProvider": "postgresql",
   "inlineSchema": "generator client {\n  provider = \"prisma-client\"\n  output   = \"../src/generated/prisma\"\n}\n\ndatasource db {\n  provider = \"postgresql\"\n  // url      = env(\"DATABASE_URL\")\n}\n\nmodel User {\n  id       String  @id\n  name     String\n  username String? @unique\n\n  email         String\n  emailVerified Boolean @default(false)\n\n  phoneNumber         String?\n  whatsappNumber      String?\n  phoneNumberVerified Boolean @default(false)\n\n  image String?\n\n  twoFactor        TwoFactor?\n  twoFactorEnabled Boolean    @default(false)\n\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n\n  sessions Session[]\n  accounts Account[]\n\n  @@unique([email])\n  @@map(\"user\")\n}\n\nmodel TwoFactor {\n  id String @id @default(cuid())\n\n  userId String\n  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)\n\n  secret      String?\n  backupCodes String?\n\n  @@unique([userId])\n  @@map(\"twoFactor\")\n}\n\nmodel Session {\n  id        String   @id\n  expiresAt DateTime\n  token     String\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n  ipAddress String?\n  userAgent String?\n  userId    String\n  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)\n\n  @@unique([token])\n  @@index([userId])\n  @@map(\"session\")\n}\n\nmodel Account {\n  id                    String    @id\n  accountId             String\n  providerId            String\n  userId                String\n  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)\n  accessToken           String?\n  refreshToken          String?\n  idToken               String?\n  accessTokenExpiresAt  DateTime?\n  refreshTokenExpiresAt DateTime?\n  scope                 String?\n  password              String?\n  createdAt             DateTime  @default(now())\n  updatedAt             DateTime  @updatedAt\n\n  @@index([userId])\n  @@map(\"account\")\n}\n\nmodel Verification {\n  id         String   @id\n  identifier String\n  value      String\n  expiresAt  DateTime\n  createdAt  DateTime @default(now())\n  updatedAt  DateTime @updatedAt\n\n  @@index([identifier])\n  @@map(\"verification\")\n}\n\nmodel Product {\n  id              String            @id @unique @default(uuid())\n  name            String            @unique\n  description     String\n  price           Float\n  image           String\n  assetId         String?\n  category        String?\n  rating          Float?\n  OrderProduct    OrderProduct[]\n  InvoiceProducts InvoiceProducts[]\n  invoiceId       String?\n\n  @@index([category])\n  @@index([price])\n  @@index([rating])\n}\n\nmodel Review {\n  id        String  @id @unique @default(uuid())\n  rating    Int\n  comment   String\n  author    String\n  productId String?\n}\n\nmodel Order {\n  id               String         @id @unique @default(uuid())\n  orderId          String         @unique\n  subtotal         Float\n  tax              Float\n  shippingFee      Float\n  total            Float\n  referenceNumber  String?\n  paymentDate      String?\n  verificationCode String?\n  orderNumber      String?\n  orderDate        String?\n  shippingInfoId   String\n  status           String\n  shippingInfo     ShippingInfo   @relation(fields: [shippingInfoId], references: [id])\n  products         OrderProduct[]\n\n  @@index([status])\n  @@index([orderDate])\n  @@index([status, orderDate])\n  @@index([orderNumber])\n}\n\nmodel ShippingInfo {\n  id          String  @id @unique @default(uuid())\n  firstName   String\n  lastName    String\n  email       String\n  phoneNumber String\n  address     String\n  city        String\n  postalCode  String\n  orderNotes  String?\n  Order       Order[]\n}\n\nmodel OrderProduct {\n  id        String  @id @unique @default(uuid())\n  quantity  Int\n  productId String\n  orderId   String\n  order     Order   @relation(fields: [orderId], references: [id])\n  product   Product @relation(fields: [productId], references: [id])\n}\n\nmodel Invoice {\n  id                 String            @id @unique @default(uuid())\n  invoiceNumber      String            @unique\n  customerName       String\n  customerEmail      String\n  customerPhone      String\n  amount             Float\n  amountPaid         Float             @default(0)\n  amountDue          Float             @default(0)\n  discountPercentage Int               @default(0)\n  taxRate            Int               @default(0)\n  shippingFee        Int               @default(0)\n  serviceCharge      Int               @default(0)\n  miscellaneous      Int               @default(0)\n  dateCreated        String\n  dueDate            String\n  status             String\n  InvoiceProducts    InvoiceProducts[] @relation(\"InvoiceProducts\")\n\n  @@index([status])\n  @@index([dateCreated])\n  @@index([dueDate])\n  @@index([customerEmail])\n  @@index([status, dateCreated])\n}\n\n// Relation to  \nmodel InvoiceProducts {\n  id        String    @id @unique @default(uuid())\n  basePrice Float\n  quantity  Int\n  price     Float\n  discount  Float     @default(0)\n  invoiceId String?\n  invoice   Invoice?  @relation(\"InvoiceProducts\", fields: [invoiceId], references: [id])\n  Product   Product[]\n}\n\n// Schema for Income, Expense, and Revenue Projections.\nmodel Expense {\n  id       String @id @default(uuid())\n  name     String\n  category String\n  amount   Float\n  date     String\n}\n\nmodel Income {\n  id       String @id @default(uuid())\n  name     String\n  category String\n  amount   Float\n  date     String\n}\n\nmodel Revenue {\n  id                 String              @id @default(uuid())\n  year               Int\n  yearlyTarget       Float\n  monthlyProjections MonthlyProjection[]\n}\n\nmodel MonthlyProjection {\n  id         String  @id @default(uuid())\n  month      String\n  projection Float\n  actual     Float\n  revenue    Revenue @relation(fields: [revenueId], references: [id])\n  revenueId  String\n\n  @@unique([revenueId, month])\n}\n",
   "runtimeDataModel": {
@@ -37,12 +37,14 @@ async function decodeBase64AsWasm(wasmBase64: string): Promise<WebAssembly.Modul
 }
 
 config.compilerWasm = {
-  getRuntime: async () => await import("@prisma/client/runtime/query_compiler_bg.postgresql.mjs"),
+  getRuntime: async () => await import("@prisma/client/runtime/query_compiler_fast_bg.postgresql.mjs"),
 
   getQueryCompilerWasmModule: async () => {
-    const { wasm } = await import("@prisma/client/runtime/query_compiler_bg.postgresql.wasm-base64.mjs")
+    const { wasm } = await import("@prisma/client/runtime/query_compiler_fast_bg.postgresql.wasm-base64.mjs")
     return await decodeBase64AsWasm(wasm)
-  }
+  },
+
+  importName: "./query_compiler_fast_bg.js"
 }
 
 
@@ -62,7 +64,7 @@ export interface PrismaClientConstructor {
    * const users = await prisma.user.findMany()
    * ```
    * 
-   * Read more in our [docs](https://www.prisma.io/docs/reference/tools-and-interfaces/prisma-client).
+   * Read more in our [docs](https://pris.ly/d/client).
    */
 
   new <
@@ -84,7 +86,7 @@ export interface PrismaClientConstructor {
  * const users = await prisma.user.findMany()
  * ```
  * 
- * Read more in our [docs](https://www.prisma.io/docs/reference/tools-and-interfaces/prisma-client).
+ * Read more in our [docs](https://pris.ly/d/client).
  */
 
 export interface PrismaClient<
@@ -113,7 +115,7 @@ export interface PrismaClient<
    * const result = await prisma.$executeRaw`UPDATE User SET cool = ${true} WHERE email = ${'user@email.com'};`
    * ```
    *
-   * Read more in our [docs](https://www.prisma.io/docs/reference/tools-and-interfaces/prisma-client/raw-database-access).
+   * Read more in our [docs](https://pris.ly/d/raw-queries).
    */
   $executeRaw<T = unknown>(query: TemplateStringsArray | Prisma.Sql, ...values: any[]): Prisma.PrismaPromise<number>;
 
@@ -125,7 +127,7 @@ export interface PrismaClient<
    * const result = await prisma.$executeRawUnsafe('UPDATE User SET cool = $1 WHERE email = $2 ;', true, 'user@email.com')
    * ```
    *
-   * Read more in our [docs](https://www.prisma.io/docs/reference/tools-and-interfaces/prisma-client/raw-database-access).
+   * Read more in our [docs](https://pris.ly/d/raw-queries).
    */
   $executeRawUnsafe<T = unknown>(query: string, ...values: any[]): Prisma.PrismaPromise<number>;
 
@@ -136,7 +138,7 @@ export interface PrismaClient<
    * const result = await prisma.$queryRaw`SELECT * FROM User WHERE id = ${1} OR email = ${'user@email.com'};`
    * ```
    *
-   * Read more in our [docs](https://www.prisma.io/docs/reference/tools-and-interfaces/prisma-client/raw-database-access).
+   * Read more in our [docs](https://pris.ly/d/raw-queries).
    */
   $queryRaw<T = unknown>(query: TemplateStringsArray | Prisma.Sql, ...values: any[]): Prisma.PrismaPromise<T>;
 
@@ -148,7 +150,7 @@ export interface PrismaClient<
    * const result = await prisma.$queryRawUnsafe('SELECT * FROM User WHERE id = $1 OR email = $2;', 1, 'user@email.com')
    * ```
    *
-   * Read more in our [docs](https://www.prisma.io/docs/reference/tools-and-interfaces/prisma-client/raw-database-access).
+   * Read more in our [docs](https://pris.ly/d/raw-queries).
    */
   $queryRawUnsafe<T = unknown>(query: string, ...values: any[]): Prisma.PrismaPromise<T>;
 

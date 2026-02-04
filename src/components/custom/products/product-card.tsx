@@ -25,7 +25,8 @@ import {
   CarouselPrevious,
 } from "../../ui/carousel";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../ui/tabs";
-import RatingReview from "./rating-review";
+import RatingReview from "../rating-review";
+
 
 type ProductTabsProps = {
   categories: string[];

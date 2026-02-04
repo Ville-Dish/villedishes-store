@@ -1,3 +1,11 @@
+interface ContactDetails {
+  subject?: string;
+  name: string;
+  message: string;
+  email: string;
+  phone: string;
+}
+
 type MenuItem = {
   id: string;
   name: string;
@@ -293,4 +301,13 @@ interface ProfitData {
 interface CategoryData {
   category: string;
   value: number;
+}
+
+interface CateringDetails {
+  name: string;
+  email: string;
+  cateringDate: Date;
+  phone: string;
+  message?: string;
+  products: string[];
 }
