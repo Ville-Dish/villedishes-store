@@ -39,6 +39,7 @@ import {
   MoreVerticalIcon,
   Pencil,
   Plus,
+  TrashIcon,
 } from "lucide-react";
 import { lazy, useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -347,6 +348,9 @@ export default function AdminInvoicesPage() {
         // Close the dialog
         setDialogOpen(false);
 
+        // Open the edit invoice
+        setSelectedInvoice(result.data);
+
         // Show a success message
         toast.success("Invoice created successfully!");
       } else {
@@ -404,6 +408,41 @@ export default function AdminInvoicesPage() {
     } catch (error) {
       console.error("Error updating invoice:", error);
       toast.error("Failed to update invoice");
+      throw error;
+    }
+  };
+
+  const handleDeleteInvoice = async (id: string) => {
+    try {
+      const response = await fetch(`/api/invoices`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ id }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to delete invoice");
+      }
+
+      const result = await response.json();
+
+      // Ensure the returned data has all the necessary fields
+      const deletedInvoice = result.data as Invoice;
+
+      // Update the invoices state
+      setInvoices((prevInvoices) =>
+        prevInvoices.filter((inv) => inv.id !== deletedInvoice.id),
+      );
+
+      // Update filtered invoices
+      setFilteredInvoices((prevFiltered) =>
+        prevFiltered.filter((inv) => inv.id !== deletedInvoice.id),
+      );
+    } catch (error) {
+      console.error("Error deleting invoice:", error);
+      toast.error("Failed to delete invoice");
       throw error;
     }
   };
@@ -783,6 +822,13 @@ export default function AdminInvoicesPage() {
                             {invoice.status === "PAID"
                               ? "Mark as Unpaid"
                               : "Mark as Paid"}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            className="cursor-pointer text-destructive focus:bg-destructive/20 focus:text-destructive"
+                            onSelect={() => handleDeleteInvoice(invoice.id)}
+                          >
+                            <TrashIcon className="size-4" color="#ff0000" />
+                            Delete Invoice
                           </DropdownMenuItem>
                         </DropdownMenuGroup>
                       </DropdownMenuContent>
