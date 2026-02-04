@@ -57,6 +57,7 @@ interface Invoice {
   customerEmail: string;
   customerPhone: string;
   discountPercentage?: number;
+  discountType: "PERCENT" | "AMOUNT";
   taxRate?: number;
   shippingFee?: number;
   serviceCharge?: number;
@@ -241,7 +242,7 @@ interface YearlyRevenueAccordionProps {
   revenueProjections: YearlyRevenue[];
   onUpdate: (
     year: number,
-    updatedProjections: YearlyRevenue["monthlyProjections"]
+    updatedProjections: YearlyRevenue["monthlyProjections"],
   ) => void;
 }
 

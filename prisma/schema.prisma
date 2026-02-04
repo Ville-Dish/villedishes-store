@@ -7,6 +7,11 @@ datasource db {
   // url      = env("DATABASE_URL")
 }
 
+enum DiscountType {
+  PERCENT
+  AMOUNT
+}
+
 model Product {
   id              String            @id @unique @default(uuid())
   name            String            @unique
@@ -71,7 +76,7 @@ model ShippingInfo {
 
 model OrderProduct {
   id        String  @id @unique @default(uuid())
-  quantity  Int
+  quantity  Float
   productId String
   orderId   String
   order     Order   @relation(fields: [orderId], references: [id])
@@ -87,11 +92,12 @@ model Invoice {
   amount             Float
   amountPaid         Float             @default(0)
   amountDue          Float             @default(0)
-  discountPercentage Int               @default(0)
-  taxRate            Int               @default(0)
-  shippingFee        Int               @default(0)
-  serviceCharge      Int               @default(0)
-  miscellaneous      Int               @default(0)
+  discountPercentage Float               @default(0)
+  discountType       DiscountType       @default(PERCENT)
+  taxRate            Float               @default(0)
+  shippingFee        Float               @default(0)
+  serviceCharge      Float               @default(0)
+  miscellaneous      Float               @default(0)
   dateCreated        String
   dueDate            String
   status             String
@@ -108,7 +114,7 @@ model Invoice {
 model InvoiceProducts {
   id        String    @id @unique @default(uuid())
   basePrice Float
-  quantity  Int
+  quantity  Float
   price     Float
   discount  Float     @default(0)
   invoiceId String?

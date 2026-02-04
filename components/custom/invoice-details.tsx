@@ -93,6 +93,10 @@ export const InvoiceDetails = ({
   const [discountPercentage, setDiscountPercentage] = useState(
     String(invoice.discountPercentage || 0),
   );
+  const [discountType, setDiscountType] = useState(
+    invoice.discountType || "PERCENT",
+  );
+
   const [productDiscount, setProductDiscount] = useState<string[]>(
     invoice?.products?.map((p) => String(p.discount)) || [],
   );
@@ -162,6 +166,7 @@ export const InvoiceDetails = ({
     const value = parseFloat(e.target.value);
     setDiscountPercentage(isNaN(value) ? "" : String(value));
   };
+
   const handleTaxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseFloat(e.target.value);
     setTaxRate(isNaN(value) ? "" : String(value));
@@ -394,7 +399,10 @@ export const InvoiceDetails = ({
 
   const calculateTotal = useCallback(() => {
     const subtotal = calculateSubtotal() || 0;
-    const discountAmount = subtotal * ((Number(discountPercentage) || 0) / 100);
+    const discountAmount =
+      discountType === "PERCENT"
+        ? subtotal * ((Number(discountPercentage) || 0) / 100)
+        : Number(discountPercentage) || 0;
     const taxAmount = subtotal * ((Number(taxRate) || 0) / 100);
     return (
       subtotal -
@@ -407,11 +415,19 @@ export const InvoiceDetails = ({
   }, [
     calculateSubtotal,
     discountPercentage,
+    discountType,
     miscellaneous,
     serviceCharge,
     shippingFee,
     taxRate,
   ]);
+
+  const subTotal = calculateSubtotal() || 0;
+
+  const discountAmount =
+    discountType === "PERCENT"
+      ? subTotal * (Number(discountPercentage) / 100)
+      : Number(discountPercentage);
 
   const handleUpdateInvoice = async () => {
     try {
@@ -422,6 +438,7 @@ export const InvoiceDetails = ({
       const currentProducts =
         updatedInvoice.products?.map((product) => ({
           ...product,
+          quantity: product.quantity,
           price:
             product.basePrice *
             product.quantity *
@@ -434,6 +451,7 @@ export const InvoiceDetails = ({
         amountPaid: amountPaid,
         amountDue: amountDue,
         discountPercentage: Number(discountPercentage),
+        discountType: discountType,
         taxRate: Number(taxRate),
         shippingFee: Number(shippingFee),
         serviceCharge: Number(serviceCharge),
@@ -509,12 +527,6 @@ export const InvoiceDetails = ({
     }
   };
 
-  const numberToTrayFraction = (value: number) => {
-    // 0.5 -> "1/2", 1.5 -> "11/2"
-    if (Number.isInteger(value)) return value.toString();
-    return `${Math.floor(value)}1/2`;
-  };
-
   const trayFractionToNumber = (value: string) => {
     // "1/2" -> 0.5, "11/2" -> 1.5
     if (value.includes("1/2")) {
@@ -523,8 +535,6 @@ export const InvoiceDetails = ({
     }
     return parseFloat(value);
   };
-
-  const subTotal = calculateSubtotal() || 0;
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
@@ -923,7 +933,7 @@ export const InvoiceDetails = ({
                                     setNewProducts(updated);
                                   }}
                                   className="col-span-3"
-                                  // step={isTray ? 0.5 : 1}
+                                  step={halfStep ? 0.5 : 1}
                                   min={halfStep ? 0.5 : 1}
                                   // min={0.5}
                                 />
@@ -998,7 +1008,18 @@ export const InvoiceDetails = ({
               <span>{formattedCurrency.format(subTotal)}</span>
             </div>
             <div className="flex justify-between items-center">
-              <span>Discount (%):</span>
+              <span>
+                Discount
+                <select
+                  value={discountType}
+                  onChange={(e) => setDiscountType(e.target.value as any)}
+                  className="border rounded px-2 py-1 ml-2"
+                >
+                  <option value="PERCENT">%</option>
+                  <option value="AMOUNT">$</option>
+                </select>
+                :
+              </span>
               <div className="flex items-center">
                 <Input
                   type="number"
@@ -1006,14 +1027,11 @@ export const InvoiceDetails = ({
                   onChange={handleDiscountChange}
                   className="w-20 mr-2"
                   min="0"
-                  max="100"
-                  step={0.01}
+                  max={discountType === "PERCENT" ? 100 : undefined}
+                  step={discountType === "PERCENT" ? 0.01 : 1}
                 />
-                <span>
-                  {formattedCurrency.format(
-                    subTotal * (Number(discountPercentage) / 100),
-                  )}
-                </span>
+
+                <span>{formattedCurrency.format(discountAmount)}</span>
               </div>
             </div>
             <div className="flex justify-between items-center">

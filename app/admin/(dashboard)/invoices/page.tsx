@@ -62,7 +62,7 @@ import { cn } from "@/lib/utils";
 const InvoiceDetails = lazy(() =>
   import("@/components/custom/invoice-details").then((module) => ({
     default: module.InvoiceDetails,
-  }))
+  })),
 );
 
 // const generatePDF = lazy(() => import("@/lib/invoicePdfGenerate").then(module => ({
@@ -92,6 +92,7 @@ export default function AdminInvoicesPage() {
     amountDue: 0,
     dueDate: "",
     status: "PENDING",
+    discountType: "PERCENT",
   });
 
   const { setIsLoading } = useLoading();
@@ -105,7 +106,7 @@ export default function AdminInvoicesPage() {
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
 
   const [availableProducts, setAvailableProducts] = useState<InvoiceProduct[]>(
-    []
+    [],
   );
   const [searchTerm, setSearchTerm] = useState<string>("");
 
@@ -174,7 +175,7 @@ export default function AdminInvoicesPage() {
 
           // Calculate the maximum amount for the slider
           const maxInvoiceAmount = Math.max(
-            ...data.data.map((invoice: Invoice) => invoice.amount)
+            ...data.data.map((invoice: Invoice) => invoice.amount),
           );
           const roundedMaxAmount = Math.ceil(maxInvoiceAmount / 1000) * 1000; // Round up to the nearest thousand
           setMaxAmount(roundedMaxAmount);
@@ -205,7 +206,7 @@ export default function AdminInvoicesPage() {
             id: product.id,
             name: product.name,
             basePrice: product.price, // Assuming 'price' is the field in the database
-          })
+          }),
         );
         setAvailableProducts(products);
       } catch (error) {
@@ -223,8 +224,8 @@ export default function AdminInvoicesPage() {
     if (searchTerm.trim() !== "") {
       filtered = filtered.filter((invoice) =>
         Object.values(invoice).some((value) =>
-          String(value).toLowerCase().includes(searchTerm.toLowerCase())
-        )
+          String(value).toLowerCase().includes(searchTerm.toLowerCase()),
+        ),
       );
     }
 
@@ -244,7 +245,7 @@ export default function AdminInvoicesPage() {
     // Apply amount range filter
     filtered = filtered.filter(
       (invoice) =>
-        invoice.amount >= amountRange[0] && invoice.amount <= amountRange[1]
+        invoice.amount >= amountRange[0] && invoice.amount <= amountRange[1],
     );
 
     // Apply sorting
@@ -341,6 +342,7 @@ export default function AdminInvoicesPage() {
           amountDue: 0,
           dueDate: "",
           status: "PENDING",
+          discountType: "PERCENT",
         });
         // Close the dialog
         setDialogOpen(false);
@@ -382,15 +384,15 @@ export default function AdminInvoicesPage() {
       // Update the invoices state
       setInvoices((prevInvoices) =>
         prevInvoices.map((inv) =>
-          inv.id === updatedInvoice.id ? updatedData : inv
-        )
+          inv.id === updatedInvoice.id ? updatedData : inv,
+        ),
       );
 
       // Update filtered invoices
       setFilteredInvoices((prevFiltered) =>
         prevFiltered.map((inv) =>
-          inv.id === updatedInvoice.id ? result.data : inv
-        )
+          inv.id === updatedInvoice.id ? result.data : inv,
+        ),
       );
 
       // Update selected invoice if it's the one being edited
@@ -433,7 +435,7 @@ export default function AdminInvoicesPage() {
         blob,
         invoiceName
           ? `${invoiceName}.pdf`
-          : `Invoice_${invoice.invoiceNumber}.pdf`
+          : `Invoice_${invoice.invoiceNumber}.pdf`,
       );
 
       toast.info(`Downloaded Invoice ${invoice.invoiceNumber} successfully`);
@@ -713,7 +715,7 @@ export default function AdminInvoicesPage() {
                             invoice.status === "DUE",
                           "bg-[#fe9e1d] border-[#fe9e1d] hover:bg-[#c6893a]":
                             invoice.status === "PENDING",
-                        }
+                        },
                       )}
                     >
                       {invoice.status}

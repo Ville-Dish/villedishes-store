@@ -1,7 +1,7 @@
-import { NextResponse } from "next/server";
-import prisma from "@/lib/prisma/client";
-import { InvoiceStatus, isValidInvoiceStatus } from "@/lib/invoiceUtils";
 import { generateInvoiceNumber } from "@/lib/invoiceHelperFunction";
+import { InvoiceStatus, isValidInvoiceStatus } from "@/lib/invoiceUtils";
+import prisma from "@/lib/prisma/client";
+import { NextResponse } from "next/server";
 
 // POST method to create a new invoice
 export async function POST(req: Request) {
@@ -27,7 +27,7 @@ export async function POST(req: Request) {
     ) {
       return NextResponse.json(
         { message: "Invalid or missing customer name" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -38,7 +38,7 @@ export async function POST(req: Request) {
     ) {
       return NextResponse.json(
         { message: "Invalid or missing customer email" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -49,14 +49,14 @@ export async function POST(req: Request) {
     ) {
       return NextResponse.json(
         { message: "Invalid or missing customer phone" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     if (!dueDate || typeof dueDate !== "string") {
       return NextResponse.json(
         { message: "Invalid or missing due date" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -64,7 +64,7 @@ export async function POST(req: Request) {
     if (!invoiceNumber || typeof invoiceNumber !== "string") {
       return NextResponse.json(
         { message: "Invalid or missing invoice number" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -72,7 +72,7 @@ export async function POST(req: Request) {
     if (!isValidInvoiceStatus(status)) {
       return NextResponse.json(
         { message: "Invalid invoice status" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -100,7 +100,7 @@ export async function POST(req: Request) {
     console.error("Error Adding Invoice", error);
     return NextResponse.json(
       { message: "Error adding invoice", error },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -120,6 +120,7 @@ export async function PATCH(req: Request) {
       amountPaid,
       amountDue,
       discountPercentage,
+      discountType,
       taxRate,
       shippingFee,
       serviceCharge,
@@ -129,7 +130,7 @@ export async function PATCH(req: Request) {
     if (!id) {
       return NextResponse.json(
         { message: "Invoice ID is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -262,7 +263,7 @@ export async function PATCH(req: Request) {
     if (!updatedInvoice) {
       return NextResponse.json(
         { message: "Invoice not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -275,7 +276,7 @@ export async function PATCH(req: Request) {
     console.error("ERROR: ", error);
     return NextResponse.json(
       { message: "Error updating invoice", error },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -347,6 +348,7 @@ export async function GET() {
           dueDate: invoice.dueDate,
           status: invoice.status,
           discountPercentage: invoice.discountPercentage,
+          discountType: invoice.discountType,
           products: invoice.InvoiceProducts.map((ip) => ({
             id: ip.Product[0]?.id,
             name: ip.Product[0]?.name,
@@ -355,7 +357,7 @@ export async function GET() {
             discount: ip.discount,
           })),
         };
-      })
+      }),
     );
 
     return NextResponse.json({
@@ -367,7 +369,7 @@ export async function GET() {
     console.error("Error retrieving invoices:", error);
     return NextResponse.json(
       { message: "Error retrieving invoices", error },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -389,7 +391,7 @@ export async function DELETE(req: Request) {
   } catch (error) {
     return NextResponse.json(
       { message: "Error deleting invoice", error },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
