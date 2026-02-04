@@ -5,16 +5,18 @@ import { auth } from "@/config/firebase";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useTransition } from "react";
 
 export default function LoginPage() {
-  const [loading, setLoading] = useState(false);
+  // const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [from, setFrom] = useState("");
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
     const fromParam = searchParams.get("from");
@@ -25,49 +27,54 @@ export default function LoginPage() {
 
   const handleLogin = async () => {
     setError("");
-    setLoading(true);
-    try {
-      const userCredential = await signInWithEmailAndPassword(
-        auth,
-        email,
-        password
-      );
-      // New token refresh logic
-      const user = userCredential.user;
-      const currentUser = auth.currentUser;
+    // setLoading(true);
 
-      let token = await user.getIdToken();
-
-      // Force refresh token if possible
-      if (currentUser) {
-        token = await currentUser.getIdToken(true); // Force refresh
-      }
-
-      // Send the token to the server-side route
-      const response = await fetch("/api/set-token", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ token }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(
-          errorData.error || "Failed to set authentication token"
+    startTransition(async () => {
+      try {
+        const userCredential = await signInWithEmailAndPassword(
+          auth,
+          email,
+          password,
         );
-      }
+        // New token refresh logic
+        const user = userCredential.user;
+        const currentUser = auth.currentUser;
 
-      // Redirect the user to the dashboard
-      // router.push("/admin/dashboard");
-      router.push(from || "/admin/dashboard");
-    } catch (error) {
-      console.error("Login failed:", error);
-      setError("Invalid email or password.");
-    } finally {
-      setLoading(false);
-    }
+        let token = await user.getIdToken();
+
+        // Force refresh token if possible
+        if (currentUser) {
+          token = await currentUser.getIdToken(true); // Force refresh
+        }
+
+        // Send the token to the server-side route
+        const response = await fetch("/api/set-token", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ token }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(
+            errorData.error || "Failed to set authentication token",
+          );
+        }
+
+        // Redirect the user to the dashboard
+        // router.push("/admin/dashboard");
+        router.push(from || "/admin/dashboard");
+      } catch (error) {
+        console.error("Login failed:", error);
+        setError("Invalid email or password.");
+      }
+    });
+
+    // finally {
+    //   setLoading(false);
+    // }
   };
 
   return (
@@ -94,6 +101,7 @@ export default function LoginPage() {
               className="w-full h-11 px-4 pt-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1aa879] focus:border-transparent transition-all peer placeholder-transparent"
               placeholder="Email"
               onChange={(e) => setEmail(e.target.value)}
+              disabled={isPending}
             />
             <label
               htmlFor="email"
@@ -109,6 +117,7 @@ export default function LoginPage() {
               type="password"
               id="password"
               value={password}
+              disabled={isPending}
               className="w-full h-11 px-4 pt-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1aa879] focus:border-transparent transition-all peer placeholder-transparent"
               placeholder="Password"
               onChange={(e) => setPassword(e.target.value)}
@@ -127,9 +136,9 @@ export default function LoginPage() {
         <button
           className="w-full bg-[#1aa879] py-3 rounded-md text-white font-semibold hover:bg-[#1cd396] transition-colors duration-200 text-lg"
           onClick={handleLogin}
-          disabled={loading}
+          disabled={isPending}
         >
-          {loading ? "Logging in..." : "Login"}
+          {isPending ? "Logging in..." : "Login"}
         </button>
       </div>
     </div>
