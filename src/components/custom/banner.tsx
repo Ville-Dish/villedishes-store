@@ -7,6 +7,8 @@ type Props = {
   subtitle: string;
   ctaText: string;
   ctaLink: string;
+  extraCtaText?: string;
+  extraCtaLink?: string;
   backgroundImage: string;
 };
 
@@ -15,6 +17,8 @@ export const Banner = ({
   subtitle,
   ctaText,
   ctaLink,
+  extraCtaText,
+  extraCtaLink,
   backgroundImage,
 }: Props) => {
   return (
@@ -32,6 +36,8 @@ export const Banner = ({
               {subtitle}
             </p>
           </div>
+          <div className="flex gap-2">
+            {/* CTA 1 */}
           <Link href={ctaLink}>
             <Button
               className="bg-[#fd9d1c] text-black hover:bg-[#fd9e1d]"
@@ -40,6 +46,18 @@ export const Banner = ({
               {ctaText}
             </Button>
           </Link>
+            {/* CTA 2 */}
+            {extraCtaLink && extraCtaText && (
+          <Link href={extraCtaLink}>
+            <Button
+              className="bg-[#fd9d1c] text-black hover:bg-[#fd9e1d]"
+              size="lg"
+            >
+              {extraCtaText}
+            </Button>
+          </Link>
+            )}
+          </div>
         </div>
       </div>
     </section>

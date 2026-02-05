@@ -1,8 +1,8 @@
 import { OrderList } from "@/components/custom/orders/order-list";
-import { getAuthSession } from "@/lib/session/server-session";
+import { requireAuth } from "@/lib/session/server-session";
 
 const AdminOrdersPage = async () => {
-  await getAuthSession();
+  await requireAuth();
   return <OrderList />;
 };
 

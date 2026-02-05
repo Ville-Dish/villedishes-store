@@ -1,8 +1,8 @@
 import { ProductList } from "@/components/custom/products/product-list";
-import { getAuthSession } from "@/lib/session/server-session";
+import { requireAuth } from "@/lib/session/server-session";
 
 const AdminProductsPage = async () => {
-  await getAuthSession();
+  await requireAuth();
   return <ProductList />;
 };
 

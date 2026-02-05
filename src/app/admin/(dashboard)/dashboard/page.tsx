@@ -1,10 +1,10 @@
 //app/admin/(dashboard)/dashboard/page.tsx
 
 import { AdminDashboard } from "@/components/custom/dashboard/admin-dashboard";
-import { getAuthSession } from "@/lib/session/server-session";
+import { requireAuth } from "@/lib/session/server-session";
 
 const AdminDashboardPage = async () => {
-  await getAuthSession();
+ await requireAuth();
 
   return <AdminDashboard />;
 };

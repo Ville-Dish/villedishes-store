@@ -84,6 +84,8 @@ export const HomeView = () => {
           subtitle="Experience the rich flavors of Nigeria with our delicious meals and desserts"
           ctaText="Order Now"
           ctaLink="/products"
+          extraCtaText="Catering Services"
+          extraCtaLink="/catering"
           backgroundImage="https://res.cloudinary.com/dxt7vk5dg/image/upload/v1743187545/banner-bg_zsu5gn.png"
         />
         <section className="w-full py-12 md:py-24 lg:py-32 bg-gray-100">

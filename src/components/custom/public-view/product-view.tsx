@@ -101,6 +101,8 @@ export const ProductView = () => {
           subtitle="Explore our delicious Nigerian dishes"
           ctaText="Place Order"
           ctaLink="#product-items"
+          extraCtaText="Catering Services"
+          extraCtaLink="/catering"
           backgroundImage="https://res.cloudinary.com/dxt7vk5dg/image/upload/v1743187546/product-banner-bg_qzyrx1.png"
         />
         <section id="product-items" className="w-full py-12 md:py-24 lg:py-32">
