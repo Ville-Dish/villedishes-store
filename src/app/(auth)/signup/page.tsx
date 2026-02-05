@@ -1,7 +1,7 @@
+import Image from "next/image";
+
 import { SignUpForm } from "@/components/signup-form";
 import { requireNoAuth } from "@/lib/session/server-session";
-import Image from "next/image";
-import React from "react";
 
 const SignUpPage = async () => {
   await requireNoAuth();
@@ -14,7 +14,7 @@ const SignUpPage = async () => {
         priority
         width={150}
         height={150}
-        className="mb-4 size-[100px]"
+        className="mb-4 size-25"
       />
       <SignUpForm />
     </div>

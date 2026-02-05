@@ -84,8 +84,10 @@ export const LoginForm = () => {
       <CardContent className="space-y-6">
         {!!error && (
           <Alert className="bg-destructive/10 border-none">
-            <OctagonAlertIcon className="size-4 !text-destructive" />
-            <p className="text-xs break-words !whitespace-normal">{error}</p>
+            <OctagonAlertIcon className="size-4 text-destructive!" />
+            <p className="text-xs wrap-break-word whitespace-normal!">
+              {error}
+            </p>
           </Alert>
         )}
 
@@ -108,7 +110,7 @@ export const LoginForm = () => {
                       disabled={isloading}
                     />
                   </FormControl>
-                  <div className="min-h-[1.25rem]">
+                  <div className="min-h-5">
                     <FormMessage />
                   </div>
                 </FormItem>
@@ -148,7 +150,7 @@ export const LoginForm = () => {
                       </Button>
                     </div>
                   </FormControl>
-                  <div className="min-h-[1.25rem]">
+                  <div className="min-h-5">
                     <FormMessage />
                     <Link
                       href="/"

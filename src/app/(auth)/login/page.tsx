@@ -1,7 +1,7 @@
-import { LoginForm } from "@/components/login-form";
-import { Separator } from "@/components/ui/separator";
-import { requireNoAuth } from "@/lib/session/server-session";
 import Image from "next/image";
+
+import { LoginForm } from "@/components/login-form";
+import { requireNoAuth } from "@/lib/session/server-session";
 
 const LoginPage = async () => {
   await requireNoAuth();
@@ -14,7 +14,7 @@ const LoginPage = async () => {
         priority
         width={200}
         height={200}
-        className="mb-4 size-[200px]"
+        className="mb-4 size-50"
       />
       <LoginForm />
     </div>
