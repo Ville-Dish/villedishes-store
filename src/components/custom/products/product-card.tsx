@@ -27,7 +27,6 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../ui/tabs";
 import RatingReview from "../rating-review";
 
-
 type ProductTabsProps = {
   categories: string[];
   items: MenuItem[];
@@ -198,9 +197,9 @@ export const ProductCard = ({
               {currentItems.map((item, index) => (
                 <Card
                   key={item.id}
-                  className="flex flex-col justify-between overflow-hidden h-[250px] w-full md:w-[245px]"
+                  className="flex flex-col justify-between overflow-hidden h-62.5 w-full md:w-61.25"
                 >
-                  <div className="relative w-full h-[120px]">
+                  <div className="relative w-full h-30">
                     <Image
                       src={
                         item.image ||
@@ -220,7 +219,7 @@ export const ProductCard = ({
                       {item.name}
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="p-2 pt-0 flex-grow">
+                  <CardContent className="p-2 pt-0 grow">
                     <p className="text-sm text-gray-600 line-clamp-2">
                       {item.description}
                     </p>
@@ -281,7 +280,7 @@ export const ProductCard = ({
                       >
                         {page}
                       </Button>
-                    )
+                    ),
                 )}
 
                 {/* Next */}
@@ -306,7 +305,7 @@ export const ProductCard = ({
 const getPaginatedPages = (
   current: number,
   total: number,
-  windowSize: number
+  windowSize: number,
 ) => {
   const pages: (number | "ellipsis")[] = [];
   const first = 1;

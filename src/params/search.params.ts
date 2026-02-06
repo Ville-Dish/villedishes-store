@@ -1,4 +1,4 @@
-import { DEFAULT_PAGE } from "@/src/hooks/use-search";
+import { DEFAULT_PAGE } from "@/hooks/use-search";
 import { parseAsInteger, parseAsString } from "nuqs/server";
 
 export const menuParams = {
