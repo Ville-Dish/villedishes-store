@@ -1,10 +1,10 @@
 import { createAuthClient } from "better-auth/react";
 
-import type { auth } from "@/lib/auth";
 import {
   twoFactorClient,
   inferAdditionalFields,
 } from "better-auth/client/plugins";
+import { auth } from "./auth";
 export const {
   signIn,
   signUp,

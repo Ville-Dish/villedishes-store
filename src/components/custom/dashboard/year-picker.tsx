@@ -21,7 +21,7 @@ export function YearPicker({ selectedYear, onYearChange }: YearPickerProps) {
       value={selectedYear.toString()}
       onValueChange={(value) => onYearChange(parseInt(value))}
     >
-      <SelectTrigger className="w-[180px]">
+      <SelectTrigger className="w-45">
         <SelectValue placeholder="Select year" />
       </SelectTrigger>
       <SelectContent>
