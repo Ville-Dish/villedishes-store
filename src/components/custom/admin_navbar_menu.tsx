@@ -1,6 +1,9 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
+import { Menu } from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
 import {
   Sheet,
   SheetContent,
@@ -8,13 +11,10 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-} from "@/components/ui/sheet";
+} from "../ui/sheet";
+import { Button } from "../ui/button";
 import { adminMenuItems } from "@/lib/constantData";
 import { cn } from "@/lib/utils";
-import { Menu } from "lucide-react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
 
 export const AdminNavbarMenu = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -46,8 +46,8 @@ export const AdminNavbarMenu = () => {
   }) => (
     <Link
       className={cn(
-        "text-lg text-muted-foreground font-semibold hover:text-primary underline-offset-4 relative after:absolute after:bottom-0 after:left-0 after:h-[3px] after:w-0 hover:after:w-full after:bg-primary after:transition-all after:duration-300",
-        pathname === href && "text-primary after:w-full"
+        "text-lg text-muted-foreground font-semibold hover:text-primary underline-offset-4 relative after:absolute after:bottom-0 after:left-0 after:h-0.75 after:w-0 hover:after:w-full after:bg-primary after:transition-all after:duration-300",
+        pathname === href && "text-primary after:w-full",
       )}
       href={href}
       onClick={onClick}

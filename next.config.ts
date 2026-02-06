@@ -16,12 +16,13 @@ const nextConfig: NextConfig = {
         /^node:/,
         (resource: { request: string }) => {
           resource.request = resource.request.replace(/^node:/, "");
-        }
-      )
+        },
+      ),
     );
 
     return config;
   },
+  turbopack: {}, // enable experimental turbopack support
   images: {
     remotePatterns: [
       {

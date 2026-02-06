@@ -33,14 +33,14 @@ const QuarterlyFinancialStatement = lazy(() =>
   import("@/components/custom/dashboard/quarterly-financial").then(
     (module) => ({
       default: module.QuarterlyFinancialStatement,
-    })
-  )
+    }),
+  ),
 );
 
 const AnnualPerformanceReview = lazy(() =>
   import("@/components/custom/dashboard/annual-performance").then((module) => ({
     default: module.AnnualPerformanceReview,
-  }))
+  })),
 );
 
 type MonthlySales = {
@@ -179,15 +179,15 @@ export const ReportsSection = ({ data }: AdminReportProps) => {
                     (quarter) => {
                       const totalRevenue = quarter.monthlyData.reduce(
                         (sum, month) => sum + month.revenue,
-                        0
+                        0,
                       );
                       const totalExpenses = quarter.monthlyData.reduce(
                         (sum, month) => sum + month.expenses,
-                        0
+                        0,
                       );
                       const totalProfit = quarter.monthlyData.reduce(
                         (sum, month) => sum + month.profit,
-                        0
+                        0,
                       );
 
                       const year = parseInt(report.items[0].date);
@@ -222,7 +222,7 @@ export const ReportsSection = ({ data }: AdminReportProps) => {
                               }
                               onOpenChange={(isOpen) =>
                                 setOpenDialog(
-                                  isOpen ? `${index}-${quarter.quarter}` : null
+                                  isOpen ? `${index}-${quarter.quarter}` : null,
                                 )
                               }
                             >
@@ -235,7 +235,7 @@ export const ReportsSection = ({ data }: AdminReportProps) => {
                                   {status === "Completed" ? "View" : "Preview"}
                                 </Button>
                               </DialogTrigger>
-                              <DialogContent className="max-w-4xl w-full max-h-[100vh]">
+                              <DialogContent className="max-w-4xl w-full max-h-screen">
                                 <DialogHeader>
                                   <DialogTitle>
                                     Q{quarter.quarter} {report.items[0].date}{" "}
@@ -261,7 +261,7 @@ export const ReportsSection = ({ data }: AdminReportProps) => {
                                           expenseBreakdown={[
                                             report.items[0].quarterlyReport?.expenseBreakdown.find(
                                               (e) =>
-                                                e.quarter === quarter.quarter
+                                                e.quarter === quarter.quarter,
                                             ) || {
                                               quarter: quarter.quarter,
                                               data: [],
@@ -277,7 +277,7 @@ export const ReportsSection = ({ data }: AdminReportProps) => {
                           </TableCell>
                         </TableRow>
                       );
-                    }
+                    },
                   )}
                 </TableBody>
               </Table>
@@ -300,7 +300,7 @@ export const ReportsSection = ({ data }: AdminReportProps) => {
                           open={openDialog === `${index}-${itemIndex}`}
                           onOpenChange={(isOpen) =>
                             setOpenDialog(
-                              isOpen ? `${index}-${itemIndex}` : null
+                              isOpen ? `${index}-${itemIndex}` : null,
                             )
                           }
                         >
@@ -313,7 +313,7 @@ export const ReportsSection = ({ data }: AdminReportProps) => {
                               {item.status === "Completed" ? "View" : "Preview"}
                             </Button>
                           </DialogTrigger>
-                          <DialogContent className="max-w-4xl w-full max-h-[100vh]">
+                          <DialogContent className="max-w-4xl w-full max-h-screen">
                             <DialogHeader>
                               <DialogTitle>
                                 {report.type} - {item.date}

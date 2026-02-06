@@ -41,7 +41,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
     <div>
       <div className="mb-4 flex items-center gap-4">
         {value && (
-          <div className="relative w-[200px] h-[200px]">
+          <div className="relative w-50 h-50">
             <div className="absolute top-0 right-0 z-10">
               <Button
                 type="button"

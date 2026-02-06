@@ -43,7 +43,7 @@ export function MonthYearPicker({
         value={selectedMonth.toString()}
         onValueChange={(value) => onMonthChange(parseInt(value))}
       >
-        <SelectTrigger className="w-[180px]">
+        <SelectTrigger className="w-45">
           <SelectValue placeholder="Select month" />
         </SelectTrigger>
         <SelectContent>
@@ -58,7 +58,7 @@ export function MonthYearPicker({
         value={selectedYear.toString()}
         onValueChange={(value) => onYearChange(parseInt(value))}
       >
-        <SelectTrigger className="w-[120px]">
+        <SelectTrigger className="w-30">
           <SelectValue placeholder="Select year" />
         </SelectTrigger>
         <SelectContent>

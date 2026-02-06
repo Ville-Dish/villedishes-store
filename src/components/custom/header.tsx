@@ -15,7 +15,7 @@ export const Header = ({ show }: { show: boolean }) => {
   const router = useRouter();
   return (
     <div className="flex items-center justify-between px-4 my-4">
-      <div className="flex-shrink-0">
+      <div className="shrink-0">
         <Link href={show ? "/" : "/admin/dashboard"}>
           <Image
             src="https://res.cloudinary.com/dxt7vk5dg/image/upload/v1743187507/ville-logo_mkhrsj.svg"
@@ -23,16 +23,16 @@ export const Header = ({ show }: { show: boolean }) => {
             width={100}
             height={50}
             priority
-            className="w-[100px] h-[50px]"
+            className="w-25 h-12.5"
           />
         </Link>
       </div>
       <div className="flex items-center flex-row-reverse md:flex-1 md:flex-row">
-        <div className="flex-grow flex justify-center">
+        <div className="grow flex justify-center">
           {show ? <NavbarMenu /> : <AdminNavbarMenu />}
         </div>
 
-        <div className="flex-shrink-0">
+        <div className="shrink-0">
           {show ? (
             <div className="flex items-center space-x-2">
               <Button
