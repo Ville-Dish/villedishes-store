@@ -46,9 +46,6 @@ next-env.d.ts
 # text
 *.txt
 
-# Json
-ville-dishes-firebase-adminsdk-srwmr-d4e93b106b.json
-
 # prisma
 /prisma/seed.ts
 /prisma/sqlite-seed.ts
