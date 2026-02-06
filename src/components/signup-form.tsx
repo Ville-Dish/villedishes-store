@@ -80,9 +80,7 @@ export const SignUpForm = () => {
       console.log("Sign up successful");
       const result = await signUpAction(validatedFields.data);
       if (result.success) {
-        toast.success(
-          "Registration successful! Please verify your email before logging in."
-        );
+        toast.success("Registration successful! Please login.");
         router.push("/login");
       }
     } catch (error) {
@@ -140,7 +138,7 @@ export const SignUpForm = () => {
                         disabled={loading}
                       />
                     </FormControl>
-                    <div className="min-h-[1.25rem]">
+                    <div className="min-h-5">
                       <FormMessage />
                     </div>
                   </FormItem>
@@ -162,7 +160,7 @@ export const SignUpForm = () => {
                         disabled={loading}
                       />
                     </FormControl>
-                    <div className="min-h-[1.25rem]">
+                    <div className="min-h-5">
                       <FormMessage />
                     </div>
                   </FormItem>
@@ -188,7 +186,7 @@ export const SignUpForm = () => {
                         disabled={loading}
                       />
                     </FormControl>
-                    <div className="min-h-[1.25rem]">
+                    <div className="min-h-5">
                       <FormMessage />
                     </div>
                   </FormItem>
@@ -213,7 +211,7 @@ export const SignUpForm = () => {
                           disabled={loading}
                         />
                       </FormControl>
-                      <div className="min-h-[1.25rem]">
+                      <div className="min-h-5">
                         <FormMessage />
                       </div>
                     </FormItem>
@@ -264,7 +262,7 @@ export const SignUpForm = () => {
                       </div>
                     )}
 
-                    <div className="min-h-[1.25rem]">
+                    <div className="min-h-5">
                       <FormMessage />
                     </div>
                   </FormItem>
@@ -306,7 +304,7 @@ export const SignUpForm = () => {
                         </Button>
                       </div>
                     </FormControl>
-                    <div className="min-h-[1.25rem]">
+                    <div className="min-h-5">
                       <FormMessage />
                     </div>
                   </FormItem>
@@ -373,12 +371,12 @@ export const SignupFormSkeleton = () => {
             <div className="space-y-2">
               <Skeleton className="size-24" /> {/* Label */}
               <Skeleton className="h-10 w-full" /> {/* Input */}
-              <div className="min-h-[1.25rem]" />
+              <div className="min-h-5" />
             </div>
             <div className="space-y-2">
               <Skeleton className="size-24" />
               <Skeleton className="h-10 w-full" />
-              <div className="min-h-[1.25rem]" />
+              <div className="min-h-5" />
             </div>
           </div>
 
@@ -387,12 +385,12 @@ export const SignupFormSkeleton = () => {
             <div className="space-y-2">
               <Skeleton className="h-4 w-32" />
               <Skeleton className="h-10 w-full" />
-              <div className="min-h-[1.25rem]" />
+              <div className="min-h-5" />
             </div>
             <div className="space-y-2">
               <Skeleton className="h-4 w-28" />
               <Skeleton className="h-10 w-full" />
-              <div className="min-h-[1.25rem]" />
+              <div className="min-h-5" />
             </div>
           </div>
 
@@ -401,12 +399,12 @@ export const SignupFormSkeleton = () => {
             <div className="space-y-2">
               <Skeleton className="h-4 w-20" />
               <Skeleton className="h-10 w-full" />
-              <div className="min-h-[1.25rem]" />
+              <div className="min-h-5" />
             </div>
             <div className="space-y-2">
               <Skeleton className="h-4 w-36" />
               <Skeleton className="h-10 w-full" />
-              <div className="min-h-[1.25rem]" />
+              <div className="min-h-5" />
             </div>
           </div>
 

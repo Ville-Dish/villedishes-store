@@ -10,8 +10,9 @@
     "generate": "bun prisma generate",
     "push": "bun prisma db push",
     "prisma:studio": "prisma studio",
-    "preview-email": "bun --bun email dev",
-    "generate-data": "ts-node --compiler-options \"{\\\"module\\\":\\\"CommonJS\\\"}\" lib/db/generateData.ts"
+    "preview-email": "bun email dev --port 3001",
+    "generate-data": "ts-node --compiler-options \"{\\\"module\\\":\\\"CommonJS\\\"}\" lib/db/generateData.ts",
+    "dev:all": "mprocs"
   },
   "dependencies": {
     "@faker-js/faker": "^10.2.0",
@@ -58,6 +59,7 @@
     "jspdf": "^4.1.0",
     "jspdf-autotable": "^5.0.7",
     "lucide-react": "^0.563.0",
+    "mprocs": "^0.8.3",
     "next": "16.1.6",
     "next-cloudinary": "^6.17.5",
     "next-themes": "^0.4.6",

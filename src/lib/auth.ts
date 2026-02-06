@@ -16,6 +16,7 @@ const options = {
     enabled: true,
     autoSignIn: false,
     minPasswordLength: 8,
+    requireEmailVerification: false,
   },
   database: prismaAdapter(prisma, {
     provider: "postgresql",

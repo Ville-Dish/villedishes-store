@@ -71,13 +71,13 @@ const CateringTemplate = ({
                   Menu List
                 </Heading>
                 {menuList.map((menu, index) => (
-                  <Section key={index} className="mb-[36px]">
-                    <div className="mr-[32px] ml-[12px] inline-flex items-start">
-                      <div className="mr-[18px] flex h-[24px] w-[24px] shrink-0 items-center justify-center rounded-full bg-[#f5ad07] font-semibold text-white text-[12px] leading-none"></div>
+                  <Section key={index} className="mb-9">
+                    <div className="mr-8 ml-3 inline-flex items-start">
+                      <div className="mr-4.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#f5ad07] font-semibold text-white text-[12px] leading-none"></div>
                       <div>
                         <Heading
                           as="h5"
-                          className="mt-[0px] mb-[4px] text-gray-900 text-[12px] leading-[28px]"
+                          className="mt-0 mb-1 text-gray-900 text-[12px] leading-7"
                         >
                           {menu}
                         </Heading>
