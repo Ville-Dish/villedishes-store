@@ -17,3 +17,23 @@ export const productSchema = z.object({
 });
 
 export type ProductSchema = z.infer<typeof productSchema>;
+
+export const testimonialSchema = z
+  .object({
+    // id: z.string().uuid().optional(),
+    comment: z
+      .string()
+      .min(1, "Comment is required")
+      .max(1000, "Comment is too long"),
+    isAnonymous: z.boolean(),
+    authorName: z.string().optional(),
+    isApproved: z.boolean().optional(),
+    createdAt: z.date().optional(),
+    updatedAt: z.date().optional(),
+  })
+  .refine((data) => !data.isAnonymous || !data.authorName, {
+    message: "Author name must be empty when anonymous",
+    path: ["authorName"],
+  });
+
+export type TestimonialSchema = z.infer<typeof testimonialSchema>;

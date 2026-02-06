@@ -66,7 +66,8 @@ export const ModelName = {
   Expense: 'Expense',
   Income: 'Income',
   Revenue: 'Revenue',
-  MonthlyProjection: 'MonthlyProjection'
+  MonthlyProjection: 'MonthlyProjection',
+  Testimonial: 'Testimonial'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -301,6 +302,19 @@ export const MonthlyProjectionScalarFieldEnum = {
 } as const
 
 export type MonthlyProjectionScalarFieldEnum = (typeof MonthlyProjectionScalarFieldEnum)[keyof typeof MonthlyProjectionScalarFieldEnum]
+
+
+export const TestimonialScalarFieldEnum = {
+  id: 'id',
+  comment: 'comment',
+  isAnonymous: 'isAnonymous',
+  authorName: 'authorName',
+  isApproved: 'isApproved',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type TestimonialScalarFieldEnum = (typeof TestimonialScalarFieldEnum)[keyof typeof TestimonialScalarFieldEnum]
 
 
 export const SortOrder = {

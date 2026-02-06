@@ -5,6 +5,8 @@ import { ProductCard } from "@/components/custom/products/product-card";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { testimonials } from "@/lib/constantData";
+import { useTRPC } from "@/trpc/client";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { ChefHat, Clock, Rabbit, Truck } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -36,12 +38,17 @@ const RenderNoProductsFound = ({ products }: { products: MenuItem[] }) => (
 );
 
 export const HomeView = () => {
+  const trpc = useTRPC();
   const [activeCategory, setActiveCategory] = useState("All");
   const [loading, setLoading] = useState<boolean>(true);
   const [loadingProducts, setLoadingProducts] = useState<boolean>(true);
 
   const [filteredItems, setFilteredItems] = useState<MenuItem[]>([]);
   const [categories, setCategories] = useState<string[]>(["All"]);
+
+  const { data: testimonials, isLoading } = useSuspenseQuery(
+    trpc.testimonials.getTestimonials.queryOptions(),
+  );
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -169,12 +176,12 @@ export const HomeView = () => {
             </h2>
             <div className="grid gap-6 lg:grid-cols-2 lg:gap-12">
               {testimonials.map((testimonial) => (
-                <Card key={testimonial.name}>
+                <Card key={testimonial.id}>
                   <CardContent className="pt-6">
                     <p className="mb-4 italic">
-                      &quot;{testimonial.quote}&quot;
+                      &quot;{testimonial.comment}&quot;
                     </p>
-                    <p className="font-bold">- {testimonial.name}</p>
+                    <p className="font-bold">- {testimonial.authorName}</p>
                   </CardContent>
                 </Card>
               ))}
@@ -184,4 +191,4 @@ export const HomeView = () => {
       </main>
     </div>
   );
-}
+};

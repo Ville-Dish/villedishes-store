@@ -97,3 +97,8 @@ export type Revenue = Prisma.RevenueModel
  * 
  */
 export type MonthlyProjection = Prisma.MonthlyProjectionModel
+/**
+ * Model Testimonial
+ * 
+ */
+export type Testimonial = Prisma.TestimonialModel
