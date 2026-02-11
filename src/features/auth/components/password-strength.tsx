@@ -29,7 +29,7 @@ export const PasswordStrength = ({ strength }: { strength: PasswordScore }) => {
   const gradient = useTransform(
     hue,
     (h) =>
-      `linear-gradient(90deg, hsl(${Math.max(h - 20, 0)}, 90%, 45%), hsl(${h}, 90%, 45%))`
+      `linear-gradient(90deg, hsl(${Math.max(h - 20, 0)}, 90%, 45%), hsl(${h}, 90%, 45%))`,
   );
 
   // Use same color for text label

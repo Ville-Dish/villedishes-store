@@ -12,7 +12,7 @@ import { passwordStrength } from "@/lib/utils";
 
 import { toast } from "sonner";
 
-import { PasswordStrength } from "@/components/password-strength";
+import { PasswordStrength } from "@/features/auth/components/password-strength";
 
 import { Button } from "@/components/ui/button";
 import {

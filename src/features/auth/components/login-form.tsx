@@ -23,7 +23,6 @@ import { toast } from "sonner";
 import { loginSchema, LoginSchema } from "@/lib/schemas/authSchema";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Alert } from "./ui/alert";
 import {
   EyeClosedIcon,
   EyeIcon,
@@ -33,8 +32,13 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { signInAction } from "@/actions/authActions";
+import { Alert } from "@/components/ui/alert";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useTRPC } from "@/trpc/client";
 
 export const LoginForm = () => {
+  const queryClient = useQueryClient();
+  const trpc = useTRPC();
   const router = useRouter();
 
   const [showPassword, setShowPassword] = useState(false);
@@ -51,9 +55,21 @@ export const LoginForm = () => {
     },
   });
 
+  const login = useMutation(
+    trpc.auth.login.mutationOptions({
+      onSuccess: async () => {
+        toast.success("Login Successful");
+        router.push("/admin/dashboard");
+      },
+      onError: (error) => {
+        setError(error.message);
+        toast.error("An error occurred during login");
+      },
+    }),
+  );
+
   const onSubmit = async (values: LoginSchema) => {
     setError(null);
-    setIsLoading(true);
     const validatedFields = loginSchema.safeParse(values);
 
     if (!validatedFields.success) {
@@ -61,20 +77,11 @@ export const LoginForm = () => {
       return;
     }
 
-    // const { email, password } = validatedFields.data;
-    try {
-      const result = await signInAction(validatedFields.data);
-      if (result.success) {
-        toast.success("Login Successful");
-        router.push("/admin/dashboard");
-      }
-    } catch (error) {
-      console.error("Login failed:", error);
-      toast.error("Invalid email or password.");
-    } finally {
-      setIsLoading(false);
-    }
+    const { email, password } = validatedFields.data;
+
+    login.mutate({ email, password });
   };
+
   return (
     <Card className="w-full max-w-md shadow-lg">
       <CardHeader className="space-y-2 text-center">

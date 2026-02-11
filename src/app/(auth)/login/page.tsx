@@ -1,7 +1,7 @@
 import Image from "next/image";
 
-import { LoginForm } from "@/components/login-form";
 import { requireNoAuth } from "@/lib/session/server-session";
+import { LoginForm } from "@/features/auth/components/login-form";
 
 const LoginPage = async () => {
   await requireNoAuth();
