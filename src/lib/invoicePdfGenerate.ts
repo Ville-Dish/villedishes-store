@@ -1,5 +1,16 @@
 import { formattedCurrency, logoImageData } from "@/lib/utils";
 
+const formatQuantity = (qty: number): string => {
+  const whole = Math.floor(qty);
+  const decimal = qty - whole;
+
+  if (decimal === 0) return whole.toString();
+  if (decimal === 0.5) return whole === 0 ? "½" : `${whole}½`;
+
+  // Fallback for other decimals
+  return qty.toString();
+};
+
 export const createInvoicePDF = async (data: Invoice): Promise<Uint8Array> => {
   try {
     // Import jsPDF (named export)
@@ -26,7 +37,7 @@ export const createInvoicePDF = async (data: Invoice): Promise<Uint8Array> => {
       title: string,
       content: () => void,
       width: number,
-      height: number
+      height: number,
     ) => {
       if (yPosition + height > pageHeight - 40) {
         doc.addPage();
@@ -153,29 +164,29 @@ export const createInvoicePDF = async (data: Invoice): Promise<Uint8Array> => {
         doc.text(
           formattedCurrency.format(data.amount),
           valueX + columnWidth,
-          yPosition + 40
+          yPosition + 40,
         );
         addBoldText("Paid:", labelX + columnWidth, yPosition + 60);
         doc.text(
           formattedCurrency.format(data.amountPaid),
           valueX + columnWidth,
-          yPosition + 60
+          yPosition + 60,
         );
         addBoldText("Due:", labelX + columnWidth, yPosition + 80);
         doc.text(
           formattedCurrency.format(data.amountDue),
           valueX + columnWidth,
-          yPosition + 80
+          yPosition + 80,
         );
       },
       pageWidth - 60,
-      120
+      120,
     );
 
     // Product Details (optimized)
     if (data.products && data.products.length > 0) {
       const allDiscountsZero = data.products.every(
-        (product) => product.discount === 0
+        (product) => product.discount === 0,
       );
       const tableColumn = [
         "S/N",
@@ -201,7 +212,7 @@ export const createInvoicePDF = async (data: Invoice): Promise<Uint8Array> => {
           index + 1,
           product.name,
           product.basePrice.toFixed(2),
-          product.quantity,
+          formatQuantity(product.quantity),
           ...(allDiscountsZero ? [] : [product.discount]),
           totalCell,
           originalTotal,
@@ -272,7 +283,7 @@ export const createInvoicePDF = async (data: Invoice): Promise<Uint8Array> => {
             originalX,
             originalY - 3,
             originalX + originalWidth,
-            originalY - 3
+            originalY - 3,
           );
 
           // restore styles
@@ -309,10 +320,14 @@ export const createInvoicePDF = async (data: Invoice): Promise<Uint8Array> => {
         }, 0);
 
         const discountPercentage = data.discountPercentage || 0;
+        const discountType = data.discountType || "PERCENT";
         const taxRate = data.taxRate || 0;
         const shippingFee = data.shippingFee || 0;
 
-        const discountAmount = subtotal * (discountPercentage / 100);
+        const discountAmount =
+          discountType === "PERCENT"
+            ? subtotal * (discountPercentage / 100)
+            : discountPercentage;
         const taxAmount = subtotal * (taxRate / 100);
         const total = subtotal - discountAmount + taxAmount + shippingFee;
 
@@ -320,7 +335,7 @@ export const createInvoicePDF = async (data: Invoice): Promise<Uint8Array> => {
           label: string,
           value: string,
           y: number,
-          isBold = false
+          isBold = false,
         ) => {
           if (isBold) doc.setFont("helvetica", "bold");
           doc.text(label, 40, y);
@@ -333,27 +348,27 @@ export const createInvoicePDF = async (data: Invoice): Promise<Uint8Array> => {
         addSummaryRow(
           "Discount (on subtotal):",
           `$${discountAmount.toFixed(2)}`,
-          yPosition + 40 + lineHeight
+          yPosition + 40 + lineHeight,
         );
         addSummaryRow(
           "Tax:",
           `$${taxAmount.toFixed(2)}`,
-          yPosition + 40 + lineHeight * 2
+          yPosition + 40 + lineHeight * 2,
         );
         addSummaryRow(
           "Shipping Fee:",
           `$${shippingFee.toFixed(2)}`,
-          yPosition + 40 + lineHeight * 3
+          yPosition + 40 + lineHeight * 3,
         );
         addSummaryRow(
           "Total:",
           `$${total.toFixed(2)}`,
           yPosition + 40 + lineHeight * 4,
-          true
+          true,
         );
       },
       pageWidth - 60,
-      140
+      140,
     );
 
     // Footer (optimized)
@@ -374,7 +389,7 @@ export const createInvoicePDF = async (data: Invoice): Promise<Uint8Array> => {
 };
 
 export const createInvoicePDFPreview = async (
-  data: Invoice
+  data: Invoice,
 ): Promise<string> => {
   try {
     const pdfData = await createInvoicePDF(data);

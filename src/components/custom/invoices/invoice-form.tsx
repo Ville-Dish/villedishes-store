@@ -38,9 +38,13 @@ import { toast } from "sonner";
 
 interface InvoiceFormProps {
   setDialog: (value: boolean) => void;
+  setSelectedInvoice: (data: Invoice | null) => void;
 }
 
-export const InvoiceForm = ({ setDialog }: InvoiceFormProps) => {
+export const InvoiceForm = ({
+  setDialog,
+  setSelectedInvoice,
+}: InvoiceFormProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const form = useForm<CreateInvoiceSchema>({
     resolver: zodResolver(createInvoiceSchema),
@@ -61,7 +65,7 @@ export const InvoiceForm = ({ setDialog }: InvoiceFormProps) => {
 
     if (!validatedFields.success) {
       toast.error(
-        validatedFields.error.message || "Please fill in all required fields"
+        validatedFields.error.message || "Please fill in all required fields",
       );
       return;
     }
@@ -85,10 +89,13 @@ export const InvoiceForm = ({ setDialog }: InvoiceFormProps) => {
       }
 
       toast.success(
-        "Invoice created successfully! Complete the invoice in Invoice Details"
+        "Invoice created successfully! Complete the invoice in Invoice Details",
       );
       form.reset();
       setDialog(false);
+
+      // Open the edit invoice
+      setSelectedInvoice(result.data);
     } catch (error) {
       toast.error("An unexpected error occurred. Please try again.");
       console.error("Error creating invoice:", error);
@@ -98,7 +105,7 @@ export const InvoiceForm = ({ setDialog }: InvoiceFormProps) => {
   };
 
   return (
-    <Card>
+    <Card className="overflow-y-auto">
       <CardHeader>
         <CardTitle className="text-lg">Invoice Form</CardTitle>
         <CardDescription>
@@ -231,14 +238,14 @@ export const InvoiceForm = ({ setDialog }: InvoiceFormProps) => {
                               variant={"outline"}
                               className={cn(
                                 "w-full pl-3 text-left font-normal",
-                                !field.value && "text-muted-foreground"
+                                !field.value && "text-muted-foreground",
                               )}
                             >
                               {field.value ? (
                                 format(
                                   // new Date(field.value),
-                                  new Date(formatDate(new Date(field.value))),
-                                  "PPP"
+                                  new Date(Date.now()),
+                                  "PPP",
                                 )
                               ) : (
                                 <span>Select a date</span>
@@ -287,7 +294,7 @@ export const InvoiceForm = ({ setDialog }: InvoiceFormProps) => {
                 disabled={isLoading || !form.formState.isDirty}
               >
                 {isLoading && <Loader2Icon className="size-4 animate-spin" />}
-                {isLoading ?? "Creating Request..."}
+                {isLoading ? "Creating Invoice..." : "Create Invoice"}
               </Button>
             </div>
           </form>

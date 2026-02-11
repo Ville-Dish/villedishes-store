@@ -44,9 +44,9 @@ import Image from "next/image";
 import {
   CheckIcon,
   ChevronsUpDownIcon,
-  Edit,
-  Loader,
-  Trash2,
+  EditIcon,
+  LoaderIcon,
+  Trash2Icon,
 } from "lucide-react";
 
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -56,6 +56,16 @@ import { InvoiceStatus, isValidInvoiceStatus } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+import { MixedFraction } from "./fractions";
+
+const allowsHalfQuantity = (productName?: string, popoverOpen?: boolean) => {
+  if (!productName || popoverOpen) return false;
+
+  return (
+    productName.toLowerCase().includes("tray") ||
+    /\b\d+(\.\d+)?\s?(l|ml)\b/i.test(productName)
+  );
+};
 
 export const InvoiceDetails = ({
   invoice,
@@ -80,33 +90,36 @@ export const InvoiceDetails = ({
     number | null
   >(null);
   const [editingProductIndex, setEditingProductIndex] = useState<number | null>(
-    null
+    null,
   );
   const [discountPercentage, setDiscountPercentage] = useState(
-    String(invoice.discountPercentage || 0)
+    String(invoice.discountPercentage || 0),
+  );
+  const [discountType, setDiscountType] = useState(
+    invoice.discountType || "PERCENT",
   );
   const [productDiscount, setProductDiscount] = useState<string[]>(
-    invoice?.products?.map((p) => String(p.discount)) || []
+    invoice?.products?.map((p) => String(p.discount)) || [],
   );
   const [sending, setSending] = useState(false);
   const [updating, setUpdating] = useState(false);
   const [taxRate, setTaxRate] = useState(String(invoice.taxRate || 0)); // Default tax rate
   const [shippingFee, setShippingFee] = useState(
-    String(invoice.shippingFee || 0)
+    String(invoice.shippingFee || 0),
   ); // Default shipping fee
   const [invoiceAmount, setInvoiceAmount] = useState(invoice.amount || 0);
   const [amountPaid, setAmountPaid] = useState(invoice.amountPaid || 0);
   const [amountDue, setAmountDue] = useState(
-    invoice.amount - (invoice.amountPaid || 0)
+    invoice.amount - (invoice.amountPaid || 0),
   );
   const [filteredProducts, setFilteredProducts] = useState(availableProducts);
   const [searchTerm, setSearchTerm] = useState("");
 
   const [serviceCharge, setServiceCharge] = useState(
-    String(invoice.serviceCharge || 0)
+    String(invoice.serviceCharge || 0),
   );
   const [miscellaneous, setMiscellaneous] = useState(
-    String(invoice.miscellaneous || 0)
+    String(invoice.miscellaneous || 0),
   );
 
   useEffect(() => {
@@ -140,7 +153,7 @@ export const InvoiceDetails = ({
 
   useEffect(() => {
     const filtered = availableProducts.filter((product) =>
-      product.name.toLowerCase().includes(searchTerm.toLowerCase())
+      product.name.toLowerCase().includes(searchTerm.toLowerCase()),
     );
     setFilteredProducts(filtered);
   }, [searchTerm, availableProducts]);
@@ -164,14 +177,14 @@ export const InvoiceDetails = ({
   };
 
   const handleServiceChargeChange = (
-    e: React.ChangeEvent<HTMLInputElement>
+    e: React.ChangeEvent<HTMLInputElement>,
   ) => {
     const value = parseFloat(e.target.value);
     setServiceCharge(isNaN(value) ? "" : String(value));
   };
 
   const handleMiscellaneousChange = (
-    e: React.ChangeEvent<HTMLInputElement>
+    e: React.ChangeEvent<HTMLInputElement>,
   ) => {
     const value = parseFloat(e.target.value);
     setMiscellaneous(isNaN(value) ? "" : String(value));
@@ -213,7 +226,7 @@ export const InvoiceDetails = ({
   const handleProductChange = (
     index: number,
     field: string,
-    value: string | number
+    value: string | number,
   ) => {
     const updatedProducts = updatedInvoice.products
       ? [...updatedInvoice.products]
@@ -266,18 +279,18 @@ export const InvoiceDetails = ({
 
     validProducts.forEach((newProduct) => {
       const selectedProduct = availableProducts.find(
-        (p) => p.id === newProduct.id
+        (p) => p.id === newProduct.id,
       );
       if (selectedProduct) {
         // const updatedProducts = updatedInvoice.products ? [...updatedInvoice.products] : [];
 
         const existingProductIndex = updatedProducts.findIndex(
-          (p) => p.id === selectedProduct.id
+          (p) => p.id === selectedProduct.id,
         );
         if (existingProductIndex !== -1) {
           updatedProducts[existingProductIndex].quantity += newProduct.quantity;
           updatedProducts[existingProductIndex].discount = Number(
-            productDiscount[existingProductIndex]
+            productDiscount[existingProductIndex],
           );
           updatedProducts[existingProductIndex].price =
             updatedProducts[existingProductIndex].basePrice *
@@ -380,13 +393,16 @@ export const InvoiceDetails = ({
         product.basePrice *
           product.quantity *
           (1 - (product.discount || 0) / 100),
-      0
+      0,
     );
   }, [updatedInvoice]);
 
   const calculateTotal = useCallback(() => {
     const subtotal = calculateSubtotal() || 0;
-    const discountAmount = subtotal * ((Number(discountPercentage) || 0) / 100);
+    const discountAmount =
+      discountType === "PERCENT"
+        ? subtotal * ((Number(discountPercentage) || 0) / 100)
+        : Number(discountPercentage) || 0;
     const taxAmount = subtotal * ((Number(taxRate) || 0) / 100);
     return (
       subtotal -
@@ -399,11 +415,19 @@ export const InvoiceDetails = ({
   }, [
     calculateSubtotal,
     discountPercentage,
+    discountType,
     miscellaneous,
     serviceCharge,
     shippingFee,
     taxRate,
   ]);
+
+  const subTotal = calculateSubtotal() || 0;
+
+  const discountAmount =
+    discountType === "PERCENT"
+      ? subTotal * (Number(discountPercentage) / 100)
+      : Number(discountPercentage);
 
   const handleUpdateInvoice = async () => {
     try {
@@ -414,6 +438,7 @@ export const InvoiceDetails = ({
       const currentProducts =
         updatedInvoice.products?.map((product) => ({
           ...product,
+          quantity: product.quantity,
           price:
             product.basePrice *
             product.quantity *
@@ -426,6 +451,7 @@ export const InvoiceDetails = ({
         amountPaid: amountPaid,
         amountDue: amountDue,
         discountPercentage: Number(discountPercentage),
+        discountType: discountType,
         taxRate: Number(taxRate),
         shippingFee: Number(shippingFee),
         serviceCharge: Number(serviceCharge),
@@ -501,7 +527,15 @@ export const InvoiceDetails = ({
     }
   };
 
-  const subTotal = calculateSubtotal() || 0;
+  const trayFractionToNumber = (value: string) => {
+    // "1/2" => 0.5, "11/2" => 1.5
+    if (value.includes("1/2")) {
+      const whole = parseInt(value.replace("1/2", ""), 10);
+      return isNaN(whole) ? 0.5 : whole + 0.5;
+    }
+
+    return parseFloat(value);
+  };
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
@@ -688,7 +722,9 @@ export const InvoiceDetails = ({
                         <TableCell>{index + 1}</TableCell>
                         <TableCell>{product.name}</TableCell>
                         <TableCell>{product.basePrice.toFixed(2)}</TableCell>
-                        <TableCell>{product.quantity}</TableCell>
+                        <TableCell>
+                          <MixedFraction value={product.quantity} />
+                        </TableCell>
                         <TableCell>
                           <Input
                             type="number"
@@ -697,7 +733,7 @@ export const InvoiceDetails = ({
                               handleProductChange(
                                 index,
                                 "discount",
-                                e.target.value
+                                e.target.value,
                               )
                             }
                             className="w-16"
@@ -718,14 +754,14 @@ export const InvoiceDetails = ({
                             size="sm"
                             onClick={() => startEditingProduct(index)}
                           >
-                            <Edit className="h-4 w-4" />
+                            <EditIcon className="size-4" />
                           </Button>
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => removeProduct(index)}
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2Icon className="size-4" />
                           </Button>
                         </TableCell>
                       </TableRow>
@@ -758,156 +794,180 @@ export const InvoiceDetails = ({
                 </DialogTitle>
               </DialogHeader>
               <div className="grid gap-4 py-4 pt-8">
-                <ScrollArea className="max-h-[400px] pr-4">
+                <ScrollArea className="max-h-100 pr-4">
                   <div className="space-y-4">
-                    {newProducts.map((product, index) => (
-                      <div
-                        key={index}
-                        className={cn(
-                          "space-y-4 border-b border-input py-4",
-                          newProducts.length === 1 && "pr-2"
-                        )}
-                      >
-                        <div className="flex justify-between items-start">
-                          <div className="flex-1 space-y-2">
-                            <div className="grid grid-cols-4 items-center gap-4">
-                              <Label
-                                htmlFor={`product-${index}`}
-                                className="text-right"
-                              >
-                                Product {index + 1}
-                              </Label>
-                              <Popover
-                                open={isOpen && selectedProductIndex === index}
-                                onOpenChange={(open) => {
-                                  setIsOpen(open);
-                                  if (open) {
-                                    setSelectedProductIndex(index);
-                                  } else {
-                                    setSelectedProductIndex(null);
+                    {newProducts.map((product, index) => {
+                      const selectedProduct = filteredProducts.find(
+                        (p) => p.id === selectedProductIds[index],
+                      );
+
+                      const halfStep = allowsHalfQuantity(
+                        selectedProduct?.name,
+                        isOpen,
+                      );
+
+                      return (
+                        <div
+                          key={index}
+                          className={cn(
+                            "space-y-4 border-b border-input py-4",
+                            newProducts.length === 1 && "pr-2",
+                          )}
+                        >
+                          <div className="flex justify-between items-start">
+                            <div className="flex-1 space-y-2">
+                              <div className="grid grid-cols-4 items-center gap-4">
+                                <Label
+                                  htmlFor={`product-${index}`}
+                                  className="text-right"
+                                >
+                                  Product {index + 1}
+                                </Label>
+                                <Popover
+                                  open={
+                                    isOpen && selectedProductIndex === index
                                   }
-                                }}
-                              >
-                                <PopoverTrigger asChild className="col-span-3">
-                                  <Button
-                                    variant="outline"
-                                    role="combobox"
-                                    aria-expanded={
-                                      isOpen && selectedProductIndex === index
+                                  onOpenChange={(open) => {
+                                    setIsOpen(open);
+                                    if (open) {
+                                      setSelectedProductIndex(index);
+                                    } else {
+                                      setSelectedProductIndex(null);
                                     }
-                                    className="w-full justify-between"
+                                  }}
+                                >
+                                  <PopoverTrigger
+                                    asChild
+                                    className="col-span-3"
                                   >
-                                    {(selectedProductIds[index] &&
-                                      filteredProducts.find(
-                                        (p) =>
-                                          p.id === selectedProductIds[index]
-                                      )?.name) ||
-                                      "Select a product"}
-                                    <ChevronsUpDownIcon className="opacity-30" />
-                                  </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-full p-0">
-                                  <Command>
-                                    <CommandInput
-                                      placeholder="Filter products"
-                                      value={searchTerm}
-                                      onValueChange={setSearchTerm}
-                                    />
+                                    <Button
+                                      variant="outline"
+                                      role="combobox"
+                                      aria-expanded={
+                                        isOpen && selectedProductIndex === index
+                                      }
+                                      className="w-full justify-between"
+                                    >
+                                      {(selectedProductIds[index] &&
+                                        filteredProducts.find(
+                                          (p) =>
+                                            p.id === selectedProductIds[index],
+                                        )?.name) ||
+                                        "Select a product"}
+                                      <ChevronsUpDownIcon className="opacity-30" />
+                                    </Button>
+                                  </PopoverTrigger>
+                                  <PopoverContent className="w-full p-0">
+                                    <Command>
+                                      <CommandInput
+                                        placeholder="Filter products"
+                                        value={searchTerm}
+                                        onValueChange={setSearchTerm}
+                                      />
 
-                                    <CommandList>
-                                      <CommandEmpty>
-                                        No product found.
-                                      </CommandEmpty>
-                                      <CommandGroup>
-                                        {filteredProducts.map((product) => (
-                                          <CommandItem
-                                            key={product.id}
-                                            value={product.name}
-                                            className="cursor-pointer justify-between"
-                                            onSelect={() => {
-                                              // Update the newProducts array with selected product
-                                              const updated = [...newProducts];
-                                              updated[index].id = product.id;
-                                              setNewProducts(updated);
+                                      <CommandList>
+                                        <CommandEmpty>
+                                          No product found.
+                                        </CommandEmpty>
+                                        <CommandGroup>
+                                          {filteredProducts.map((product) => (
+                                            <CommandItem
+                                              key={product.id}
+                                              value={product.name}
+                                              className="cursor-pointer justify-between"
+                                              onSelect={() => {
+                                                // Update the newProducts array with selected product
+                                                const updated = [
+                                                  ...newProducts,
+                                                ];
 
-                                              // Update selectedProductIds for display
-                                              const updatedIds = [
-                                                ...selectedProductIds,
-                                              ];
-                                              updatedIds[index] = product.id;
-                                              setSelectedProductIds(updatedIds);
+                                                updated[index].id = product.id;
+                                                setNewProducts(updated);
 
-                                              setSearchTerm("");
-                                              setIsOpen(false);
-                                              setSelectedProductIndex(null);
-                                            }}
-                                          >
-                                            {product.name} - $
-                                            {product.basePrice.toFixed(2)}
-                                            <CheckIcon
-                                              className={cn(
-                                                "size-4",
-                                                selectedProductIds[index] ===
-                                                  product.id
-                                                  ? "opacity-100"
-                                                  : "opacity-0"
-                                              )}
-                                            />
-                                          </CommandItem>
-                                        ))}
-                                      </CommandGroup>
-                                    </CommandList>
-                                  </Command>
-                                </PopoverContent>
-                              </Popover>
+                                                // Update selectedProductIds for display
+                                                const updatedIds = [
+                                                  ...selectedProductIds,
+                                                ];
+                                                updatedIds[index] = product.id;
+                                                setSelectedProductIds(
+                                                  updatedIds,
+                                                );
+
+                                                setSearchTerm("");
+                                                setIsOpen(false);
+                                                setSelectedProductIndex(null);
+                                              }}
+                                            >
+                                              {product.name} - $
+                                              {product.basePrice.toFixed(2)}
+                                              <CheckIcon
+                                                className={cn(
+                                                  "size-4",
+                                                  selectedProductIds[index] ===
+                                                    product.id
+                                                    ? "opacity-100"
+                                                    : "opacity-0",
+                                                )}
+                                              />
+                                            </CommandItem>
+                                          ))}
+                                        </CommandGroup>
+                                      </CommandList>
+                                    </Command>
+                                  </PopoverContent>
+                                </Popover>
+                              </div>
+                              <div className="grid grid-cols-4 items-center gap-4">
+                                <Label
+                                  htmlFor={`quantity-${index}`}
+                                  className="text-right"
+                                >
+                                  Quantity
+                                </Label>
+                                <Input
+                                  id={`quantity-${index}`}
+                                  type="number"
+                                  value={product.quantity}
+                                  onChange={(e) => {
+                                    const updated = [...newProducts];
+                                    const raw = e.target.value;
+
+                                    updated[index].quantity = halfStep
+                                      ? trayFractionToNumber(raw)
+                                      : parseInt(raw, 10);
+                                    setNewProducts(updated);
+                                  }}
+                                  className="col-span-3"
+                                  step={halfStep ? 0.5 : 1}
+                                  min={halfStep ? 0.5 : 1}
+                                />
+                              </div>
                             </div>
-                            <div className="grid grid-cols-4 items-center gap-4">
-                              <Label
-                                htmlFor={`quantity-${index}`}
-                                className="text-right"
-                              >
-                                Quantity
-                              </Label>
-                              <Input
-                                id={`quantity-${index}`}
-                                type="number"
-                                value={product.quantity}
-                                onChange={(e) => {
-                                  const updated = [...newProducts];
-                                  updated[index].quantity = parseInt(
-                                    e.target.value
+                            {newProducts.length > 1 && ( // Only show remove button if there's more than one product
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  const updated = newProducts.filter(
+                                    (_, i) => i !== index,
                                   );
                                   setNewProducts(updated);
-                                }}
-                                className="col-span-3"
-                                min="1"
-                              />
-                            </div>
-                          </div>
-                          {newProducts.length > 1 && ( // Only show remove button if there's more than one product
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {
-                                const updated = newProducts.filter(
-                                  (_, i) => i !== index
-                                );
-                                setNewProducts(updated);
 
-                                // Also remove from selectedProductIds
-                                const updatedIds = selectedProductIds.filter(
-                                  (_, i) => i !== index
-                                );
-                                setSelectedProductIds(updatedIds);
-                              }}
-                              className="ml-2 hover:bg-transparent"
-                            >
-                              <Trash2 className="h-4 w-4 text-red-500" />
-                            </Button>
-                          )}
+                                  // Also remove from selectedProductIds
+                                  const updatedIds = selectedProductIds.filter(
+                                    (_, i) => i !== index,
+                                  );
+                                  setSelectedProductIds(updatedIds);
+                                }}
+                                className="ml-2 hover:bg-transparent"
+                              >
+                                <Trash2Icon className="size-4 text-red-500" />
+                              </Button>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </ScrollArea>
 
@@ -952,7 +1012,22 @@ export const InvoiceDetails = ({
               <span>{formattedCurrency.format(subTotal)}</span>
             </div>
             <div className="flex justify-between items-center">
-              <span>Discount (%):</span>
+              <span className="flex items-center">
+                Discount
+                <Select
+                  value={discountType}
+                  onValueChange={(value) => setDiscountType(value as any)}
+                >
+                  <SelectTrigger className="border rounded px-2 py-1 mx-2">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="PERCENT">%</SelectItem>
+                    <SelectItem value="AMOUNT">$</SelectItem>
+                  </SelectContent>
+                </Select>
+                :
+              </span>
               <div className="flex items-center">
                 <Input
                   type="number"
@@ -960,14 +1035,10 @@ export const InvoiceDetails = ({
                   onChange={handleDiscountChange}
                   className="w-20 mr-2"
                   min="0"
-                  max="100"
-                  step={0.01}
+                  max={discountType === "PERCENT" ? 100 : undefined}
+                  step={discountType === "PERCENT" ? 0.01 : 1}
                 />
-                <span>
-                  {formattedCurrency.format(
-                    subTotal * (Number(discountPercentage) / 100)
-                  )}
-                </span>
+                <span>{formattedCurrency.format(discountAmount)}</span>
               </div>
             </div>
             <div className="flex justify-between items-center">
@@ -1048,7 +1119,7 @@ export const InvoiceDetails = ({
           onClick={handleUpdateInvoice}
           disabled={updating || sending}
         >
-          {updating && <Loader className="animate-spin w-4 h-4 mr-2" />}
+          {updating && <LoaderIcon className="animate-spin size-4 mr-2" />}
           Update Invoice
         </Button>
         <Button
@@ -1057,7 +1128,7 @@ export const InvoiceDetails = ({
           onClick={handleSendInvoiceEmail}
           disabled={sending || updating}
         >
-          {sending && <Loader className="animate-spin w-4 h-4 mr-2" />}
+          {sending && <LoaderIcon className="animate-spin size-4 mr-2" />}
           Send Invoice
         </Button>
       </div>

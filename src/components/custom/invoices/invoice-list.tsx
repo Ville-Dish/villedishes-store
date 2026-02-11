@@ -39,6 +39,7 @@ import {
   MoreVerticalIcon,
   Pencil,
   Plus,
+  TrashIcon,
 } from "lucide-react";
 import { lazy, useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -63,7 +64,7 @@ import { InvoiceForm } from "./invoice-form";
 const InvoiceDetails = lazy(() =>
   import("@/components/custom/invoices/invoice-details").then((module) => ({
     default: module.InvoiceDetails,
-  }))
+  })),
 );
 
 type InvoiceProduct = {
@@ -89,6 +90,7 @@ export const InvoiceList = () => {
     amountDue: 0,
     dueDate: "",
     status: "PENDING",
+    discountType: "PERCENT",
   });
 
   const { setIsLoading } = useLoading();
@@ -102,7 +104,7 @@ export const InvoiceList = () => {
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
 
   const [availableProducts, setAvailableProducts] = useState<InvoiceProduct[]>(
-    []
+    [],
   );
   const [searchTerm, setSearchTerm] = useState<string>("");
 
@@ -171,7 +173,7 @@ export const InvoiceList = () => {
 
           // Calculate the maximum amount for the slider
           const maxInvoiceAmount = Math.max(
-            ...data.data.map((invoice: Invoice) => invoice.amount)
+            ...data.data.map((invoice: Invoice) => invoice.amount),
           );
           const roundedMaxAmount = Math.ceil(maxInvoiceAmount / 1000) * 1000; // Round up to the nearest thousand
           setMaxAmount(roundedMaxAmount);
@@ -202,7 +204,7 @@ export const InvoiceList = () => {
             id: product.id,
             name: product.name,
             basePrice: product.price, // Assuming 'price' is the field in the database
-          })
+          }),
         );
         setAvailableProducts(products);
       } catch (error) {
@@ -220,8 +222,8 @@ export const InvoiceList = () => {
     if (searchTerm.trim() !== "") {
       filtered = filtered.filter((invoice) =>
         Object.values(invoice).some((value) =>
-          String(value).toLowerCase().includes(searchTerm.toLowerCase())
-        )
+          String(value).toLowerCase().includes(searchTerm.toLowerCase()),
+        ),
       );
     }
 
@@ -241,7 +243,7 @@ export const InvoiceList = () => {
     // Apply amount range filter
     filtered = filtered.filter(
       (invoice) =>
-        invoice.amount >= amountRange[0] && invoice.amount <= amountRange[1]
+        invoice.amount >= amountRange[0] && invoice.amount <= amountRange[1],
     );
 
     // Apply sorting
@@ -322,15 +324,15 @@ export const InvoiceList = () => {
       // Update the invoices state
       setInvoices((prevInvoices) =>
         prevInvoices.map((inv) =>
-          inv.id === updatedInvoice.id ? updatedData : inv
-        )
+          inv.id === updatedInvoice.id ? updatedData : inv,
+        ),
       );
 
       // Update filtered invoices
       setFilteredInvoices((prevFiltered) =>
         prevFiltered.map((inv) =>
-          inv.id === updatedInvoice.id ? result.data : inv
-        )
+          inv.id === updatedInvoice.id ? result.data : inv,
+        ),
       );
 
       // Update selected invoice if it's the one being edited
@@ -342,6 +344,41 @@ export const InvoiceList = () => {
     } catch (error) {
       console.error("Error updating invoice:", error);
       toast.error("Failed to update invoice");
+      throw error;
+    }
+  };
+
+  const handleDeleteInvoice = async (id: string) => {
+    try {
+      const response = await fetch(`/api/invoices`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ id }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to delete invoice");
+      }
+
+      const result = await response.json();
+
+      // Ensure the returned data has all the necessary fields
+      const deletedInvoice = result.data as Invoice;
+
+      // Update the invoices state
+      setInvoices((prevInvoices) =>
+        prevInvoices.filter((inv) => inv.id !== deletedInvoice.id),
+      );
+
+      // Update filtered invoices
+      setFilteredInvoices((prevFiltered) =>
+        prevFiltered.filter((inv) => inv.id !== deletedInvoice.id),
+      );
+    } catch (error) {
+      console.error("Error deleting invoice:", error);
+      toast.error("Failed to delete invoice");
       throw error;
     }
   };
@@ -373,7 +410,7 @@ export const InvoiceList = () => {
         blob,
         invoiceName
           ? `${invoiceName}.pdf`
-          : `Invoice_${invoice.invoiceNumber}.pdf`
+          : `Invoice_${invoice.invoiceNumber}.pdf`,
       );
 
       toast.info(`Downloaded Invoice ${invoice.invoiceNumber} successfully`);
@@ -412,7 +449,7 @@ export const InvoiceList = () => {
         <div className="flex items-center space-x-2">
           <Input
             placeholder="Search invoices..."
-            className="max-w-[200px]"
+            className="max-w-50"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -422,11 +459,14 @@ export const InvoiceList = () => {
                 <Plus className="h-4 w-4" /> Create New Invoice
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="h-[80vh]">
               <DialogHeader>
                 <DialogTitle>Create New Invoice</DialogTitle>
               </DialogHeader>
-              <InvoiceForm setDialog={setDialogOpen} />
+              <InvoiceForm
+                setDialog={setDialogOpen}
+                setSelectedInvoice={setSelectedInvoice}
+              />
             </DialogContent>
           </Dialog>
         </div>
@@ -434,7 +474,7 @@ export const InvoiceList = () => {
 
       <div className="grid grid-cols-2 pr-8 md:grid-cols-3 gap-4">
         <Select onValueChange={(value) => setStatusFilter(value)}>
-          <SelectTrigger className="w-[180px]">
+          <SelectTrigger className="w-45">
             <SelectValue placeholder="Filter by Status" />
           </SelectTrigger>
           <SelectContent>
@@ -569,7 +609,7 @@ export const InvoiceList = () => {
                             invoice.status === "DUE",
                           "bg-[#fe9e1d] border-[#fe9e1d] hover:bg-[#c6893a]":
                             invoice.status === "PENDING",
-                        }
+                        },
                       )}
                     >
                       {invoice.status}
@@ -637,6 +677,14 @@ export const InvoiceList = () => {
                             {invoice.status === "PAID"
                               ? "Mark as Unpaid"
                               : "Mark as Paid"}
+                          </DropdownMenuItem>
+
+                          <DropdownMenuItem
+                            className="cursor-pointer text-destructive focus:bg-destructive/20 focus:text-destructive"
+                            onSelect={() => handleDeleteInvoice(invoice.id)}
+                          >
+                            <TrashIcon className="size-4" color="#ff0000" />
+                            Delete Invoice
                           </DropdownMenuItem>
                         </DropdownMenuGroup>
                       </DropdownMenuContent>
@@ -733,7 +781,11 @@ export const InvoiceList = () => {
 
           <div className="flex-1 overflow-hidden">
             {pdfPreviewUrl ? (
-              <iframe src={pdfPreviewUrl} className="w-full h-full" />
+              <iframe
+                title="PDF Preview"
+                src={pdfPreviewUrl}
+                className="w-full h-full"
+              />
             ) : (
               <p>Loading PDF...</p>
             )}

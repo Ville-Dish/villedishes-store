@@ -1,7 +1,10 @@
 "use server";
-import { PrismaClient } from "@prisma/client";
 
-const prisma = new PrismaClient();
+import prisma from "./prisma/client";
+
+// import { PrismaClient } from "@prisma/client";
+
+// const prisma = new PrismaClient();
 
 export async function generateInvoiceNumber() {
   return await prisma.$transaction(async (tx) => {
@@ -120,7 +123,7 @@ export async function calculateMonthlyRevenue(year: number, month: number) {
   const orderTotal = orders.reduce((sum, order) => sum + order.total, 0);
   const invoiceTotal = invoices.reduce(
     (sum, invoice) => sum + invoice.amount,
-    0
+    0,
   );
   const incomeTotal = incomes.reduce((sum, income) => sum + income.amount, 0);
 
