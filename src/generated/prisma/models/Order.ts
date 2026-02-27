@@ -48,10 +48,10 @@ export type OrderMinAggregateOutputType = {
   shippingFee: number | null
   total: number | null
   referenceNumber: string | null
-  paymentDate: string | null
+  paymentDate: Date | null
   verificationCode: string | null
   orderNumber: string | null
-  orderDate: string | null
+  orderDate: Date | null
   shippingInfoId: string | null
   status: string | null
 }
@@ -64,10 +64,10 @@ export type OrderMaxAggregateOutputType = {
   shippingFee: number | null
   total: number | null
   referenceNumber: string | null
-  paymentDate: string | null
+  paymentDate: Date | null
   verificationCode: string | null
   orderNumber: string | null
-  orderDate: string | null
+  orderDate: Date | null
   shippingInfoId: string | null
   status: string | null
 }
@@ -247,10 +247,10 @@ export type OrderGroupByOutputType = {
   shippingFee: number
   total: number
   referenceNumber: string | null
-  paymentDate: string | null
+  paymentDate: Date | null
   verificationCode: string | null
   orderNumber: string | null
-  orderDate: string | null
+  orderDate: Date | null
   shippingInfoId: string
   status: string
   _count: OrderCountAggregateOutputType | null
@@ -286,10 +286,10 @@ export type OrderWhereInput = {
   shippingFee?: Prisma.FloatFilter<"Order"> | number
   total?: Prisma.FloatFilter<"Order"> | number
   referenceNumber?: Prisma.StringNullableFilter<"Order"> | string | null
-  paymentDate?: Prisma.StringNullableFilter<"Order"> | string | null
+  paymentDate?: Prisma.DateTimeNullableFilter<"Order"> | Date | string | null
   verificationCode?: Prisma.StringNullableFilter<"Order"> | string | null
   orderNumber?: Prisma.StringNullableFilter<"Order"> | string | null
-  orderDate?: Prisma.StringNullableFilter<"Order"> | string | null
+  orderDate?: Prisma.DateTimeNullableFilter<"Order"> | Date | string | null
   shippingInfoId?: Prisma.StringFilter<"Order"> | string
   status?: Prisma.StringFilter<"Order"> | string
   shippingInfo?: Prisma.XOR<Prisma.ShippingInfoScalarRelationFilter, Prisma.ShippingInfoWhereInput>
@@ -325,10 +325,10 @@ export type OrderWhereUniqueInput = Prisma.AtLeast<{
   shippingFee?: Prisma.FloatFilter<"Order"> | number
   total?: Prisma.FloatFilter<"Order"> | number
   referenceNumber?: Prisma.StringNullableFilter<"Order"> | string | null
-  paymentDate?: Prisma.StringNullableFilter<"Order"> | string | null
+  paymentDate?: Prisma.DateTimeNullableFilter<"Order"> | Date | string | null
   verificationCode?: Prisma.StringNullableFilter<"Order"> | string | null
   orderNumber?: Prisma.StringNullableFilter<"Order"> | string | null
-  orderDate?: Prisma.StringNullableFilter<"Order"> | string | null
+  orderDate?: Prisma.DateTimeNullableFilter<"Order"> | Date | string | null
   shippingInfoId?: Prisma.StringFilter<"Order"> | string
   status?: Prisma.StringFilter<"Order"> | string
   shippingInfo?: Prisma.XOR<Prisma.ShippingInfoScalarRelationFilter, Prisma.ShippingInfoWhereInput>
@@ -367,10 +367,10 @@ export type OrderScalarWhereWithAggregatesInput = {
   shippingFee?: Prisma.FloatWithAggregatesFilter<"Order"> | number
   total?: Prisma.FloatWithAggregatesFilter<"Order"> | number
   referenceNumber?: Prisma.StringNullableWithAggregatesFilter<"Order"> | string | null
-  paymentDate?: Prisma.StringNullableWithAggregatesFilter<"Order"> | string | null
+  paymentDate?: Prisma.DateTimeNullableWithAggregatesFilter<"Order"> | Date | string | null
   verificationCode?: Prisma.StringNullableWithAggregatesFilter<"Order"> | string | null
   orderNumber?: Prisma.StringNullableWithAggregatesFilter<"Order"> | string | null
-  orderDate?: Prisma.StringNullableWithAggregatesFilter<"Order"> | string | null
+  orderDate?: Prisma.DateTimeNullableWithAggregatesFilter<"Order"> | Date | string | null
   shippingInfoId?: Prisma.StringWithAggregatesFilter<"Order"> | string
   status?: Prisma.StringWithAggregatesFilter<"Order"> | string
 }
@@ -383,10 +383,10 @@ export type OrderCreateInput = {
   shippingFee: number
   total: number
   referenceNumber?: string | null
-  paymentDate?: string | null
+  paymentDate?: Date | string | null
   verificationCode?: string | null
   orderNumber?: string | null
-  orderDate?: string | null
+  orderDate?: Date | string | null
   status: string
   shippingInfo: Prisma.ShippingInfoCreateNestedOneWithoutOrderInput
   products?: Prisma.OrderProductCreateNestedManyWithoutOrderInput
@@ -400,10 +400,10 @@ export type OrderUncheckedCreateInput = {
   shippingFee: number
   total: number
   referenceNumber?: string | null
-  paymentDate?: string | null
+  paymentDate?: Date | string | null
   verificationCode?: string | null
   orderNumber?: string | null
-  orderDate?: string | null
+  orderDate?: Date | string | null
   shippingInfoId: string
   status: string
   products?: Prisma.OrderProductUncheckedCreateNestedManyWithoutOrderInput
@@ -417,10 +417,10 @@ export type OrderUpdateInput = {
   shippingFee?: Prisma.FloatFieldUpdateOperationsInput | number
   total?: Prisma.FloatFieldUpdateOperationsInput | number
   referenceNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  paymentDate?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   verificationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   orderNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  orderDate?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  orderDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   status?: Prisma.StringFieldUpdateOperationsInput | string
   shippingInfo?: Prisma.ShippingInfoUpdateOneRequiredWithoutOrderNestedInput
   products?: Prisma.OrderProductUpdateManyWithoutOrderNestedInput
@@ -434,10 +434,10 @@ export type OrderUncheckedUpdateInput = {
   shippingFee?: Prisma.FloatFieldUpdateOperationsInput | number
   total?: Prisma.FloatFieldUpdateOperationsInput | number
   referenceNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  paymentDate?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   verificationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   orderNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  orderDate?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  orderDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   shippingInfoId?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
   products?: Prisma.OrderProductUncheckedUpdateManyWithoutOrderNestedInput
@@ -451,10 +451,10 @@ export type OrderCreateManyInput = {
   shippingFee: number
   total: number
   referenceNumber?: string | null
-  paymentDate?: string | null
+  paymentDate?: Date | string | null
   verificationCode?: string | null
   orderNumber?: string | null
-  orderDate?: string | null
+  orderDate?: Date | string | null
   shippingInfoId: string
   status: string
 }
@@ -467,10 +467,10 @@ export type OrderUpdateManyMutationInput = {
   shippingFee?: Prisma.FloatFieldUpdateOperationsInput | number
   total?: Prisma.FloatFieldUpdateOperationsInput | number
   referenceNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  paymentDate?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   verificationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   orderNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  orderDate?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  orderDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   status?: Prisma.StringFieldUpdateOperationsInput | string
 }
 
@@ -482,10 +482,10 @@ export type OrderUncheckedUpdateManyInput = {
   shippingFee?: Prisma.FloatFieldUpdateOperationsInput | number
   total?: Prisma.FloatFieldUpdateOperationsInput | number
   referenceNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  paymentDate?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   verificationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   orderNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  orderDate?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  orderDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   shippingInfoId?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
 }
@@ -631,10 +631,10 @@ export type OrderCreateWithoutShippingInfoInput = {
   shippingFee: number
   total: number
   referenceNumber?: string | null
-  paymentDate?: string | null
+  paymentDate?: Date | string | null
   verificationCode?: string | null
   orderNumber?: string | null
-  orderDate?: string | null
+  orderDate?: Date | string | null
   status: string
   products?: Prisma.OrderProductCreateNestedManyWithoutOrderInput
 }
@@ -647,10 +647,10 @@ export type OrderUncheckedCreateWithoutShippingInfoInput = {
   shippingFee: number
   total: number
   referenceNumber?: string | null
-  paymentDate?: string | null
+  paymentDate?: Date | string | null
   verificationCode?: string | null
   orderNumber?: string | null
-  orderDate?: string | null
+  orderDate?: Date | string | null
   status: string
   products?: Prisma.OrderProductUncheckedCreateNestedManyWithoutOrderInput
 }
@@ -692,10 +692,10 @@ export type OrderScalarWhereInput = {
   shippingFee?: Prisma.FloatFilter<"Order"> | number
   total?: Prisma.FloatFilter<"Order"> | number
   referenceNumber?: Prisma.StringNullableFilter<"Order"> | string | null
-  paymentDate?: Prisma.StringNullableFilter<"Order"> | string | null
+  paymentDate?: Prisma.DateTimeNullableFilter<"Order"> | Date | string | null
   verificationCode?: Prisma.StringNullableFilter<"Order"> | string | null
   orderNumber?: Prisma.StringNullableFilter<"Order"> | string | null
-  orderDate?: Prisma.StringNullableFilter<"Order"> | string | null
+  orderDate?: Prisma.DateTimeNullableFilter<"Order"> | Date | string | null
   shippingInfoId?: Prisma.StringFilter<"Order"> | string
   status?: Prisma.StringFilter<"Order"> | string
 }
@@ -708,10 +708,10 @@ export type OrderCreateWithoutProductsInput = {
   shippingFee: number
   total: number
   referenceNumber?: string | null
-  paymentDate?: string | null
+  paymentDate?: Date | string | null
   verificationCode?: string | null
   orderNumber?: string | null
-  orderDate?: string | null
+  orderDate?: Date | string | null
   status: string
   shippingInfo: Prisma.ShippingInfoCreateNestedOneWithoutOrderInput
 }
@@ -724,10 +724,10 @@ export type OrderUncheckedCreateWithoutProductsInput = {
   shippingFee: number
   total: number
   referenceNumber?: string | null
-  paymentDate?: string | null
+  paymentDate?: Date | string | null
   verificationCode?: string | null
   orderNumber?: string | null
-  orderDate?: string | null
+  orderDate?: Date | string | null
   shippingInfoId: string
   status: string
 }
@@ -756,10 +756,10 @@ export type OrderUpdateWithoutProductsInput = {
   shippingFee?: Prisma.FloatFieldUpdateOperationsInput | number
   total?: Prisma.FloatFieldUpdateOperationsInput | number
   referenceNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  paymentDate?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   verificationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   orderNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  orderDate?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  orderDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   status?: Prisma.StringFieldUpdateOperationsInput | string
   shippingInfo?: Prisma.ShippingInfoUpdateOneRequiredWithoutOrderNestedInput
 }
@@ -772,10 +772,10 @@ export type OrderUncheckedUpdateWithoutProductsInput = {
   shippingFee?: Prisma.FloatFieldUpdateOperationsInput | number
   total?: Prisma.FloatFieldUpdateOperationsInput | number
   referenceNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  paymentDate?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   verificationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   orderNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  orderDate?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  orderDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   shippingInfoId?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
 }
@@ -788,10 +788,10 @@ export type OrderCreateManyShippingInfoInput = {
   shippingFee: number
   total: number
   referenceNumber?: string | null
-  paymentDate?: string | null
+  paymentDate?: Date | string | null
   verificationCode?: string | null
   orderNumber?: string | null
-  orderDate?: string | null
+  orderDate?: Date | string | null
   status: string
 }
 
@@ -803,10 +803,10 @@ export type OrderUpdateWithoutShippingInfoInput = {
   shippingFee?: Prisma.FloatFieldUpdateOperationsInput | number
   total?: Prisma.FloatFieldUpdateOperationsInput | number
   referenceNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  paymentDate?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   verificationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   orderNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  orderDate?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  orderDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   status?: Prisma.StringFieldUpdateOperationsInput | string
   products?: Prisma.OrderProductUpdateManyWithoutOrderNestedInput
 }
@@ -819,10 +819,10 @@ export type OrderUncheckedUpdateWithoutShippingInfoInput = {
   shippingFee?: Prisma.FloatFieldUpdateOperationsInput | number
   total?: Prisma.FloatFieldUpdateOperationsInput | number
   referenceNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  paymentDate?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   verificationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   orderNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  orderDate?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  orderDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   status?: Prisma.StringFieldUpdateOperationsInput | string
   products?: Prisma.OrderProductUncheckedUpdateManyWithoutOrderNestedInput
 }
@@ -835,10 +835,10 @@ export type OrderUncheckedUpdateManyWithoutShippingInfoInput = {
   shippingFee?: Prisma.FloatFieldUpdateOperationsInput | number
   total?: Prisma.FloatFieldUpdateOperationsInput | number
   referenceNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  paymentDate?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   verificationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   orderNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  orderDate?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  orderDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   status?: Prisma.StringFieldUpdateOperationsInput | string
 }
 
@@ -969,10 +969,10 @@ export type $OrderPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs 
     shippingFee: number
     total: number
     referenceNumber: string | null
-    paymentDate: string | null
+    paymentDate: Date | null
     verificationCode: string | null
     orderNumber: string | null
-    orderDate: string | null
+    orderDate: Date | null
     shippingInfoId: string
     status: string
   }, ExtArgs["result"]["order"]>
@@ -1407,10 +1407,10 @@ export interface OrderFieldRefs {
   readonly shippingFee: Prisma.FieldRef<"Order", 'Float'>
   readonly total: Prisma.FieldRef<"Order", 'Float'>
   readonly referenceNumber: Prisma.FieldRef<"Order", 'String'>
-  readonly paymentDate: Prisma.FieldRef<"Order", 'String'>
+  readonly paymentDate: Prisma.FieldRef<"Order", 'DateTime'>
   readonly verificationCode: Prisma.FieldRef<"Order", 'String'>
   readonly orderNumber: Prisma.FieldRef<"Order", 'String'>
-  readonly orderDate: Prisma.FieldRef<"Order", 'String'>
+  readonly orderDate: Prisma.FieldRef<"Order", 'DateTime'>
   readonly shippingInfoId: Prisma.FieldRef<"Order", 'String'>
   readonly status: Prisma.FieldRef<"Order", 'String'>
 }

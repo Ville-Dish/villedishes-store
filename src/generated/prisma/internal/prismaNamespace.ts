@@ -1870,6 +1870,7 @@ export const InvoiceScalarFieldEnum = {
   discountPercentage: 'discountPercentage',
   discountType: 'discountType',
   taxRate: 'taxRate',
+  taxType: 'taxType',
   shippingFee: 'shippingFee',
   serviceCharge: 'serviceCharge',
   miscellaneous: 'miscellaneous',

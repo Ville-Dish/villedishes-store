@@ -7,6 +7,7 @@ import {
   postcodeValidatorExistsForCountry,
 } from "postcode-validator";
 import { PASSWORD_LENGTH } from "./constantData";
+import { PasswordFeedback } from "./types";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -59,7 +60,7 @@ export function isValidInvoiceStatus(status: string): status is InvoiceStatus {
 // Validate Canadian postal code
 export function isValidPostalCode(
   postalCode: string,
-  countryCode: string
+  countryCode: string,
 ): boolean {
   if (!postalCode || !countryCode) return false;
 
@@ -79,7 +80,7 @@ export function isValidPostalCode(
 // Get appropriate error message based on country support
 export function getPostalCodeValidationMessage(
   postalCode: string,
-  countryCode: string
+  countryCode: string,
 ): string {
   if (!countryCode) {
     return "Please select a country first";

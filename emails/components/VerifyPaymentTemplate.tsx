@@ -17,7 +17,7 @@ import {
 import { EmailFooter } from "./email-footer";
 import { EmailHeader } from "./email-header";
 
-type VerifyPaymentAdminEmailProps = {
+type VerifyPaymentEmailProps = {
   customerName: string;
   paymentAmount: number;
   paymentDate: string;
@@ -28,7 +28,7 @@ type VerifyPaymentAdminEmailProps = {
   verificationLink?: string;
 };
 
-export const VerifyPaymentTemplate = ({
+const VerifyPaymentdTemplate = ({
   customerName,
   paymentAmount,
   paymentDate,
@@ -37,19 +37,23 @@ export const VerifyPaymentTemplate = ({
   verificationCode,
   orderId,
   verificationLink,
-}: VerifyPaymentAdminEmailProps) => {
+}: VerifyPaymentEmailProps) => {
   const previewText = `Verify Payment for New Order`;
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
   customerName = customerName || "John Doe";
-  paymentAmount = paymentAmount || 0.0;
+  paymentAmount = paymentAmount ?? 0.0;
   paymentDate = paymentDate || "2023-11-04";
-  paymentMethod = "Interac";
+  const displayPaymentMethod = paymentMethod ?? "Interac";
   referenceNumber = referenceNumber || "A0AaBCdE12FG";
   verificationCode = verificationCode || "000000";
-  orderId = orderId || 1234567890;
-  verificationLink = `${
-    verificationLink || `${baseUrl}/admin/verify-payment`
-  }?orderId=${orderId}`;
+  orderId = orderId ?? 1234567890;
+  // Build link only if missing or without orderId; avoid double query params
+  const baseLink =
+    verificationLink && verificationLink.trim() !== ""
+      ? verificationLink.replace(/\?orderId=\d+$/, "").replace(/\?$/, "")
+      : `${baseUrl}/admin/verify-payment`;
+  const separator = baseLink.includes("?") ? "&" : "?";
+  verificationLink = `${baseLink}${separator}orderId=${orderId}`;
 
   return (
     <Html>
@@ -115,7 +119,7 @@ export const VerifyPaymentTemplate = ({
                   </Column>
                   <Column className="p-3 text-right">
                     <Text className="text-sm text-gray-700 m-0">
-                      {paymentMethod}
+                      {displayPaymentMethod}
                     </Text>
                   </Column>
                   <Column className="p-3 text-right">
@@ -142,7 +146,7 @@ export const VerifyPaymentTemplate = ({
                 <Section className="text-center">
                   <Link
                     href={verificationLink}
-                    className="bg-green-500 hover:bg-green-600 text-white py-3 px-6 rounded-md font-bold text-base no-underline inline-block transition-colors duration-300"
+                    className="bg-green-500 text-white py-3 px-6 rounded-md font-bold text-base no-underline inline-block transition-colors duration-300"
                   >
                     Verify Payment
                   </Link>
@@ -164,4 +168,4 @@ export const VerifyPaymentTemplate = ({
   );
 };
 
-export default VerifyPaymentTemplate;
+export default VerifyPaymentdTemplate;

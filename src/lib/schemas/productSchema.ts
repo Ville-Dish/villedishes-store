@@ -4,19 +4,30 @@ export const productSchema = z.object({
   name: z.string().min(1, {
     message: "Product name is required",
   }),
+  description: z.string().min(1, {
+    message: "Product category is required",
+  }),
+  price: z.number().min(0, "Price must be a positive number"),
+  image: z.url("Image is required."),
   category: z.string().min(1, {
     message: "Product category is required",
   }),
-  description: z.string().optional(),
-  price: z
-    .string()
-    .regex(/^\d+(\.\d{1,2})?$/, "Enter a valid price (e.g. 9.99)")
-    .transform((val) => parseFloat(val)),
-  image: z.url("Image is required."),
   assetId: z.string().optional(),
+  rating: z.number().min(0),
 });
 
-export type ProductSchema = z.infer<typeof productSchema>;
+export const createProductSchema = productSchema;
+
+export const updateProductSchema = productSchema.extend({
+  id: z.string().optional(),
+});
+
+export type CreateProductInput = z.infer<typeof createProductSchema>;
+export type UpdateProductInput = z.infer<typeof updateProductSchema>;
+
+export type ProductFormValues = CreateProductInput & {
+  id?: string;
+};
 
 export const testimonialSchema = z
   .object({

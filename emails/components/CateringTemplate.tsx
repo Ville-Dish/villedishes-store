@@ -19,7 +19,7 @@ type CateringEmailProps = {
   email: string;
   cateringDate: Date;
   phone: string;
-  note?: string;
+  message?: string;
   products: string[];
 };
 
@@ -36,7 +36,7 @@ const CateringTemplate = ({
   email,
   cateringDate,
   phone,
-  note,
+  message,
   products,
 }: CateringEmailProps) => {
   const previewText = "You have catering order inquiry from your website";
@@ -45,7 +45,7 @@ const CateringTemplate = ({
     ? cateringDate.toDateString()
     : "November 13th 2025";
   const menuList = products ? products : fakeProduct;
-  const message = note ? note : `Notes from ${contactName}`;
+  const messageText = message ? message : `Notes from ${contactName}`;
   const contactPhone = phone ? phone : "123-456-7890";
   const contactEmail = email
     ? email
@@ -71,13 +71,13 @@ const CateringTemplate = ({
                   Menu List
                 </Heading>
                 {menuList.map((menu, index) => (
-                  <Section key={index} className="mb-[36px]">
-                    <div className="mr-[32px] ml-[12px] inline-flex items-start">
-                      <div className="mr-[18px] flex h-[24px] w-[24px] shrink-0 items-center justify-center rounded-full bg-[#f5ad07] font-semibold text-white text-[12px] leading-none"></div>
+                  <Section key={index} className="mb-9">
+                    <div className="mr-8 ml-4 inline-flex items-start">
+                      <div className="mr-4.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#f5ad07] font-semibold text-white text-[12px] leading-none"></div>
                       <div>
                         <Heading
                           as="h5"
-                          className="mt-[0px] mb-[4px] text-gray-900 text-[12px] leading-[28px]"
+                          className="mt-0 mb-4 text-gray-900 text-[12px] leading-7"
                         >
                           {menu}
                         </Heading>
@@ -87,13 +87,13 @@ const CateringTemplate = ({
                 ))}
                 <Hr />
 
-                {message && (
+                {messageText && (
                   <>
                     <Text className="text-[16px] mx-4 my-0 text-center">
                       More details
                     </Text>
                     <Text style={codeText}>
-                      {message || `Note from ${contactName}`}
+                      {messageText || `Note from ${contactName}`}
                     </Text>
                   </>
                 )}

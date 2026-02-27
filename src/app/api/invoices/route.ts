@@ -120,7 +120,9 @@ export async function PATCH(req: Request) {
       amountPaid,
       amountDue,
       discountPercentage,
+      discountType,
       taxRate,
+      taxType,
       shippingFee,
       serviceCharge,
       miscellaneous,
@@ -185,7 +187,11 @@ export async function PATCH(req: Request) {
       // Update the invoice
       await prisma.invoice.update({
         where: { id },
-        data: updateData,
+        data: {
+          ...updateData,
+          discountType,
+          taxType,
+        },
       });
 
       // If products are provided, update them
@@ -348,12 +354,18 @@ export async function GET() {
           status: invoice.status,
           discountPercentage: invoice.discountPercentage,
           discountType: invoice.discountType,
+          taxRate: invoice.taxRate,
+          taxType: invoice.taxType,
+          shippingFee: invoice.shippingFee,
+          serviceCharge: invoice.serviceCharge,
+          miscellaneous: invoice.miscellaneous,
           products: invoice.InvoiceProducts.map((ip) => ({
             id: ip.Product[0]?.id,
             name: ip.Product[0]?.name,
             basePrice: ip.basePrice,
             quantity: ip.quantity,
             discount: ip.discount,
+            category: ip.Product?.[0]?.category,
           })),
         };
       }),

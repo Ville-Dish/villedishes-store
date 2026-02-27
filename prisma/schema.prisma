@@ -128,10 +128,10 @@ model Order {
   shippingFee      Float
   total            Float
   referenceNumber  String?
-  paymentDate      String?
+  paymentDate      DateTime?
   verificationCode String?
   orderNumber      String?
-  orderDate        String?
+  orderDate        DateTime?
   shippingInfoId   String
   status           String
   shippingInfo     ShippingInfo   @relation(fields: [shippingInfoId], references: [id])
@@ -154,6 +154,8 @@ model ShippingInfo {
   postalCode  String
   orderNotes  String?
   Order       Order[]
+
+  @@unique([email, phoneNumber])
 }
 
 model OrderProduct {
@@ -166,24 +168,25 @@ model OrderProduct {
 }
 
 model Invoice {
-  id                 String            @id @unique @default(uuid())
-  invoiceNumber      String            @unique
+  id                 String              @id @unique @default(uuid())
+  invoiceNumber      String              @unique
   customerName       String
   customerEmail      String
   customerPhone      String
   amount             Float
-  amountPaid         Float             @default(0)
-  amountDue          Float             @default(0)
+  amountPaid         Float               @default(0)
+  amountDue          Float               @default(0)
   discountPercentage Float               @default(0)
-  discountType       DiscountType       @default(PERCENT)
+  discountType       DiscountType        @default(PERCENT)
   taxRate            Float               @default(0)
+  taxType            DiscountType        @default(PERCENT)
   shippingFee        Float               @default(0)
   serviceCharge      Float               @default(0)
   miscellaneous      Float               @default(0)
   dateCreated        String
   dueDate            String
   status             String
-  InvoiceProducts    InvoiceProducts[] @relation("InvoiceProducts")
+  InvoiceProducts    InvoiceProducts[]   @relation("InvoiceProducts")
 
   @@index([status])
   @@index([dateCreated])

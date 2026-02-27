@@ -8,19 +8,21 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { OrderInfo } from "@/lib/types";
+import { formatDate } from "@/lib/utils";
 
 interface OrderDetailsProps {
-  data: OrderDetails;
+  data: OrderInfo;
 }
 
-export const OrderDetails = ({ data }: OrderDetailsProps) => {
+export const OrderDetailsView = ({ data }: OrderDetailsProps) => {
   return (
     <>
       <div className="mt-4 bg-white p-6 rounded-lg shadow-md">
         <div className="text-center mb-6">
           <h2 className="text-xl font-bold">Order Receipt</h2>
           <p className="text-gray-600">Order #{data.orderNumber}</p>
-          <p className="text-gray-600">{data.orderDate}</p>
+          <p className="text-gray-600">{formatDate(data.orderDate!)}</p>
         </div>
 
         <div className="grid grid-cols-2 gap-6 mb-6">

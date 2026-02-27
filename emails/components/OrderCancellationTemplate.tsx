@@ -11,6 +11,7 @@ import {
   Hr,
   Tailwind,
   Link,
+  Button,
 } from "@react-email/components";
 import { EmailFooter } from "./email-footer";
 import { EmailHeader } from "./email-header";
@@ -18,24 +19,27 @@ import { EmailHeader } from "./email-header";
 type OrderCancellationEmailProps = {
   customerName: string;
   orderNumber: string;
-  orderDate?: string;
-  subtotal?: number;
-  tax?: number;
-  shippingFee?: number;
   total?: number;
-  items?: Product[];
-  estimatedDelivery?: string;
+  feedbackLink?: string;
 };
 
-const OrderFulfillmentTemplate = ({
+const OrderCancellationTemplate = ({
   customerName,
   orderNumber,
   total,
+  feedbackLink,
 }: OrderCancellationEmailProps) => {
-  customerName = customerName || "John Doe";
-  orderNumber = orderNumber || "ORD-00000";
-  total = total || 57.21;
-  const previewText = `Order with number ${orderNumber} has been cancelled`;
+  const displayName =
+    typeof customerName === "string" ? customerName : "John Doe";
+  const displayOrderNumber =
+    typeof orderNumber === "string" ? orderNumber : "ORD-00000";
+  const displayTotal =
+    typeof total === "number" && Number.isFinite(total) ? total : 57.21;
+  const displayFeedbackLink =
+    typeof feedbackLink === "string" && feedbackLink.trim() !== ""
+      ? feedbackLink
+      : "http://localhost:3000";
+  const previewText = `Order with number ${displayOrderNumber} has been cancelled`;
 
   return (
     <Html>
@@ -48,13 +52,13 @@ const OrderFulfillmentTemplate = ({
               <EmailHeader />
               <Section className="mt-6">
                 <Heading className="text-3xl font-bold uppercase mb-4 text-center">
-                  Order Fulfillment
+                  Order Cancellation
                 </Heading>
                 <Text className="text-lg mb-4">
-                  We are sorry to see your order go, {customerName}! Your order
+                  We are sorry to see your order go, {displayName}! Your order
                   has been cancelled per your request and your refund of $
-                  {total} is being processed. We will like to know why your
-                  order was cancelled.
+                  {displayTotal} is being processed. We will like to know why
+                  your order was cancelled.
                 </Text>
               </Section>
 
@@ -65,8 +69,8 @@ const OrderFulfillmentTemplate = ({
                   button below to leave us a message via our contact form.
                 </Text>
                 <Link
-                  href="/"
-                  className="bg-green-500 hover:bg-green-600 text-white py-3 px-6 rounded-md font-bold text-base no-underline inline-block transition-colors duration-300"
+                  href={displayFeedbackLink}
+                  className="bg-green-500 text-white py-3 px-6 rounded-md font-bold text-base no-underline inline-block transition-colors duration-300"
                 >
                   Leave a Message
                 </Link>
@@ -82,4 +86,4 @@ const OrderFulfillmentTemplate = ({
   );
 };
 
-export default OrderFulfillmentTemplate;
+export default OrderCancellationTemplate;

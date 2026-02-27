@@ -1,8 +1,15 @@
-import { OrderList } from "@/components/custom/orders/order-list";
+import { OrderList } from "@/features/orders/components/order-list";
+import { ordersParamsLoader } from "@/features/orders/params-loader";
 import { requireAuth } from "@/lib/session/server-session";
+import { SearchParams } from "nuqs/server";
 
-const AdminOrdersPage = async () => {
+type Props = {
+  searchParams: Promise<SearchParams>;
+};
+
+const AdminOrdersPage = async ({ searchParams }: Props) => {
   await requireAuth();
+  const params = await ordersParamsLoader(searchParams);
   return <OrderList />;
 };
 

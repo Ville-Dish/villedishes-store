@@ -16,6 +16,11 @@ import {
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuPortal,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
@@ -44,7 +49,12 @@ import {
 import { lazy, useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
-import { createInvoicePDF } from "@/lib/invoicePdfGenerate";
+import {
+  ColumnMappings,
+  createInvoicePDF,
+  DEFAULT_COLUMN_MAPPINGS,
+  InvoiceDisplayMode,
+} from "@/lib/invoicePdfGenerate";
 import { saveAs } from "file-saver";
 import "jspdf-autotable";
 
@@ -60,6 +70,9 @@ import { Slider } from "@/components/ui/slider";
 import { useLoading } from "@/context/LoadingContext";
 import { cn } from "@/lib/utils";
 import { InvoiceForm } from "./invoice-form";
+import { Invoice, MenuItem } from "@/lib/types";
+import { CategoryMappingDialog } from "@/features/invoices/components/category-mapping-dialog";
+import { ColumnMappingDialog } from "@/features/invoices/components/column-mapping-dialog";
 
 const InvoiceDetails = lazy(() =>
   import("@/components/custom/invoices/invoice-details").then((module) => ({
@@ -91,9 +104,10 @@ export const InvoiceList = () => {
     dueDate: "",
     status: "PENDING",
     discountType: "PERCENT",
+    taxType: "PERCENT",
   });
 
-  const { setIsLoading } = useLoading();
+  // const { setIsLoading } = useLoading();
   const [loading, setLoading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
 
@@ -126,6 +140,16 @@ export const InvoiceList = () => {
 
   const [sortField, setSortField] = useState<SortField>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>(null);
+
+  // Category Mapping state
+  const [categoryMappings, setCategoryMappings] = useState<
+    Record<string, string>
+  >({});
+  const [showCategoryDialog, setShowCategoryDialog] = useState(false);
+  const [columnMappings, setColumnMappings] = useState<ColumnMappings>(
+    DEFAULT_COLUMN_MAPPINGS,
+  );
+  const [showColumnDialog, setShowColumnDialog] = useState(false);
 
   // Add this sorting handler
   const handleSort = (field: SortField) => {
@@ -185,11 +209,11 @@ export const InvoiceList = () => {
         console.error("Error fetching invoices:", error);
       } finally {
         setLoading(false);
-        setIsLoading(false);
+        // setIsLoading(false);
       }
     };
     fetchInvoices();
-  }, [setIsLoading]);
+  }, []);
 
   // Fetch available products from the API
   useEffect(() => {
@@ -387,7 +411,10 @@ export const InvoiceList = () => {
     setSelectedInvoice(invoice);
   };
 
-  const handleDownloadInvoice = async (invoice: Invoice) => {
+  const handleDownloadInvoice = async (
+    invoice: Invoice,
+    displayMode: InvoiceDisplayMode = "detailed",
+  ) => {
     try {
       toast.info(`Downloading Invoice ${invoice.invoiceNumber}`);
 
@@ -399,7 +426,12 @@ export const InvoiceList = () => {
 
       // Call createInvoicePDF to generate the PDF content as Uint8Array
       // const pdfModule = await generatePDF
-      const pdfData = await createInvoicePDF(invoice);
+      const pdfData = await createInvoicePDF(
+        invoice,
+        displayMode,
+        categoryMappings,
+        columnMappings,
+      );
 
       // Create a new Uint8Array to ensure we have a proper ArrayBuffer
       const uint8Array = new Uint8Array(pdfData);
@@ -420,9 +452,17 @@ export const InvoiceList = () => {
     }
   };
 
-  const handlePreviewInvoice = async (invoice: Invoice) => {
+  const handlePreviewInvoice = async (
+    invoice: Invoice,
+    displayMode: InvoiceDisplayMode = "detailed",
+  ) => {
     try {
-      const pdfData = await createInvoicePDF(invoice);
+      const pdfData = await createInvoicePDF(
+        invoice,
+        displayMode,
+        categoryMappings,
+        columnMappings,
+      );
 
       // Create a new Uint8Array to ensure we have a proper ArrayBuffer
       const uint8Array = new Uint8Array(pdfData);
@@ -445,18 +485,39 @@ export const InvoiceList = () => {
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 max-w-7xl mx-auto">
       <div className="flex flex-col sm:flex-row items-center justify-between space-y-2 sm:space-y-0">
-        <h2 className="text-3xl font-bold tracking-tight">Invoices</h2>
-        <div className="flex items-center space-x-2">
+        <h2 className="text-3xl font-bold tracking-tight mr-4">Invoices</h2>
+        <div className="grid grid-cols-2 pr-8 md:grid-cols-4 gap-4">
+          <Button
+            onClick={() => setShowCategoryDialog(true)}
+            variant="outline"
+            className="cursor-pointer"
+          >
+            Category Names
+          </Button>
+
+          <Button
+            onClick={() => setShowColumnDialog(true)}
+            variant="outline"
+            className="cursor-pointer"
+          >
+            Column Settings
+          </Button>
+
           <Input
             placeholder="Search invoices..."
             className="max-w-50"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
+
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
-              <Button onClick={() => setDialogOpen(true)} variant="create">
-                <Plus className="h-4 w-4" /> Create New Invoice
+              <Button
+                onClick={() => setDialogOpen(true)}
+                variant="create"
+                className="cursor-pointer"
+              >
+                <Plus className="size-4" /> Create New Invoice
               </Button>
             </DialogTrigger>
             <DialogContent className="h-[80vh]">
@@ -593,7 +654,9 @@ export const InvoiceList = () => {
                 <TableRow key={invoice.id}>
                   <TableCell>{getInvoiceIndex(invoice) + 1}</TableCell>
                   <TableCell>{invoice.invoiceNumber}</TableCell>
-                  <TableCell>{invoice.customerName}</TableCell>
+                  <TableCell className="truncate overflow-hidden">
+                    {invoice.customerName}
+                  </TableCell>
                   <TableCell>${invoice.amount.toFixed(2)}</TableCell>
                   <TableCell>{invoice.dueDate}</TableCell>
                   <TableCell>
@@ -637,20 +700,93 @@ export const InvoiceList = () => {
                             <Pencil className="size-4" color="#fe9e1d" />
                             Edit Invoice
                           </DropdownMenuItem>
-                          <DropdownMenuItem
-                            className="cursor-pointer"
-                            onSelect={() => handlePreviewInvoice(invoice)}
-                          >
-                            <Eye className="size-4 text-blue-500" />
-                            View Invoice
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            className="cursor-pointer"
-                            onSelect={() => handleDownloadInvoice(invoice)}
-                          >
-                            <Download className="size-4" color="#c7c940" />
-                            Download
-                          </DropdownMenuItem>
+
+                          {/* Preview submenu */}
+                          <DropdownMenuSub>
+                            <DropdownMenuSubTrigger>
+                              <Eye className="size-4 text-blue-500" />
+                              View Invoice
+                            </DropdownMenuSubTrigger>
+                            <DropdownMenuPortal>
+                              <DropdownMenuSubContent className="w-48">
+                                <DropdownMenuItem
+                                  className="cursor-pointer"
+                                  onSelect={() =>
+                                    handlePreviewInvoice(invoice, "detailed")
+                                  }
+                                >
+                                  Detailed View
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  className="cursor-pointer"
+                                  onSelect={() =>
+                                    handlePreviewInvoice(
+                                      invoice,
+                                      "category-summary",
+                                    )
+                                  }
+                                >
+                                  Category Summary
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  className="cursor-pointer"
+                                  onSelect={() =>
+                                    handlePreviewInvoice(
+                                      invoice,
+                                      "category-grouped",
+                                    )
+                                  }
+                                >
+                                  Grouped by Category
+                                </DropdownMenuItem>
+                              </DropdownMenuSubContent>
+                            </DropdownMenuPortal>
+                          </DropdownMenuSub>
+
+                          {/* Download submenu */}
+                          <DropdownMenuSub>
+                            <DropdownMenuSubTrigger>
+                              <Download className="size-4" color="#c7c940" />
+                              Download
+                            </DropdownMenuSubTrigger>
+                            <DropdownMenuPortal>
+                              <DropdownMenuSubContent className="w-48">
+                                <DropdownMenuItem
+                                  className="cursor-pointer"
+                                  onSelect={() =>
+                                    handleDownloadInvoice(invoice, "detailed")
+                                  }
+                                >
+                                  Detailed View
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  className="cursor-pointer"
+                                  onSelect={() =>
+                                    handleDownloadInvoice(
+                                      invoice,
+                                      "category-summary",
+                                    )
+                                  }
+                                >
+                                  Category Summary
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  className="cursor-pointer"
+                                  onSelect={() =>
+                                    handleDownloadInvoice(
+                                      invoice,
+                                      "category-grouped",
+                                    )
+                                  }
+                                >
+                                  Grouped by Category
+                                </DropdownMenuItem>
+                              </DropdownMenuSubContent>
+                            </DropdownMenuPortal>
+                          </DropdownMenuSub>
+
+                          <DropdownMenuSeparator />
+
                           <DropdownMenuItem
                             className="cursor-pointer"
                             onSelect={() =>
@@ -764,10 +900,31 @@ export const InvoiceList = () => {
                 invoice={selectedInvoice}
                 availableProducts={availableProducts}
                 onUpdate={handleUpdateInvoice}
+                categoryMappings={categoryMappings}
+                columnMappings={columnMappings}
               />
             </ScrollArea>
           </DialogContent>
         </Dialog>
+      )}
+
+      {showCategoryDialog && (
+        <CategoryMappingDialog
+          open={showCategoryDialog}
+          onOpenChange={setShowCategoryDialog}
+          categoryMappings={categoryMappings}
+          onSave={setCategoryMappings}
+        />
+      )}
+
+      {showColumnDialog && (
+        <ColumnMappingDialog
+          open={showColumnDialog}
+          onOpenChange={setShowColumnDialog}
+          columnMappings={columnMappings}
+          onSave={setColumnMappings}
+          availableProducts={availableProducts}
+        />
       )}
 
       <Dialog open={pdfPreviewOpen} onOpenChange={setPdfPreviewOpen}>

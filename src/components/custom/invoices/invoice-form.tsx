@@ -35,6 +35,7 @@ import { addMonths, format } from "date-fns";
 import { CalendarIcon, Loader2Icon } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { toast } from "sonner";
+import { Invoice } from "@/lib/types";
 
 interface InvoiceFormProps {
   setDialog: (value: boolean) => void;

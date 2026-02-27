@@ -85,7 +85,7 @@ function Calendar({
           defaultClassNames.caption_label,
         ),
         table: "w-full border-collapse",
-        weekdays: cn("flex", defaultClassNames.weekdays),
+        weekdays: cn("flex gap-4", defaultClassNames.weekdays),
         weekday: cn(
           "text-muted-foreground flex-1 select-none rounded-md text-[0.8rem] font-normal",
           defaultClassNames.weekday,
@@ -110,7 +110,7 @@ function Calendar({
         range_middle: cn("rounded-none", defaultClassNames.range_middle),
         range_end: cn("bg-accent rounded-r-md", defaultClassNames.range_end),
         today: cn(
-          "bg-accent text-accent-foreground rounded-md data-[selected=true]:rounded-none",
+          "bg-yellow-600 text-white rounded-md data-[selected=true]:rounded-none",
           defaultClassNames.today,
         ),
         outside: cn(

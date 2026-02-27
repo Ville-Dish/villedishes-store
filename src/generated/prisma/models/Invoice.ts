@@ -60,6 +60,7 @@ export type InvoiceMinAggregateOutputType = {
   discountPercentage: number | null
   discountType: $Enums.DiscountType | null
   taxRate: number | null
+  taxType: $Enums.DiscountType | null
   shippingFee: number | null
   serviceCharge: number | null
   miscellaneous: number | null
@@ -80,6 +81,7 @@ export type InvoiceMaxAggregateOutputType = {
   discountPercentage: number | null
   discountType: $Enums.DiscountType | null
   taxRate: number | null
+  taxType: $Enums.DiscountType | null
   shippingFee: number | null
   serviceCharge: number | null
   miscellaneous: number | null
@@ -100,6 +102,7 @@ export type InvoiceCountAggregateOutputType = {
   discountPercentage: number
   discountType: number
   taxRate: number
+  taxType: number
   shippingFee: number
   serviceCharge: number
   miscellaneous: number
@@ -144,6 +147,7 @@ export type InvoiceMinAggregateInputType = {
   discountPercentage?: true
   discountType?: true
   taxRate?: true
+  taxType?: true
   shippingFee?: true
   serviceCharge?: true
   miscellaneous?: true
@@ -164,6 +168,7 @@ export type InvoiceMaxAggregateInputType = {
   discountPercentage?: true
   discountType?: true
   taxRate?: true
+  taxType?: true
   shippingFee?: true
   serviceCharge?: true
   miscellaneous?: true
@@ -184,6 +189,7 @@ export type InvoiceCountAggregateInputType = {
   discountPercentage?: true
   discountType?: true
   taxRate?: true
+  taxType?: true
   shippingFee?: true
   serviceCharge?: true
   miscellaneous?: true
@@ -291,6 +297,7 @@ export type InvoiceGroupByOutputType = {
   discountPercentage: number
   discountType: $Enums.DiscountType
   taxRate: number
+  taxType: $Enums.DiscountType
   shippingFee: number
   serviceCharge: number
   miscellaneous: number
@@ -334,6 +341,7 @@ export type InvoiceWhereInput = {
   discountPercentage?: Prisma.FloatFilter<"Invoice"> | number
   discountType?: Prisma.EnumDiscountTypeFilter<"Invoice"> | $Enums.DiscountType
   taxRate?: Prisma.FloatFilter<"Invoice"> | number
+  taxType?: Prisma.EnumDiscountTypeFilter<"Invoice"> | $Enums.DiscountType
   shippingFee?: Prisma.FloatFilter<"Invoice"> | number
   serviceCharge?: Prisma.FloatFilter<"Invoice"> | number
   miscellaneous?: Prisma.FloatFilter<"Invoice"> | number
@@ -355,6 +363,7 @@ export type InvoiceOrderByWithRelationInput = {
   discountPercentage?: Prisma.SortOrder
   discountType?: Prisma.SortOrder
   taxRate?: Prisma.SortOrder
+  taxType?: Prisma.SortOrder
   shippingFee?: Prisma.SortOrder
   serviceCharge?: Prisma.SortOrder
   miscellaneous?: Prisma.SortOrder
@@ -379,6 +388,7 @@ export type InvoiceWhereUniqueInput = Prisma.AtLeast<{
   discountPercentage?: Prisma.FloatFilter<"Invoice"> | number
   discountType?: Prisma.EnumDiscountTypeFilter<"Invoice"> | $Enums.DiscountType
   taxRate?: Prisma.FloatFilter<"Invoice"> | number
+  taxType?: Prisma.EnumDiscountTypeFilter<"Invoice"> | $Enums.DiscountType
   shippingFee?: Prisma.FloatFilter<"Invoice"> | number
   serviceCharge?: Prisma.FloatFilter<"Invoice"> | number
   miscellaneous?: Prisma.FloatFilter<"Invoice"> | number
@@ -400,6 +410,7 @@ export type InvoiceOrderByWithAggregationInput = {
   discountPercentage?: Prisma.SortOrder
   discountType?: Prisma.SortOrder
   taxRate?: Prisma.SortOrder
+  taxType?: Prisma.SortOrder
   shippingFee?: Prisma.SortOrder
   serviceCharge?: Prisma.SortOrder
   miscellaneous?: Prisma.SortOrder
@@ -428,6 +439,7 @@ export type InvoiceScalarWhereWithAggregatesInput = {
   discountPercentage?: Prisma.FloatWithAggregatesFilter<"Invoice"> | number
   discountType?: Prisma.EnumDiscountTypeWithAggregatesFilter<"Invoice"> | $Enums.DiscountType
   taxRate?: Prisma.FloatWithAggregatesFilter<"Invoice"> | number
+  taxType?: Prisma.EnumDiscountTypeWithAggregatesFilter<"Invoice"> | $Enums.DiscountType
   shippingFee?: Prisma.FloatWithAggregatesFilter<"Invoice"> | number
   serviceCharge?: Prisma.FloatWithAggregatesFilter<"Invoice"> | number
   miscellaneous?: Prisma.FloatWithAggregatesFilter<"Invoice"> | number
@@ -448,6 +460,7 @@ export type InvoiceCreateInput = {
   discountPercentage?: number
   discountType?: $Enums.DiscountType
   taxRate?: number
+  taxType?: $Enums.DiscountType
   shippingFee?: number
   serviceCharge?: number
   miscellaneous?: number
@@ -469,6 +482,7 @@ export type InvoiceUncheckedCreateInput = {
   discountPercentage?: number
   discountType?: $Enums.DiscountType
   taxRate?: number
+  taxType?: $Enums.DiscountType
   shippingFee?: number
   serviceCharge?: number
   miscellaneous?: number
@@ -490,6 +504,7 @@ export type InvoiceUpdateInput = {
   discountPercentage?: Prisma.FloatFieldUpdateOperationsInput | number
   discountType?: Prisma.EnumDiscountTypeFieldUpdateOperationsInput | $Enums.DiscountType
   taxRate?: Prisma.FloatFieldUpdateOperationsInput | number
+  taxType?: Prisma.EnumDiscountTypeFieldUpdateOperationsInput | $Enums.DiscountType
   shippingFee?: Prisma.FloatFieldUpdateOperationsInput | number
   serviceCharge?: Prisma.FloatFieldUpdateOperationsInput | number
   miscellaneous?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -511,6 +526,7 @@ export type InvoiceUncheckedUpdateInput = {
   discountPercentage?: Prisma.FloatFieldUpdateOperationsInput | number
   discountType?: Prisma.EnumDiscountTypeFieldUpdateOperationsInput | $Enums.DiscountType
   taxRate?: Prisma.FloatFieldUpdateOperationsInput | number
+  taxType?: Prisma.EnumDiscountTypeFieldUpdateOperationsInput | $Enums.DiscountType
   shippingFee?: Prisma.FloatFieldUpdateOperationsInput | number
   serviceCharge?: Prisma.FloatFieldUpdateOperationsInput | number
   miscellaneous?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -532,6 +548,7 @@ export type InvoiceCreateManyInput = {
   discountPercentage?: number
   discountType?: $Enums.DiscountType
   taxRate?: number
+  taxType?: $Enums.DiscountType
   shippingFee?: number
   serviceCharge?: number
   miscellaneous?: number
@@ -552,6 +569,7 @@ export type InvoiceUpdateManyMutationInput = {
   discountPercentage?: Prisma.FloatFieldUpdateOperationsInput | number
   discountType?: Prisma.EnumDiscountTypeFieldUpdateOperationsInput | $Enums.DiscountType
   taxRate?: Prisma.FloatFieldUpdateOperationsInput | number
+  taxType?: Prisma.EnumDiscountTypeFieldUpdateOperationsInput | $Enums.DiscountType
   shippingFee?: Prisma.FloatFieldUpdateOperationsInput | number
   serviceCharge?: Prisma.FloatFieldUpdateOperationsInput | number
   miscellaneous?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -572,6 +590,7 @@ export type InvoiceUncheckedUpdateManyInput = {
   discountPercentage?: Prisma.FloatFieldUpdateOperationsInput | number
   discountType?: Prisma.EnumDiscountTypeFieldUpdateOperationsInput | $Enums.DiscountType
   taxRate?: Prisma.FloatFieldUpdateOperationsInput | number
+  taxType?: Prisma.EnumDiscountTypeFieldUpdateOperationsInput | $Enums.DiscountType
   shippingFee?: Prisma.FloatFieldUpdateOperationsInput | number
   serviceCharge?: Prisma.FloatFieldUpdateOperationsInput | number
   miscellaneous?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -592,6 +611,7 @@ export type InvoiceCountOrderByAggregateInput = {
   discountPercentage?: Prisma.SortOrder
   discountType?: Prisma.SortOrder
   taxRate?: Prisma.SortOrder
+  taxType?: Prisma.SortOrder
   shippingFee?: Prisma.SortOrder
   serviceCharge?: Prisma.SortOrder
   miscellaneous?: Prisma.SortOrder
@@ -623,6 +643,7 @@ export type InvoiceMaxOrderByAggregateInput = {
   discountPercentage?: Prisma.SortOrder
   discountType?: Prisma.SortOrder
   taxRate?: Prisma.SortOrder
+  taxType?: Prisma.SortOrder
   shippingFee?: Prisma.SortOrder
   serviceCharge?: Prisma.SortOrder
   miscellaneous?: Prisma.SortOrder
@@ -643,6 +664,7 @@ export type InvoiceMinOrderByAggregateInput = {
   discountPercentage?: Prisma.SortOrder
   discountType?: Prisma.SortOrder
   taxRate?: Prisma.SortOrder
+  taxType?: Prisma.SortOrder
   shippingFee?: Prisma.SortOrder
   serviceCharge?: Prisma.SortOrder
   miscellaneous?: Prisma.SortOrder
@@ -699,6 +721,7 @@ export type InvoiceCreateWithoutInvoiceProductsInput = {
   discountPercentage?: number
   discountType?: $Enums.DiscountType
   taxRate?: number
+  taxType?: $Enums.DiscountType
   shippingFee?: number
   serviceCharge?: number
   miscellaneous?: number
@@ -719,6 +742,7 @@ export type InvoiceUncheckedCreateWithoutInvoiceProductsInput = {
   discountPercentage?: number
   discountType?: $Enums.DiscountType
   taxRate?: number
+  taxType?: $Enums.DiscountType
   shippingFee?: number
   serviceCharge?: number
   miscellaneous?: number
@@ -755,6 +779,7 @@ export type InvoiceUpdateWithoutInvoiceProductsInput = {
   discountPercentage?: Prisma.FloatFieldUpdateOperationsInput | number
   discountType?: Prisma.EnumDiscountTypeFieldUpdateOperationsInput | $Enums.DiscountType
   taxRate?: Prisma.FloatFieldUpdateOperationsInput | number
+  taxType?: Prisma.EnumDiscountTypeFieldUpdateOperationsInput | $Enums.DiscountType
   shippingFee?: Prisma.FloatFieldUpdateOperationsInput | number
   serviceCharge?: Prisma.FloatFieldUpdateOperationsInput | number
   miscellaneous?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -775,6 +800,7 @@ export type InvoiceUncheckedUpdateWithoutInvoiceProductsInput = {
   discountPercentage?: Prisma.FloatFieldUpdateOperationsInput | number
   discountType?: Prisma.EnumDiscountTypeFieldUpdateOperationsInput | $Enums.DiscountType
   taxRate?: Prisma.FloatFieldUpdateOperationsInput | number
+  taxType?: Prisma.EnumDiscountTypeFieldUpdateOperationsInput | $Enums.DiscountType
   shippingFee?: Prisma.FloatFieldUpdateOperationsInput | number
   serviceCharge?: Prisma.FloatFieldUpdateOperationsInput | number
   miscellaneous?: Prisma.FloatFieldUpdateOperationsInput | number
@@ -826,6 +852,7 @@ export type InvoiceSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   discountPercentage?: boolean
   discountType?: boolean
   taxRate?: boolean
+  taxType?: boolean
   shippingFee?: boolean
   serviceCharge?: boolean
   miscellaneous?: boolean
@@ -848,6 +875,7 @@ export type InvoiceSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Exten
   discountPercentage?: boolean
   discountType?: boolean
   taxRate?: boolean
+  taxType?: boolean
   shippingFee?: boolean
   serviceCharge?: boolean
   miscellaneous?: boolean
@@ -868,6 +896,7 @@ export type InvoiceSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Exten
   discountPercentage?: boolean
   discountType?: boolean
   taxRate?: boolean
+  taxType?: boolean
   shippingFee?: boolean
   serviceCharge?: boolean
   miscellaneous?: boolean
@@ -888,6 +917,7 @@ export type InvoiceSelectScalar = {
   discountPercentage?: boolean
   discountType?: boolean
   taxRate?: boolean
+  taxType?: boolean
   shippingFee?: boolean
   serviceCharge?: boolean
   miscellaneous?: boolean
@@ -896,7 +926,7 @@ export type InvoiceSelectScalar = {
   status?: boolean
 }
 
-export type InvoiceOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "invoiceNumber" | "customerName" | "customerEmail" | "customerPhone" | "amount" | "amountPaid" | "amountDue" | "discountPercentage" | "discountType" | "taxRate" | "shippingFee" | "serviceCharge" | "miscellaneous" | "dateCreated" | "dueDate" | "status", ExtArgs["result"]["invoice"]>
+export type InvoiceOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "invoiceNumber" | "customerName" | "customerEmail" | "customerPhone" | "amount" | "amountPaid" | "amountDue" | "discountPercentage" | "discountType" | "taxRate" | "taxType" | "shippingFee" | "serviceCharge" | "miscellaneous" | "dateCreated" | "dueDate" | "status", ExtArgs["result"]["invoice"]>
 export type InvoiceInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   InvoiceProducts?: boolean | Prisma.Invoice$InvoiceProductsArgs<ExtArgs>
   _count?: boolean | Prisma.InvoiceCountOutputTypeDefaultArgs<ExtArgs>
@@ -921,6 +951,7 @@ export type $InvoicePayload<ExtArgs extends runtime.Types.Extensions.InternalArg
     discountPercentage: number
     discountType: $Enums.DiscountType
     taxRate: number
+    taxType: $Enums.DiscountType
     shippingFee: number
     serviceCharge: number
     miscellaneous: number
@@ -1362,6 +1393,7 @@ export interface InvoiceFieldRefs {
   readonly discountPercentage: Prisma.FieldRef<"Invoice", 'Float'>
   readonly discountType: Prisma.FieldRef<"Invoice", 'DiscountType'>
   readonly taxRate: Prisma.FieldRef<"Invoice", 'Float'>
+  readonly taxType: Prisma.FieldRef<"Invoice", 'DiscountType'>
   readonly shippingFee: Prisma.FieldRef<"Invoice", 'Float'>
   readonly serviceCharge: Prisma.FieldRef<"Invoice", 'Float'>
   readonly miscellaneous: Prisma.FieldRef<"Invoice", 'Float'>

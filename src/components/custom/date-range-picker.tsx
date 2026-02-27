@@ -26,11 +26,11 @@ export function DatePickerWithRange({
             id="date"
             variant={"outline"}
             className={cn(
-              "w-75 justify-start text-left font-normal",
+              "justify-start text-left font-normal",
               !date && "text-muted-foreground",
             )}
           >
-            <CalendarIcon className="mr-2 h-4 w-4" />
+            <CalendarIcon className="size-4" />
             {date?.from ? (
               date.to ? (
                 <>

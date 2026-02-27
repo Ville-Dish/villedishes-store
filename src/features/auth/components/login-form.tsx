@@ -32,7 +32,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { signInAction } from "@/actions/authActions";
-import { Alert } from "@/components/ui/alert";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTRPC } from "@/trpc/client";
 
@@ -90,22 +90,28 @@ export const LoginForm = () => {
       </CardHeader>
       <CardContent className="space-y-6">
         {!!error && (
-          <Alert className="bg-destructive/10 border-none">
-            <OctagonAlertIcon className="size-4 text-destructive!" />
-            <p className="text-xs wrap-break-word whitespace-normal!">
+          <Alert
+            variant="destructive"
+            className="bg-destructive/10 border-none"
+          >
+            <OctagonAlertIcon className="size-4" />
+            <AlertTitle className="text-xs font-bold">
+              Authentication Error
+            </AlertTitle>
+            <AlertDescription className="text-xs wrap-break-word whitespace-normal!">
               {error}
-            </p>
+            </AlertDescription>
           </Alert>
         )}
 
         {/* Email/Password Form */}
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-2">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
               name="email"
               render={({ field }) => (
-                <FormItem className="space-y-2">
+                <FormItem className="space-y-1">
                   <FormLabel>Email</FormLabel>
                   <FormControl>
                     <Input
@@ -117,9 +123,7 @@ export const LoginForm = () => {
                       disabled={isloading}
                     />
                   </FormControl>
-                  <div className="min-h-5">
-                    <FormMessage />
-                  </div>
+                  <FormMessage />
                 </FormItem>
               )}
             />
@@ -128,8 +132,17 @@ export const LoginForm = () => {
               control={form.control}
               name="password"
               render={({ field }) => (
-                <FormItem className="space-y-2">
-                  <FormLabel>Password</FormLabel>
+                <FormItem className="space-y-1">
+                  <FormLabel className="flex items-center">
+                    <span>Password</span>
+
+                    <Link
+                      href="/"
+                      className="ml-auto text-xs font-light underline-offset-4 hover:underline hover:text-blue-500"
+                    >
+                      Forgot your password?
+                    </Link>
+                  </FormLabel>
                   <FormControl>
                     <div className="relative">
                       <Input
@@ -157,22 +170,14 @@ export const LoginForm = () => {
                       </Button>
                     </div>
                   </FormControl>
-                  <div className="min-h-5">
-                    <FormMessage />
-                    <Link
-                      href="/"
-                      className="ml-auto inline-block text-sm font-light underline-offset-4 hover:underline hover:text-blue-500"
-                    >
-                      Forgot your password?
-                    </Link>
-                  </div>
+                  <FormMessage />
                 </FormItem>
               )}
             />
 
             <Button
               type="submit"
-              className="w-full mt-6 bg-[#1aa879]"
+              className="w-full mt-2 bg-[#1aa879] hover:bg-[#1aa879]/90 cursor-pointer"
               disabled={isloading}
             >
               {isloading ? (

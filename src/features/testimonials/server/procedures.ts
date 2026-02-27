@@ -3,7 +3,7 @@ import { createTRPCRouter, publicProcedure } from "@/trpc/init";
 import { z } from "zod";
 
 export const testimonialsRouter = createTRPCRouter({
-  getTestimonials: publicProcedure.query(async ({ ctx }) => {
+  getTestimonials: publicProcedure.query(async ({}) => {
     const testimonials = await prisma.testimonial.findMany({
       where: { isApproved: true },
       orderBy: { createdAt: "desc" },

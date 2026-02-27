@@ -13,6 +13,8 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -57,6 +59,23 @@ import { cn } from "@/lib/utils";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { MixedFraction } from "./fractions";
+import {
+  ColumnMappings,
+  DEFAULT_COLUMN_MAPPINGS,
+  InvoiceDisplayMode,
+} from "@/lib/invoicePdfGenerate";
+import { Invoice, InvoiceDetailsProps } from "@/lib/types";
+import z from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 
 const allowsHalfQuantity = (productName?: string, popoverOpen?: boolean) => {
   if (!productName || popoverOpen) return false;
@@ -67,11 +86,22 @@ const allowsHalfQuantity = (productName?: string, popoverOpen?: boolean) => {
   );
 };
 
+const sendInvoiceSchema = z.object({
+  email: z.email({ message: "Email address is required" }),
+});
+
+type SendInvoiceValue = z.infer<typeof sendInvoiceSchema>;
+
 export const InvoiceDetails = ({
   invoice,
   availableProducts,
   onUpdate,
-}: InvoiceDetailsProps) => {
+  categoryMappings = {},
+  columnMappings = DEFAULT_COLUMN_MAPPINGS,
+}: InvoiceDetailsProps & {
+  categoryMappings?: Record<string, string>;
+  columnMappings?: ColumnMappings;
+}) => {
   const [updatedInvoice, setUpdatedInvoice] = useState<Invoice>(invoice);
 
   const [newProducts, setNewProducts] = useState<
@@ -79,8 +109,9 @@ export const InvoiceDetails = ({
       id: string;
       quantity: number;
       discount: number;
+      category: string;
     }>
-  >([{ id: "", quantity: 1, discount: 0 }]);
+  >([{ id: "", quantity: 1, discount: 0, category: "" }]);
 
   const [isAddProductDialogOpen, setIsAddProductDialogOpen] = useState(false);
 
@@ -101,9 +132,13 @@ export const InvoiceDetails = ({
   const [productDiscount, setProductDiscount] = useState<string[]>(
     invoice?.products?.map((p) => String(p.discount)) || [],
   );
+  const [sendInvoiceOpen, setSendInvoiceOpen] = useState(false);
+  const [emailDisplayMode, setEmailDisplayMode] =
+    useState<InvoiceDisplayMode>("detailed");
   const [sending, setSending] = useState(false);
   const [updating, setUpdating] = useState(false);
   const [taxRate, setTaxRate] = useState(String(invoice.taxRate || 0)); // Default tax rate
+  const [taxType, setTaxType] = useState(invoice.taxType || "PERCENT");
   const [shippingFee, setShippingFee] = useState(
     String(invoice.shippingFee || 0),
   ); // Default shipping fee
@@ -121,6 +156,13 @@ export const InvoiceDetails = ({
   const [miscellaneous, setMiscellaneous] = useState(
     String(invoice.miscellaneous || 0),
   );
+
+  const sendEmailForm = useForm<SendInvoiceValue>({
+    resolver: zodResolver(sendInvoiceSchema),
+    defaultValues: {
+      email: updatedInvoice.customerEmail || "",
+    },
+  });
 
   useEffect(() => {
     setUpdatedInvoice(invoice);
@@ -167,10 +209,12 @@ export const InvoiceDetails = ({
     const value = parseFloat(e.target.value);
     setDiscountPercentage(isNaN(value) ? "" : String(value));
   };
+
   const handleTaxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseFloat(e.target.value);
     setTaxRate(isNaN(value) ? "" : String(value));
   };
+
   const handleShippingChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseFloat(e.target.value);
     setShippingFee(isNaN(value) ? "" : String(value));
@@ -216,7 +260,7 @@ export const InvoiceDetails = ({
   };
 
   const resetProductDialog = () => {
-    setNewProducts([{ id: "", quantity: 1, discount: 0 }]);
+    setNewProducts([{ id: "", quantity: 1, discount: 0, category: "" }]);
     setEditingProductIndex(null);
     setIsAddProductDialogOpen(false);
     setSearchTerm(""); // Clear search term
@@ -305,6 +349,7 @@ export const InvoiceDetails = ({
             price:
               selectedProduct.basePrice * newProduct.quantity * (1 - 0 / 100),
             discount: 0,
+            category: newProduct.category,
           });
         }
       }
@@ -344,6 +389,7 @@ export const InvoiceDetails = ({
           id: productToEdit.id,
           quantity: productToEdit.quantity,
           discount: productToEdit.discount,
+          category: productToEdit.category,
         },
       ]);
       setIsAddProductDialogOpen(true);
@@ -403,7 +449,10 @@ export const InvoiceDetails = ({
       discountType === "PERCENT"
         ? subtotal * ((Number(discountPercentage) || 0) / 100)
         : Number(discountPercentage) || 0;
-    const taxAmount = subtotal * ((Number(taxRate) || 0) / 100);
+    const taxAmount =
+      taxType === "PERCENT"
+        ? subtotal * ((Number(taxRate) || 0) / 100)
+        : Number(taxRate) || 0;
     return (
       subtotal -
       discountAmount +
@@ -416,6 +465,7 @@ export const InvoiceDetails = ({
     calculateSubtotal,
     discountPercentage,
     discountType,
+    taxType,
     miscellaneous,
     serviceCharge,
     shippingFee,
@@ -428,6 +478,11 @@ export const InvoiceDetails = ({
     discountType === "PERCENT"
       ? subTotal * (Number(discountPercentage) / 100)
       : Number(discountPercentage);
+
+  const taxAmount =
+    taxType === "PERCENT"
+      ? subTotal * ((Number(taxRate) || 0) / 100)
+      : Number(taxRate) || 0;
 
   const handleUpdateInvoice = async () => {
     try {
@@ -453,6 +508,7 @@ export const InvoiceDetails = ({
         discountPercentage: Number(discountPercentage),
         discountType: discountType,
         taxRate: Number(taxRate),
+        taxType: taxType,
         shippingFee: Number(shippingFee),
         serviceCharge: Number(serviceCharge),
         miscellaneous: Number(miscellaneous),
@@ -494,9 +550,18 @@ export const InvoiceDetails = ({
     calculateTotal,
   ]);
 
-  const handleSendInvoiceEmail = async () => {
+  const handleSendInvoiceEmail = async (data: SendInvoiceValue) => {
     try {
       setSending(true);
+
+      const parsed = sendInvoiceSchema.safeParse(data);
+      if (!parsed.success) {
+        toast.error("Failed to send Invoice email", {
+          description: "Please check the email address format",
+        });
+        return;
+      }
+
       const response = await fetch("/api/emails/invoice", {
         method: "POST",
         headers: {
@@ -504,15 +569,19 @@ export const InvoiceDetails = ({
         },
         body: JSON.stringify({
           from: adminEmail,
-          to: updatedInvoice.customerEmail,
+          to: parsed.data.email,
           subject: `Your Invoice ${updatedInvoice.invoiceNumber} from VilleDishes is ready`,
           customerName: updatedInvoice.customerName,
           invoiceNumber: updatedInvoice.invoiceNumber,
           invoice: updatedInvoice,
+          displayMode: emailDisplayMode,
+          categoryMappings,
+          columnMappings,
         }),
       });
 
       if (response.ok) {
+        setSendInvoiceOpen(false);
         toast.success("Invoice sent successfully");
       } else {
         throw new Error("Failed to send invoice");
@@ -753,6 +822,7 @@ export const InvoiceDetails = ({
                             variant="ghost"
                             size="sm"
                             onClick={() => startEditingProduct(index)}
+                            className="cursor-pointer"
                           >
                             <EditIcon className="size-4" />
                           </Button>
@@ -760,6 +830,7 @@ export const InvoiceDetails = ({
                             variant="ghost"
                             size="sm"
                             onClick={() => removeProduct(index)}
+                            className="cursor-pointer text-destructive hover:text-destructive"
                           >
                             <Trash2Icon className="size-4" />
                           </Button>
@@ -779,7 +850,7 @@ export const InvoiceDetails = ({
             <DialogTrigger asChild>
               <Button
                 onClick={resetProductDialog}
-                className="mt-4"
+                className="mt-4 cursor-pointer"
                 variant="create"
               >
                 Add Product
@@ -974,10 +1045,11 @@ export const InvoiceDetails = ({
                 <Button
                   type="button"
                   variant="outline"
+                  className="cursor-pointer"
                   onClick={() => {
                     setNewProducts([
                       ...newProducts,
-                      { id: "", quantity: 1, discount: 0 },
+                      { id: "", quantity: 1, discount: 0, category: "" },
                     ]);
                     setSelectedProductIds([...selectedProductIds, ""]);
                   }}
@@ -990,6 +1062,7 @@ export const InvoiceDetails = ({
                   editingProductIndex !== null ? saveEditedProduct : addProduct
                 }
                 variant={editingProductIndex !== null ? "submit" : "create"}
+                className="cursor-pointer"
               >
                 {editingProductIndex !== null
                   ? "Save Changes"
@@ -1042,20 +1115,34 @@ export const InvoiceDetails = ({
               </div>
             </div>
             <div className="flex justify-between items-center">
-              <span>Tax (%):</span>
+              <span className="flex items-center">
+                Tax
+                <Select
+                  value={taxType}
+                  onValueChange={(value) => setTaxType(value as any)}
+                >
+                  <SelectTrigger className="border rounded px-2 py-1 mx-2">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="PERCENT">%</SelectItem>
+                    <SelectItem value="AMOUNT">$</SelectItem>
+                  </SelectContent>
+                </Select>
+                :
+              </span>
               <div className="flex items-center">
                 <Input
                   id="taxRate"
                   type="number"
                   value={taxRate}
+                  onChange={handleTaxChange}
                   className="w-20 mr-2"
                   min="0"
-                  step={0.01}
-                  onChange={handleTaxChange}
+                  max={taxType === "PERCENT" ? 100 : undefined}
+                  step={taxType === "PERCENT" ? 0.01 : 1}
                 />
-                <span>
-                  {formattedCurrency.format(subTotal * (Number(taxRate) / 100))}
-                </span>
+                <span>{formattedCurrency.format(taxAmount)}</span>
               </div>
             </div>
 
@@ -1114,23 +1201,95 @@ export const InvoiceDetails = ({
 
       <div className="flex flex-col sm:flex-row gap-4 justify-between">
         <Button
-          className="w-full sm:w-auto"
+          className="w-full sm:w-auto cursor-pointer"
           variant="submit"
           onClick={handleUpdateInvoice}
           disabled={updating || sending}
         >
-          {updating && <LoaderIcon className="animate-spin size-4 mr-2" />}
+          {updating && <LoaderIcon className="animate-spin size-4" />}
           Update Invoice
         </Button>
-        <Button
-          className="w-full sm:w-auto"
-          variant="send"
-          onClick={handleSendInvoiceEmail}
-          disabled={sending || updating}
-        >
-          {sending && <LoaderIcon className="animate-spin size-4 mr-2" />}
-          Send Invoice
-        </Button>
+
+        <Dialog open={sendInvoiceOpen} onOpenChange={setSendInvoiceOpen}>
+          <DialogTrigger asChild>
+            <Button
+              className="w-full sm:w-auto cursor-pointer"
+              variant="send"
+              // disabled={sending || updating}
+            >
+              {sending && <LoaderIcon className="animate-spin size-4 mr-2" />}
+              Send Invoice
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Send Invoice</DialogTitle>
+              <DialogDescription>
+                Choose how to display the invoice and edit the recipient email
+                as needed.
+              </DialogDescription>
+            </DialogHeader>
+            <Form {...sendEmailForm}>
+              <form
+                className="space-y-2"
+                onSubmit={sendEmailForm.handleSubmit(handleSendInvoiceEmail)}
+              >
+                {/* Display Mode Selection */}
+                <div className="space-y-2">
+                  <FormLabel>Invoice Display Mode</FormLabel>
+                  <Select
+                    value={emailDisplayMode}
+                    onValueChange={(value: InvoiceDisplayMode) =>
+                      setEmailDisplayMode(value)
+                    }
+                  >
+                    <SelectTrigger disabled={sending || updating}>
+                      <SelectValue placeholder="Select display mode" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="detailed">Detailed View</SelectItem>
+                      <SelectItem value="category-summary">
+                        Category Summary
+                      </SelectItem>
+                      <SelectItem value="category-grouped">
+                        Category Grouped
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <FormField
+                  control={sendEmailForm.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Enter email address"
+                          {...field}
+                          disabled={sending || updating}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <DialogFooter>
+                  <Button
+                    type="submit"
+                    className="bg-yellow-600 cursor-pointer hover:bg-yellow-700"
+                    disabled={sending || updating}
+                  >
+                    {sending && <LoaderIcon className="animate-spin size-4" />}
+                    Send Invoice
+                  </Button>
+                </DialogFooter>
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

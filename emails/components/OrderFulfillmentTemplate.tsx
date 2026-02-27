@@ -16,7 +16,12 @@ import {
 } from "@react-email/components";
 import { EmailFooter } from "./email-footer";
 import { EmailHeader } from "./email-header";
-import { demoItems } from "@/lib/constantData";
+
+/** Local type so this template does not depend on global Product or @/ paths (works in email dev too). */
+type OrderItem = {
+  quantity: number;
+  product: { name: string; price: number };
+};
 
 type OrderFulfillmentEmailProps = {
   customerName: string;
@@ -26,8 +31,8 @@ type OrderFulfillmentEmailProps = {
   tax: number;
   shippingFee: number;
   total: number;
-  items: Product[];
-  estimatedDelivery?: string;
+  items: OrderItem[];
+  feedbackLink?: string;
 };
 
 const OrderFulfillmentTemplate = ({
@@ -38,14 +43,15 @@ const OrderFulfillmentTemplate = ({
   shippingFee,
   total,
   items,
+  feedbackLink,
 }: OrderFulfillmentEmailProps) => {
   customerName = customerName || "John Doe";
   orderNumber = orderNumber || "ORD-00000";
-  subtotal = subtotal || 44.96;
-  tax = tax || 2.45;
-  shippingFee = shippingFee || 10.0;
-  total = total || 57.21;
-  items = items || demoItems;
+  subtotal = Number(subtotal) || 44.96;
+  tax = Number(tax) || 2.45;
+  shippingFee = Number(shippingFee) || 10.0;
+  total = Number(total) || 57.21;
+  const safeItems = Array.isArray(items) ? items : [];
   const previewText = `Your Order with number ${orderNumber} has been fulfilled`;
 
   return (
@@ -81,17 +87,22 @@ const OrderFulfillmentTemplate = ({
                   <Column className="p-3 w-1/4 text-center">Quantity</Column>
                   <Column className="p-3 w-1/4 text-right">Price</Column>
                 </Row>
-                {items.map((item, index) => (
+                {safeItems.map((item, index) => (
                   <Row
                     key={index}
                     className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}
                   >
-                    <Column className="p-3 w-1/2">{item.product.name}</Column>
+                    <Column className="p-3 w-1/2">
+                      {item?.product?.name ?? "Item"}
+                    </Column>
                     <Column className="p-3 w-1/4 text-center">
-                      {item.quantity}
+                      {item?.quantity ?? 0}
                     </Column>
                     <Column className="p-3 w-1/4 text-right">
-                      ${item.product.price.toFixed(2)}
+                      $
+                      {typeof item?.product?.price === "number"
+                        ? item.product.price.toFixed(2)
+                        : "0.00"}
                     </Column>
                   </Row>
                 ))}
@@ -133,8 +144,10 @@ const OrderFulfillmentTemplate = ({
               <Hr className="border-gray-300 my-6" />
               <Section className="text-center">
                 <Link
-                  href="/"
-                  className="bg-green-500 hover:bg-green-600 text-white py-3 px-6 rounded-md font-bold text-base no-underline inline-block transition-colors duration-300"
+                  href={
+                    feedbackLink || "https://www.surveymonkey.com/r/feedback"
+                  }
+                  className="bg-green-500 text-white py-3 px-6 rounded-md font-bold text-base no-underline inline-block transition-colors duration-300"
                 >
                   Leave a Review
                 </Link>

@@ -21,8 +21,12 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 import { CustomPhoneInput } from "../phone-input";
+import { useTRPC } from "@/trpc/client";
+import { useMutation } from "@tanstack/react-query";
 
 export const ContactForm = () => {
+  const trpc = useTRPC();
+
   const form = useForm<ContactFormData>({
     resolver: zodResolver(contactSchema),
     defaultValues: {
@@ -34,37 +38,16 @@ export const ContactForm = () => {
     },
   });
 
-  const sendContactEmail = (contactDetails: ContactDetails) => {
-    fetch("/api/emails/contact", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from: contactDetails.email,
-        to: testEmail,
-        subject: contactDetails.subject,
-        name: contactDetails.name,
-        email: contactDetails.email,
-        phone: contactDetails.phone,
-        message: contactDetails.message,
-      }),
-    })
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error("Failed to send email");
-        }
-        return response.json();
-      })
-      .then((data) => {
-        console.log("Email sent successfully:", data);
+  const sendContactMail = useMutation(
+    trpc.mail.sendEmail.mutationOptions({
+      onSuccess: () => {
         toast.success("Email Sent", {
           description:
             "An email has been sent to the admin. You should get a response soon.",
         });
         form.reset(); // Clear the form fields after successful submission
-      })
-      .catch((error) => {
+      },
+      onError: (error) => {
         toast.error("Something went wrong", {
           description:
             error instanceof Error
@@ -72,8 +55,9 @@ export const ContactForm = () => {
               : "An unknown error occurred",
         });
         console.error("Error sending email:", error);
-      });
-  };
+      },
+    }),
+  );
 
   const onSubmit = (values: ContactFormData) => {
     console.log(values);
@@ -85,7 +69,12 @@ export const ContactForm = () => {
       message: values.message,
     };
 
-    sendContactEmail(contactData);
+    // sendContactEmail(contactData);
+    sendContactMail.mutate({
+      type: "contact",
+      to: testEmail,
+      ...contactData,
+    });
   };
 
   return (
@@ -137,7 +126,7 @@ export const ContactForm = () => {
                     alt="Map View"
                     width={350}
                     height={50}
-                    className="w-[350px] h-[50px]"
+                    className="w-87.5 h-12.5]"
                   />
                 </div>
               </div>
@@ -183,14 +172,14 @@ export const ContactForm = () => {
                         <FormItem>
                           <FormControl>
                             <CustomPhoneInput
-                          placeholder="(123) 456-7890"
-                          defaultCountry="CA"
-                          value={field.value}
-                          onChange={field.onChange}
-                          onBlur={field.onBlur}
-                          error={fieldState.error}
-                        //   disabled={loading}
-                        />
+                              placeholder="(123) 456-7890"
+                              defaultCountry="CA"
+                              value={field.value}
+                              onChange={field.onChange}
+                              onBlur={field.onBlur}
+                              error={fieldState.error}
+                              //   disabled={loading}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -245,4 +234,4 @@ export const ContactForm = () => {
       </main>
     </div>
   );
-}
+};

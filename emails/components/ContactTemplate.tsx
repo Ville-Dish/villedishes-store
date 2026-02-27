@@ -11,7 +11,6 @@ import {
   Tailwind,
   Text,
 } from "@react-email/components";
-import * as React from "react";
 import { EmailHeader } from "./email-header";
 import { EmailFooter } from "./email-footer";
 

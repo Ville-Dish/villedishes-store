@@ -2,25 +2,45 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma/client";
 import { isValidOrderStatus } from "@/lib/utils";
 import { generateOrderNumber } from "@/lib/helper";
+import { email } from "zod";
+import { phoneNumber } from "better-auth/plugins";
+
+const orderInclude = {
+  shippingInfo: true,
+  products: {
+    include: { product: true },
+  },
+};
+
+const badRequest = (message: string) =>
+  NextResponse.json({ message }, { status: 400 });
+
+const serverError = (message: string, error?: unknown) =>
+  NextResponse.json(
+    {
+      message,
+      error: error instanceof Error ? error.message : "Unknown error",
+    },
+    { status: 500 },
+  );
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    if (!body || Object.keys(body).length === 0) {
-      return NextResponse.json(
-        { error: "Missing request body" },
-        { status: 400 }
-      );
+    if (!body || typeof body !== "object") {
+      return badRequest("Invalid request body");
     }
+
+    console.log({ body });
 
     const {
       id,
       paymentDate,
       products,
       referenceNumber,
-      shippingFee,
+      shippingFee = 0,
       shippingInfo,
-      status,
+      status = "UNVERIFIED",
       subtotal,
       tax,
       total,
@@ -30,273 +50,179 @@ export async function POST(req: NextRequest) {
     } = body;
 
     // Validate required fields
-    if (!shippingInfo || !products || !products.length) {
-      return NextResponse.json(
-        { message: "Shipping information and products are required" },
-        { status: 400 }
-      );
+    if (!shippingInfo?.email || !shippingInfo?.phoneNumber) {
+      return badRequest("Valid shipping information is required");
     }
 
     // Validate the status using the isValidOrderStatus function
+    if (!Array.isArray(products) || products.length === 0) {
+      return badRequest("At least one product is required");
+    }
+
     if (status && !isValidOrderStatus(status)) {
-      return NextResponse.json(
-        { message: "Invalid order status" },
-        { status: 400 }
-      );
+      return badRequest("Invalid order status");
     }
 
     // Generate order number if not provided
-    const finalOrderNumber = orderNumber || (await generateOrderNumber());
+    // const finalOrderNumber = orderNumber ?? (await generateOrderNumber());
+    const tempOrderNumber = orderNumber;
 
-    // Check if shipping info exists and update or create
-    let shipping;
-    const existingShippingInfo = await prisma.shippingInfo.findFirst({
-      where: {
-        AND: [
-          { email: shippingInfo.email },
-          { phoneNumber: shippingInfo.phoneNumber },
-        ],
-      },
-    });
-
-    if (existingShippingInfo) {
-      shipping = await prisma.shippingInfo.update({
-        where: { id: existingShippingInfo.id },
-        data: {
-          ...shippingInfo,
+    const result = await prisma.$transaction(async (tx) => {
+      // Upsert shipping info
+      const shipping = await tx.shippingInfo.upsert({
+        where: {
+          email_phoneNumber: {
+            email: shippingInfo.email,
+            phoneNumber: shippingInfo.phoneNumber,
+          },
+        },
+        update: {
+          firstName: shippingInfo.firstName,
+          lastName: shippingInfo.lastName,
+          address: shippingInfo.address,
+          city: shippingInfo.city,
+          postalCode: shippingInfo.postalCode,
+          orderNotes: shippingInfo.orderNotes,
+        },
+        create: {
+          firstName: shippingInfo.firstName,
+          lastName: shippingInfo.lastName,
+          email: shippingInfo.email,
+          phoneNumber: shippingInfo.phoneNumber,
+          address: shippingInfo.address,
+          city: shippingInfo.city,
+          postalCode: shippingInfo.postalCode,
+          orderNotes: shippingInfo.orderNotes,
         },
       });
-    } else {
-      shipping = await prisma.shippingInfo.create({
+
+      // Create order
+      const newOrder = await tx.order.create({
         data: {
-          ...shippingInfo,
+          orderId: id,
+          paymentDate: paymentDate || null,
+          referenceNumber,
+          shippingFee,
+          status: status || "UNVERIFIED",
+          subtotal,
+          tax,
+          total,
+          verificationCode,
+          orderDate: orderDate || new Date().toISOString().split("T")[0],
+          orderNumber: tempOrderNumber,
+          shippingInfoId: shipping.id,
         },
       });
-    }
 
-    if (!shipping) {
-      return NextResponse.json(
-        {
-          message: "Error adding order",
-        },
-        { status: 400 }
-      );
-    }
-
-    // Create order
-    const newOrder = await prisma.order.create({
-      data: {
-        orderId: id,
-        paymentDate: paymentDate || null,
-        referenceNumber,
-        shippingFee,
-        status: status || "UNVERIFIED",
-        subtotal,
-        tax,
-        total,
-        verificationCode,
-        orderDate: orderDate || new Date().toISOString().split("T")[0],
-        orderNumber: finalOrderNumber,
-        shippingInfoId: shipping.id,
-      },
-    });
-
-    if (!newOrder) {
-      return NextResponse.json(
-        {
-          message: "Error adding order",
-        },
-        { status: 400 }
-      );
-    }
-
-    for (const product of products) {
-      await prisma.orderProduct.create({
-        data: {
+      // Bulk insert products
+      await tx.orderProduct.createMany({
+        data: products.map((product) => ({
           orderId: newOrder.id,
           productId: product.productId,
           quantity: product.quantity,
-        },
+        })),
       });
-    }
 
-    return NextResponse.json({
-      data: newOrder,
-      message: "Order Added Successfully",
-      status: 201,
+      return newOrder;
     });
-  } catch (error) {
-    console.error("Error adding order:", error);
+
+    const fullOrder = await prisma.order.findUnique({
+      where: { id: result.id },
+      include: orderInclude,
+    });
+
     return NextResponse.json(
-      {
-        message: "Error adding order",
-        error: error instanceof Error ? error.message : "Unknown error",
-      },
-      { status: 500 }
+      { data: fullOrder, message: "Order added successfully" },
+      { status: 201 },
     );
+  } catch (error) {
+    console.error("POST /order error:", error);
+    return serverError("Error adding order", error);
   }
 }
 
 export async function GET() {
   try {
     const orders = await prisma.order.findMany({
-      include: {
-        shippingInfo: true, // Assuming 'shippingInfo' is a relation in your Prisma schema
-        products: {
-          include: {
-            product: true,
-          },
-        }, // Assuming 'products' is a relation in your Prisma schema
-      },
+      include: orderInclude,
+      orderBy: { orderDate: "desc" },
     });
-    return NextResponse.json({
-      data: orders,
-      message: "Order retrieved successfully",
-      status: 200,
-    });
-  } catch (error) {
+
     return NextResponse.json(
-      { message: "Error sending email", error },
-      { status: 500 }
+      { data: orders, message: "Orders retrieved successfully" },
+      { status: 200 },
     );
+  } catch (error) {
+    return serverError("Error retrieving orders", error);
   }
 }
 
-// PATCH method to update an order
-export async function PATCH(req: Request) {
+export async function PATCH(req: NextRequest) {
   try {
     const { orderId, providedVerificationCode } = await req.json();
 
-    if (!orderId) {
-      return NextResponse.json(
-        { message: "Order ID is required" },
-        { status: 400 }
-      );
+    if (!orderId || !providedVerificationCode) {
+      return badRequest("Order ID and verification code are required");
     }
 
-    // Fetch the order from the database
     const order = await prisma.order.findUnique({
       where: { orderId },
-      include: {
-        shippingInfo: true,
-        products: {
-          include: {
-            product: true,
-          },
-        },
-      },
     });
 
     if (!order) {
       return NextResponse.json({ message: "Order not found" }, { status: 404 });
     }
 
-    // Check if the provided verification code matches
     if (order.verificationCode !== providedVerificationCode) {
-      return NextResponse.json(
-        { message: "Invalid verification code" },
-        { status: 400 }
-      );
+      return badRequest("Invalid verification code");
     }
 
-    // Generate new order number
     const newOrderNumber = await generateOrderNumber();
 
-    // Update the order
     const updatedOrder = await prisma.order.update({
       where: { orderId },
       data: {
         status: "PENDING",
         orderNumber: newOrderNumber,
-        orderDate: order.paymentDate, // Set orderDate to paymentDate
+        orderDate: order.paymentDate ?? new Date().toISOString(),
       },
-      include: {
-        shippingInfo: true,
-        products: {
-          include: {
-            product: true,
-          },
-        },
-      },
+      include: orderInclude,
     });
 
-    return NextResponse.json({
-      data: updatedOrder,
-      message: "Order verified and updated successfully",
-      status: 200,
-    });
-  } catch (error) {
-    console.error("Error verifying and updating order:", error);
     return NextResponse.json(
-      { message: "Error verifying and updating order", error },
-      { status: 500 }
+      { data: updatedOrder, message: "Order verified successfully" },
+      { status: 200 },
     );
+  } catch (error) {
+    console.error("PATCH /order error:", error);
+    return serverError("Error verifying order", error);
   }
 }
 
-// New PUT method to update only the order status
 export async function PUT(req: NextRequest) {
   try {
-    const body = await req.json();
-
-    if (!body || typeof body !== "object") {
-      return NextResponse.json(
-        { message: "Invalid request body" },
-        { status: 400 }
-      );
-    }
-
-    const { orderId, newStatus } = body;
+    const { orderId, newStatus } = await req.json();
 
     if (!orderId || !newStatus) {
-      return NextResponse.json(
-        { message: "Order ID and new status are required" },
-        { status: 400 }
-      );
+      return badRequest("Order ID and new status are required");
     }
 
-    // Validate the new status
     if (!isValidOrderStatus(newStatus)) {
-      return NextResponse.json(
-        { message: "Invalid order status" },
-        { status: 400 }
-      );
+      return badRequest("Invalid order status");
     }
 
-    // Update the order status
     const updatedOrder = await prisma.order.update({
       where: { orderId },
       data: { status: newStatus },
-      include: {
-        shippingInfo: true,
-        products: {
-          include: {
-            product: true,
-          },
-        },
-      },
+      include: orderInclude,
     });
 
-    if (!updatedOrder) {
-      return NextResponse.json(
-        { message: "Order not found or could not be updated" },
-        { status: 404 }
-      );
-    }
-
-    return NextResponse.json({
-      data: updatedOrder,
-      message: "Order status updated successfully",
-      status: 200,
-    });
-  } catch (error) {
-    console.error("Error updating order status:", error);
     return NextResponse.json(
-      {
-        message: "Error updating order status",
-        error: error instanceof Error ? error.message : "Unknown error",
-      },
-      { status: 500 }
+      { data: updatedOrder, message: "Order status updated successfully" },
+      { status: 200 },
     );
+  } catch (error) {
+    console.error("PUT /order error:", error);
+    return serverError("Error updating order status", error);
   }
 }

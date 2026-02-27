@@ -13,10 +13,11 @@ import { MonthYearPicker } from "@/components/custom/dashboard/month-year-picker
 import { YearPicker } from "@/components/custom/dashboard/year-picker";
 import { DatePickerWithRange } from "@/components/custom/date-range-picker";
 import { toast } from "sonner";
-import { useLoading } from "@/context/LoadingContext";
+// import { useLoading } from "@/context/LoadingContext";
 import { DateRange } from "react-day-picker";
 import { subDays } from "date-fns/subDays";
 import { format } from "date-fns";
+import { QuarterlyReport, ReportData } from "@/lib/types";
 
 const monthNames = [
   "Jan",
@@ -47,7 +48,7 @@ type revenueModified = {
   revenue: number;
 };
 export const AdminDashboard = () => {
-  const { setIsLoading } = useLoading(); // Use loading context
+  // const { setIsLoading } = useLoading(); // Use loading context
   const [isFetchingData, setIsFetchingData] = useState(false);
 
   const [activeTab, setActiveTab] = useState("overview");
@@ -58,13 +59,13 @@ export const AdminDashboard = () => {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [selectedReportYear, setSelectedReportYear] = useState(
-    new Date().getFullYear()
+    new Date().getFullYear(),
   );
   const [selectedAnalyticsMonth, setSelectedAnalyticsMonth] = useState(
-    new Date().getMonth() + 1
+    new Date().getMonth() + 1,
   );
   const [selectedAnalyticsYear, setSelectedAnalyticsYear] = useState(
-    new Date().getFullYear()
+    new Date().getFullYear(),
   );
 
   //Setting useStates for database data
@@ -114,13 +115,13 @@ export const AdminDashboard = () => {
       const [ordersResponse, invoicesResponse, incomeResponse] =
         await Promise.all([
           fetch(
-            `/api/dashboard/orders?limit=5&startDate=${fromDate}&endDate=${toDate}`
+            `/api/dashboard/orders?limit=5&startDate=${fromDate}&endDate=${toDate}`,
           ),
           fetch(
-            `/api/dashboard/invoices?startDate=${fromDate}&endDate=${toDate}`
+            `/api/dashboard/invoices?startDate=${fromDate}&endDate=${toDate}`,
           ),
           fetch(
-            `/api/dashboard/income?startDate=${fromDate}&endDate=${toDate}`
+            `/api/dashboard/income?startDate=${fromDate}&endDate=${toDate}`,
           ),
         ]);
 
@@ -155,7 +156,7 @@ export const AdminDashboard = () => {
   const fetchPerformanceData = useCallback(async () => {
     try {
       const response = await fetch(
-        `/api/dashboard/overview?year=${selectedYear}`
+        `/api/dashboard/overview?year=${selectedYear}`,
       );
 
       if (!response.ok) {
@@ -173,7 +174,7 @@ export const AdminDashboard = () => {
         .sort(
           (a: revenueModified, b: revenueModified) =>
             new Date(`${a.name} 1, 2024`).getMonth() -
-            new Date(`${b.name} 1, 2024`).getMonth()
+            new Date(`${b.name} 1, 2024`).getMonth(),
         );
 
       setAdminDashboardPerformanceData({
@@ -188,7 +189,7 @@ export const AdminDashboard = () => {
   const fetchAnalyticsData = useCallback(async () => {
     try {
       const response = await fetch(
-        `/api/dashboard/revenue?year=${selectedAnalyticsYear}&month=${selectedAnalyticsMonth}`
+        `/api/dashboard/revenue?year=${selectedAnalyticsYear}&month=${selectedAnalyticsMonth}`,
       );
 
       if (!response.ok) {
@@ -201,14 +202,14 @@ export const AdminDashboard = () => {
         (item: category) => ({
           category: item.category,
           value: item.amount,
-        })
+        }),
       );
 
       const transformedExpenseData = (data.expenseData || []).map(
         (item: category) => ({
           category: item.category,
           value: item.amount,
-        })
+        }),
       );
 
       const transformedProfit =
@@ -245,7 +246,7 @@ export const AdminDashboard = () => {
         annualPerformanceResponse,
       ] = await Promise.all([
         fetch(
-          `/api/dashboard/monthly-sales?year=${selectedReportYear}&month=${selectedMonth}`
+          `/api/dashboard/monthly-sales?year=${selectedReportYear}&month=${selectedMonth}`,
         ),
         fetch(`/api/dashboard/quarterly-financials?year=${selectedReportYear}`),
         fetch(`/api/dashboard/annual-performance?year=${selectedReportYear}`),
@@ -289,7 +290,7 @@ export const AdminDashboard = () => {
             {
               date: `${monthNames[selectedMonth - 1]} ${selectedReportYear}`,
               status: getReportStatus(
-                `${selectedReportYear}-${selectedMonth}-01`
+                `${selectedReportYear}-${selectedMonth}-01`,
               ),
               monthlySalesReport: monthlySalesData,
             },
@@ -334,7 +335,7 @@ export const AdminDashboard = () => {
       } else if (activeTab === "reports") {
         await fetchReportData();
       }
-      setIsLoading(false);
+      // setIsLoading(false);
     };
     initializeData();
   }, [
@@ -343,7 +344,7 @@ export const AdminDashboard = () => {
     fetchAnalyticsData,
     fetchPerformanceData,
     fetchReportData,
-    setIsLoading,
+    // setIsLoading,
   ]);
 
   //Figure out why data is slow to display when YearPicker value changes

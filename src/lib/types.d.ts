@@ -1,3 +1,5 @@
+import { Prisma } from "@/generated/prisma/client";
+
 interface ContactDetails {
   subject?: string;
   name: string;
@@ -6,17 +8,16 @@ interface ContactDetails {
   phone: string;
 }
 
-type MenuItem = {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  category: string;
-  image: string;
-  assetId?: string;
-  stock?: number;
-  rating?: number;
-  reviews?: { id: string; rating: number; comment: string; author: string }[];
+type MenuItem = Prisma.ProductGetPayload<{
+  omit: {
+    invoiceId: true;
+  };
+}> & {
+  reviews?: Prisma.ReviewGetPayload<{
+    omit: {
+      productId: true;
+    };
+  }>[];
 };
 
 interface Product {
@@ -33,6 +34,44 @@ interface FaqItems {
   id: number;
   question?: string;
   answer?: string | Array<string>;
+}
+
+interface OrderInfo {
+  id: string;
+  status: string;
+  orderId: string;
+  shippingInfo: {
+    phoneNumber: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    address: string;
+    city: string;
+    postalCode: string;
+    orderNotes: string | null;
+  };
+  paymentDate: Date | null;
+  products: {
+    id: string;
+    quantity: number;
+    product: {
+      id: string;
+      name: string;
+      description: string;
+      price: number;
+      assetId: string | null;
+      category: string | null;
+      rating: number | null;
+    };
+  }[];
+  shippingFee: number;
+  subtotal: number;
+  tax: number;
+  total: number;
+  orderDate: Date | null;
+  // orderDate: string | undefined;
+  orderNumber: string | null;
+  referenceNumber: string | null;
 }
 
 type PasswordFeedback = {
@@ -76,7 +115,9 @@ interface Invoice {
   customerEmail: string;
   customerPhone: string;
   discountPercentage?: number;
+  discountType: "PERCENT" | "AMOUNT";
   taxRate?: number;
+  taxType: "PERCENT" | "AMOUNT";
   shippingFee?: number;
   serviceCharge?: number;
   miscellaneous?: number;
@@ -93,6 +134,7 @@ interface Invoice {
     quantity: number;
     price: number;
     discount: number;
+    category: string;
   }>;
 }
 
@@ -260,7 +302,7 @@ interface YearlyRevenueAccordionProps {
   revenueProjections: YearlyRevenue[];
   onUpdate: (
     year: number,
-    updatedProjections: YearlyRevenue["monthlyProjections"]
+    updatedProjections: YearlyRevenue["monthlyProjections"],
   ) => void;
 }
 
