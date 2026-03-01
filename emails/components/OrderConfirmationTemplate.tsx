@@ -16,8 +16,95 @@ import {
 } from "@react-email/components";
 import { EmailFooter } from "./email-footer";
 import { EmailHeader } from "./email-header";
-import { demoItems } from "@/lib/constantData";
-import { Product } from "@/lib/types";
+
+const demoItems = [
+  {
+    id: "1",
+    name: "Jollof rice",
+    price: 12.99,
+    quantity: 1,
+    product: {
+      id: "1",
+      name: "Jollof rice",
+      description: "Spicy and flavorful rice dish",
+      price: 12.99,
+      category: "Main Dishes",
+      image: "/foods/Jollof.jpg",
+      invoiceId: null,
+    },
+  },
+  {
+    id: "2",
+    name: "Suya",
+    price: 10.9,
+    quantity: 1,
+    product: {
+      id: "2",
+      name: "Suya",
+      description: "Spicy grilled meat skewers",
+      price: 10.99,
+      category: "Sides",
+      image: "/placeholder.svg?height=200&width=200",
+      invoiceId: null,
+    },
+  },
+  {
+    id: "3",
+    name: "Puff-puff",
+    price: 6.99,
+    quantity: 1,
+    product: {
+      id: "3",
+      name: "Puff-puff",
+      description: "Sweet, deep-fried dough balls",
+      price: 6.99,
+      category: "Snacks",
+      image: "/placeholder.svg?height=200&width=200",
+      invoiceId: null,
+    },
+  },
+  {
+    id: "4",
+    name: "Pineapple Zobo",
+    price: 13.99,
+    quantity: 1,
+    product: {
+      id: "4",
+      name: "Pineapple Zobo",
+      description: "Rich okra soup with assorted",
+      price: 13.99,
+      category: "Drinks",
+      image: "/placeholder.svg?height=200&width=200",
+      invoiceId: null,
+    },
+  },
+];
+
+interface Product {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+  product: {
+    id: string;
+    name: string;
+    description: string;
+    price: number;
+    image: string;
+    assetId: string | null;
+    category: string | null;
+    rating: number | null;
+    invoiceId: string | null;
+
+    reviews?: {
+      id: string;
+      rating: number;
+      comment: string;
+      author: string;
+      productId: string | null;
+    }[];
+  };
+}
 
 type OrderConfirmationEmailProps = {
   customerName: string;
