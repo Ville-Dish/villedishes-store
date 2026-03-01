@@ -21,6 +21,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { adminEmail, shippingFee, taxRate } from "@/lib/constantData";
 import { checkoutSchema, CheckoutSchema } from "@/lib/schemas/orderSchema";
+import { OrderDetails, Product } from "@/lib/types";
 import useCartStore, {
   useCartSubtotal,
   useCartTotal,
@@ -28,13 +29,14 @@ import useCartStore, {
 import useOrderStore from "@/stores/useOrderStore";
 import { useTRPC } from "@/trpc/client";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 export const CheckoutView = () => {
   const trpc = useTRPC();
+  const queryClient = useQueryClient();
 
   const [orderPlaced, setOrderPlaced] = useState(false);
   const [payment, setPayment] = useState(false);
@@ -91,32 +93,44 @@ export const CheckoutView = () => {
     }),
   );
 
-  const sendMail = async (orderDetails: OrderDetails) => {
-    const emailData = {
-      orderId: Number(orderDetails.orderId),
-      customerName: `${orderDetails.shippingInfo.firstName} ${orderDetails.shippingInfo.lastName}`,
-      paymentAmount: orderDetails.total,
-      paymentDate:
-        orderDetails.paymentDate || new Date().toISOString().split("T")[0],
-      paymentMethod: "Interac",
-      referenceNumber: orderDetails.referenceNumber || "",
-      verificationCode: orderDetails.verificationCode || "",
-    };
-    sendVerificationEmail.mutate({
-      type: "verify_payment",
-      to: adminEmail,
-      ...emailData,
-    });
-  };
-
   const createOrder = useMutation(
-    trpc.order.placeOrder.mutationOptions({
+    trpc.orders.placeOrder.mutationOptions({
       onSuccess: (data) => {
-        console.log("Order placed successfully:", data);
         toast.success("Order Placed", {
           description:
             "Your order has been placed successfully. We will verify your payment and get back to you shortly.",
         });
+
+        if (data.success) {
+          setOrderPlaced(true);
+          clearCart();
+          clearOrder();
+
+          const order = data.order;
+
+          if (order.status === "UNVERIFIED") {
+            const emailData = {
+              orderId: Number(order.orderId),
+              customerName: `${order.shippingInfo.firstName} ${order.shippingInfo.lastName}`,
+              paymentAmount: order.total,
+              paymentDate: order.paymentDate
+                ? order.paymentDate.toISOString().split("T")[0]
+                : new Date().toISOString().split("T")[0],
+              paymentMethod: "Interac",
+              referenceNumber: order.referenceNumber || "",
+              verificationCode: order.verificationCode || "",
+            };
+            sendVerificationEmail.mutate({
+              type: "verify_payment",
+              to: adminEmail,
+              ...emailData,
+            });
+          }
+        }
+
+        queryClient.invalidateQueries(
+          trpc.orders.getPaginatedOrders.queryOptions({}),
+        );
       },
       onError: (error) => {
         console.error("Error placing order:", error);
@@ -131,107 +145,8 @@ export const CheckoutView = () => {
   );
 
   //function to handle moving order data from local storage to db
-  // const handleUpdateOrderDB = async () => {
-  //   const storedOrder = localStorage.getItem("order-storage");
-
-  //   if (storedOrder) {
-  //     try {
-  //       const parsedOrder = JSON.parse(storedOrder);
-  //       const orderDetails = parsedOrder?.state?.orders?.[0];
-  //       if (!orderDetails) {
-  //         throw new Error("Invalid order details");
-  //       }
-  //       console.log({ orderDetails });
-
-  //       // Prepare the order data for the API
-  //       const orderData = {
-  //         id: orderDetails.id,
-  //         paymentDate: orderDetails.paymentDate,
-  //         products: orderDetails.products.map((product: Product) => ({
-  //           productId: product.id,
-  //           quantity: product.quantity,
-  //         })),
-  //         referenceNumber: orderDetails.referenceNumber,
-  //         shippingFee: orderDetails.shippingFee,
-  //         shippingInfo: orderDetails.shippingInfo,
-  //         status: orderDetails.status || "UNVERIFIED",
-  //         subtotal: orderDetails.subtotal,
-  //         tax: orderDetails.tax,
-  //         total: orderDetails.total,
-  //         orderDate: orderDetails.orderDate,
-  //         orderNumber: orderDetails.orderNumber,
-  //         verificationCode: orderDetails.verificationCode,
-  //       };
-
-  //       console.log("Prepared order data:", orderData);
-
-  //       const res = await createOrder.mutateAsync(orderData);
-
-  //       return res.order;
-  //     } catch (error) {
-  //       console.error("Failed to add order to the database:", error);
-  //       throw error;
-  //     }
-  //   } else {
-  //     console.log("No order data found in local storage");
-  //     throw new Error("No order data found in local storage");
-  //   }
-  // };
-
-  // const onSubmit = async (values: CheckoutSchema) => {
-  //   const code = Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit verification code
-  //   const orderDetails = {
-  //     id: orderId,
-  //     products: cartItems,
-  //     subtotal,
-  //     tax,
-  //     shippingFee: shipping,
-  //     total,
-  //     verificationCode: code,
-  //     shippingInfo: { ...values },
-  //     status: undefined,
-  //   };
-  //   // console.log("ORDER DEETS", orderDetails);
-
-  //   if (!payment) {
-  //     await addOrder(orderDetails);
-  //     form.setValue("paymentStatus", true);
-  //   } else {
-  //     const referenceNumber = values?.referenceNumber ?? "";
-  //     if (referenceNumber) {
-  //       const updatedOrderDetails = await updateOrder(orderId, {
-  //         orderNumber: `TEMP_ORD-${Math.floor(Math.random() * 1000000)}`,
-  //         referenceNumber,
-  //         paymentDate: new Date().toISOString().split("T")[0],
-  //         orderDate: new Date().toISOString().split("T")[0],
-  //       });
-  //       console.log("Updated order details:", updatedOrderDetails);
-  //       try {
-  //         const dbOrder = await handleUpdateOrderDB();
-  //         console.log("Order added to DB:", dbOrder);
-  //         setOrderPlaced(true);
-  //         clearCart();
-  //         clearOrder();
-
-  //         if (dbOrder && dbOrder.status === "UNVERIFIED") {
-  //           sendMail(updatedOrderDetails as OrderDetails);
-  //         }
-  //       } catch (error) {
-  //         console.error("Order could not be added to DB:", error);
-  //         toast.error("Failed to place order", {
-  //           description: "Please try again later",
-  //         });
-  //         return;
-  //       }
-  //     } else {
-  //       console.error("Reference number is required");
-  //       toast.error("Reference number is required");
-  //     }
-  //   }
-  // };
-
-  //function to handle moving order data from local storage to db
   const handleUpdateOrderDB = async () => {
+    // This function ensure that order details in local storage moves to DB: POST operation
     const storedOrder = localStorage.getItem("order-storage");
 
     if (storedOrder) {
@@ -241,14 +156,14 @@ export const CheckoutView = () => {
         if (!orderDetails) {
           throw new Error("Invalid order details");
         }
-        console.log({ orderDetails });
-
         // Prepare the order data for the API
         const orderData = {
           id: orderDetails.id,
           paymentDate: orderDetails.paymentDate,
           products: orderDetails.products.map((product: Product) => ({
-            productId: product.id,
+            id: product.id,
+            name: product.name,
+            price: product.price,
             quantity: product.quantity,
           })),
           referenceNumber: orderDetails.referenceNumber,
@@ -263,32 +178,8 @@ export const CheckoutView = () => {
           verificationCode: orderDetails.verificationCode,
         };
 
-        console.log("Prepared order data:", orderData);
-
-        const res = await fetch("/api/orders", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(orderData),
-        });
-
-        console.log("API response status:", res.status);
-
-        if (!res.ok) {
-          const errorText = await res.text();
-          console.error("API error response:", errorText);
-          throw new Error(
-            `Failed to add order to the database: ${res.status} ${res.statusText}`,
-          );
-        }
-
-        const result = await res.json();
-        console.log("Order added to database successfully:", { result });
-        // Remove order from local storage
-        // localStorage.removeItem("order-storage");
-
-        return result.data;
+        const result = await createOrder.mutateAsync(orderData);
+        return result.order;
       } catch (error) {
         console.error("Failed to add order to the database:", error);
         throw error;
@@ -314,38 +205,24 @@ export const CheckoutView = () => {
     };
     // console.log("ORDER DEETS", orderDetails);
 
+    // if there is no payment, add order details to local storage & set payment to true
     if (!payment) {
-      console.log("No payment");
       await addOrder(orderDetails);
       setPayment(true);
     } else {
-      console.log("Payment");
+      // if payment === true, check for reference number
       const referenceNumber = values?.referenceNumber ?? "";
       if (referenceNumber) {
+        // if there is reference number, update order details in local storage
         const updatedOrderDetails = await updateOrder(orderId, {
           orderNumber: `TEMP_ORD-${Math.floor(Math.random() * 1000000)}`,
           referenceNumber,
           paymentDate: new Date().toISOString().split("T")[0],
           orderDate: new Date().toISOString().split("T")[0],
         });
-        console.log("Updated order details:", updatedOrderDetails);
-        try {
-          const dbOrder = await handleUpdateOrderDB();
-          console.log("Order added to DB:", dbOrder);
-          setOrderPlaced(true);
-          clearCart();
-          clearOrder();
 
-          if (dbOrder && dbOrder.status === "UNVERIFIED") {
-            sendMail(updatedOrderDetails as OrderDetails);
-          }
-        } catch (error) {
-          console.error("Order could not be added to DB:", error);
-          toast.error("Failed to place order", {
-            description: "Please try again later",
-          });
-          return;
-        }
+        // then move it to db, setOrderplace to true, clear the cart and order local storage
+        const dbOrder = await handleUpdateOrderDB();
       } else {
         console.error("Reference number is required");
         toast.error("Reference number is required");
@@ -484,8 +361,8 @@ export const CheckoutView = () => {
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
-                                <SelectItem value="airdrie">Airdrie</SelectItem>
-                                <SelectItem value="calgary">Calgary</SelectItem>
+                                <SelectItem value="Airdrie">Airdrie</SelectItem>
+                                <SelectItem value="Calgary">Calgary</SelectItem>
                               </SelectContent>
                             </Select>
                             <FormMessage />

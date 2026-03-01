@@ -22,7 +22,7 @@ const checkoutBaseSchema = z.object({
 export const checkoutSchema = checkoutBaseSchema.superRefine((data, ctx) => {
   if (data.paymentStatus && !data.referenceNumber) {
     ctx.addIssue({
-      code: z.ZodIssueCode.custom,
+      code: "custom",
       message: "Reference number is required when payment is completed",
       path: ["referenceNumber"],
     });
@@ -67,3 +67,10 @@ export const orderDetailsSchema = z.object({
   referenceNumber: z.string(),
   verificationCode: z.string(),
 });
+
+export const verifyPaymentSchema = z.object({
+  orderId: z.string(),
+  providedVerificationCode: z.string(),
+});
+
+export type VerifyPaymentValue = z.infer<typeof verifyPaymentSchema>;

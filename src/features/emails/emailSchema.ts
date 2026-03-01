@@ -102,6 +102,7 @@ export const sendEmailSchema = z.discriminatedUnion("type", [
       }),
     orderNumber: z.string().min(1, "Order number is required"),
     orderDate: z.string().min(1, "Order date is required"),
+    reason: z.string().optional(),
     total: z.number(),
   }),
   base.extend({

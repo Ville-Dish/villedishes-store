@@ -5,6 +5,7 @@ import {
   checkoutSchema,
   orderDetailsSchema,
   shippingInfoSchema,
+  verifyPaymentSchema,
 } from "@/lib/schemas/orderSchema";
 import { isValidOrderStatus, OrderStatus } from "@/lib/utils";
 import {
@@ -74,6 +75,10 @@ export const orderRouter = createTRPCRouter({
         endDate: z.date().optional(),
         minPrice: z.number().default(0),
         maxPrice: z.number().default(1000),
+        sortField: z
+          .enum(["orderNumber", "customer", "status", "total", "orderDate"])
+          .optional(),
+        sortDirection: z.enum(["asc", "desc"]).optional(),
       }),
     )
     .query(async ({ ctx, input }) => {
@@ -93,6 +98,8 @@ export const orderRouter = createTRPCRouter({
         pageSize,
         minPrice,
         maxPrice,
+        sortField,
+        sortDirection,
       } = input;
 
       const where: Prisma.OrderWhereInput = {};
@@ -147,15 +154,35 @@ export const orderRouter = createTRPCRouter({
 
       // Date filter (orderDate is stored as string YYYY-MM-DD)
       if (startDate || endDate) {
-        where.orderDate = {};
+        whereCondition.orderDate = {};
 
         if (startDate) {
-          where.orderDate.gte = startDate.toISOString();
+          (whereCondition.orderDate as Prisma.DateTimeNullableFilter).gte =
+            startDate.toISOString();
         }
 
         if (endDate) {
-          where.orderDate.lte = endDate.toISOString();
+          (whereCondition.orderDate as Prisma.DateTimeNullableFilter).lte =
+            endDate.toISOString();
         }
+      }
+
+      // Build orderBy - "customer" sorts on a relation field so needs special handling
+
+      const dir = sortDirection ?? "desc";
+      let orderBy: Prisma.OrderOrderByWithRelationInput;
+
+      if (sortField === "customer") {
+        orderBy = { shippingInfo: { firstName: dir } };
+      } else if (sortField === "orderNumber") {
+        orderBy = { orderNumber: dir };
+      } else if (sortField === "status") {
+        orderBy = { status: dir };
+      } else if (sortField === "total") {
+        orderBy = { total: dir };
+      } else {
+        // default: orderDate desc
+        orderBy = { orderDate: dir };
       }
 
       const [orders, totalCount] = await Promise.all([
@@ -173,9 +200,7 @@ export const orderRouter = createTRPCRouter({
               },
             },
           },
-          orderBy: {
-            orderDate: "desc",
-          },
+          orderBy,
         }),
 
         prisma.order.count({
@@ -276,17 +301,22 @@ export const orderRouter = createTRPCRouter({
       const newOrder = await prisma.order.create({
         data: {
           orderId: id,
-          paymentDate: paymentDate || null,
+          paymentDate: paymentDate ? new Date(paymentDate).toISOString() : null,
           referenceNumber,
           shippingFee,
-          status: status || "UNVERIFIED",
+          status: status || ("UNVERIFIED" as OrderStatus),
           subtotal,
           tax,
           total,
           verificationCode,
-          orderDate: orderDate || new Date().toISOString().split("T")[0],
+          orderDate: orderDate
+            ? new Date(orderDate).toISOString()
+            : new Date().toISOString(),
           orderNumber: finalOrderNumber,
           shippingInfoId: shipping.id,
+        },
+        include: {
+          shippingInfo: true,
         },
       });
 
@@ -311,12 +341,7 @@ export const orderRouter = createTRPCRouter({
     }),
 
   updateOrder: publicProcedure
-    .input(
-      z.object({
-        orderId: z.string(),
-        providedVerificationCode: z.string(),
-      }),
-    )
+    .input(verifyPaymentSchema)
     .mutation(async ({ input }) => {
       const { orderId, providedVerificationCode } = input;
 
@@ -439,6 +464,26 @@ export const orderRouter = createTRPCRouter({
         },
         data: {
           status: newStatus,
+        },
+        include: {
+          shippingInfo: {
+            select: {
+              firstName: true,
+              lastName: true,
+              email: true,
+            },
+          },
+          products: {
+            select: {
+              quantity: true,
+              product: {
+                select: {
+                  name: true,
+                  price: true,
+                },
+              },
+            },
+          },
         },
       });
 

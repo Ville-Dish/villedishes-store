@@ -12,14 +12,17 @@ import {
   Tailwind,
   Row,
   Column,
+  Link,
 } from "@react-email/components";
 import { EmailFooter } from "./email-footer";
 import { EmailHeader } from "./email-header";
 import { demoItems } from "@/lib/constantData";
+import { Product } from "@/lib/types";
 
 type OrderConfirmationEmailProps = {
   customerName: string;
   orderNumber: string;
+  orderId: number;
   orderDate: string;
   subtotal: number;
   tax: number;
@@ -27,11 +30,13 @@ type OrderConfirmationEmailProps = {
   total: number;
   items: Product[];
   estimatedDelivery?: string;
+  cancellationRequestLink?: string;
 };
 
 const OrderConfirmationTemplate = ({
   customerName,
   orderNumber,
+  orderId,
   orderDate,
   subtotal,
   tax,
@@ -39,6 +44,7 @@ const OrderConfirmationTemplate = ({
   total,
   items,
   estimatedDelivery,
+  cancellationRequestLink,
 }: OrderConfirmationEmailProps) => {
   customerName = customerName || "John Doe";
   orderNumber = orderNumber || "ORD-00000";
@@ -50,6 +56,15 @@ const OrderConfirmationTemplate = ({
   items = items || demoItems;
   estimatedDelivery = estimatedDelivery || "2023-03-05";
   const previewText = `Order Confirmation for ${customerName}`;
+  orderId = orderId ?? 1234567890;
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+  // Build link only if missing or without orderId; avoid double query params
+  const baseLink =
+    cancellationRequestLink && cancellationRequestLink.trim() !== ""
+      ? cancellationRequestLink.replace(/\?orderId=\d+$/, "").replace(/\?$/, "")
+      : `${baseUrl}/admin/verify-payment`;
+  const separator = baseLink.includes("?") ? "&" : "?";
+  cancellationRequestLink = `${baseLink}${separator}orderId=${orderId}`;
 
   return (
     <Html>
@@ -161,6 +176,25 @@ const OrderConfirmationTemplate = ({
                   Thank you for choosing Villedishes. We hope you enjoy your
                   meal!
                 </Text>
+              </Section>
+
+              <Hr className="border-gray-300 my-6" />
+              <Section className="text-center">
+                <Text>
+                  If you would like to cancel your order, use the button or link
+                  below. You can cancel your order 24 hours before your delivery
+                  date.
+                </Text>
+                <Link
+                  href={
+                    cancellationRequestLink ||
+                    "https://www.surveymonkey.com/r/feedback"
+                  }
+                  className="bg-green-500 text-white py-3 px-6 rounded-md font-bold text-base no-underline inline-block transition-colors duration-300"
+                >
+                  Leave a Review
+                </Link>
+                <Hr className="border-gray-300 my-6" />
               </Section>
 
               <EmailFooter variant="order" />

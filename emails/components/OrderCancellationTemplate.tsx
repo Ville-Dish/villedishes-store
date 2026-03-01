@@ -35,10 +35,8 @@ const OrderCancellationTemplate = ({
     typeof orderNumber === "string" ? orderNumber : "ORD-00000";
   const displayTotal =
     typeof total === "number" && Number.isFinite(total) ? total : 57.21;
-  const displayFeedbackLink =
-    typeof feedbackLink === "string" && feedbackLink.trim() !== ""
-      ? feedbackLink
-      : "http://localhost:3000";
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+  feedbackLink = `${baseUrl}/feedback`;
   const previewText = `Order with number ${displayOrderNumber} has been cancelled`;
 
   return (
@@ -69,7 +67,7 @@ const OrderCancellationTemplate = ({
                   button below to leave us a message via our contact form.
                 </Text>
                 <Link
-                  href={displayFeedbackLink}
+                  href={feedbackLink}
                   className="bg-green-500 text-white py-3 px-6 rounded-md font-bold text-base no-underline inline-block transition-colors duration-300"
                 >
                   Leave a Message

@@ -53,6 +53,8 @@ const OrderFulfillmentTemplate = ({
   total = Number(total) || 57.21;
   const safeItems = Array.isArray(items) ? items : [];
   const previewText = `Your Order with number ${orderNumber} has been fulfilled`;
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+  feedbackLink = `${baseUrl}/feedback`;
 
   return (
     <Html>

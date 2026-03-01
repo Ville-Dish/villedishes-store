@@ -9,6 +9,7 @@ import { Button } from "../ui/button";
 import { Calendar } from "../ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { cn } from "@/lib/utils";
+import { useEffect, useState } from "react";
 
 export function DatePickerWithRange({
   className,
@@ -18,9 +19,28 @@ export function DatePickerWithRange({
   date: DateRange | undefined;
   setDate: (date: DateRange | undefined) => void;
 }) {
+  const [open, setOpen] = useState(false);
+  // Internal pending selection — only committed when Done is clicked
+  const [pendingDate, setPendingDate] = useState<DateRange | undefined>(date);
+
+  // Keep pending in sync when external date changes (e.g. clearFilters)
+  useEffect(() => {
+    setPendingDate(date);
+  }, [date]);
+
+  const handleDone = () => {
+    setDate(pendingDate);
+    setOpen(false);
+  };
+
+  const handleClear = () => {
+    setPendingDate(undefined);
+    setDate(undefined);
+    setOpen(false);
+  };
   return (
     <div className={cn("grid gap-2", className)}>
-      <Popover>
+      <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button
             id="date"
@@ -47,13 +67,27 @@ export function DatePickerWithRange({
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0" align="start">
           <Calendar
-            initialFocus
+            autoFocus
             mode="range"
             defaultMonth={date?.from}
-            selected={date}
-            onSelect={setDate}
+            selected={pendingDate}
+            onSelect={setPendingDate}
             numberOfMonths={2}
           />
+
+          {/* Done/ Clear actions */}
+          <div className="flex items-center justify-end gap-2 border-t px-3 py-2">
+            <Button variant="ghost" size="sm" onClick={handleClear}>
+              Clear
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleDone}
+              disabled={!pendingDate?.from}
+            >
+              Done
+            </Button>
+          </div>
         </PopoverContent>
       </Popover>
     </div>

@@ -40,6 +40,7 @@ export enum OrderStatus {
   PENDING = "PENDING",
   CANCELLED = "CANCELLED",
   FULFILLED = "FULFILLED",
+  CANCEL_REQUEST = "CANCEL_REQUEST",
 }
 
 export function isValidOrderStatus(status: string): status is OrderStatus {

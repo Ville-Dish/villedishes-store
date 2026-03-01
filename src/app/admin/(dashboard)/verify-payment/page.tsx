@@ -1,4 +1,4 @@
-import { VerifyPaymentView } from "@/components/verify-payment-view";
+import { VerifyPaymentView } from "@/features/orders/components/verify-payment-view";
 
 const VerifyPaymentPage = () => {
   return <VerifyPaymentView />;
