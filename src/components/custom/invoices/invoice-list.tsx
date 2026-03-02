@@ -92,20 +92,6 @@ type SortDirection = "asc" | "desc" | null;
 export const InvoiceList = () => {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [filteredInvoices, setFilteredInvoices] = useState<Invoice[]>([]);
-  const [newInvoice, setNewInvoice] = useState<
-    Omit<Invoice, "id" | "invoiceNumber" | "dateCreated">
-  >({
-    customerName: "",
-    customerEmail: "",
-    customerPhone: "",
-    amount: 0,
-    amountPaid: 0,
-    amountDue: 0,
-    dueDate: "",
-    status: "PENDING",
-    discountType: "PERCENT",
-    taxType: "PERCENT",
-  });
 
   // const { setIsLoading } = useLoading();
   const [loading, setLoading] = useState(false);
@@ -120,6 +106,8 @@ export const InvoiceList = () => {
   const [availableProducts, setAvailableProducts] = useState<InvoiceProduct[]>(
     [],
   );
+
+  // use params
   const [searchTerm, setSearchTerm] = useState<string>("");
 
   //Filter state
@@ -184,6 +172,7 @@ export const InvoiceList = () => {
     setCurrentPage(page);
   }, []);
 
+  // TODO: use trpc getPaginatedInvoices
   // Fetch invoices from the API
   useEffect(() => {
     const fetchInvoices = async () => {
@@ -314,6 +303,7 @@ export const InvoiceList = () => {
   ]);
 
   // Add this pagination handler
+  // TODO: Update with params
   const handlePageChange = (newPage: number) => {
     setCurrentPage(newPage);
     window.scrollTo(0, 0);
@@ -323,6 +313,7 @@ export const InvoiceList = () => {
     applyFiltersAndSearch();
   }, [applyFiltersAndSearch]);
 
+  // TODO: use update trpc code
   const handleUpdateInvoice = async (updatedInvoice: Invoice) => {
     try {
       const response = await fetch(`/api/invoices`, {
@@ -372,6 +363,7 @@ export const InvoiceList = () => {
     }
   };
 
+  // TODO: use delete trpc code
   const handleDeleteInvoice = async (id: string) => {
     try {
       const response = await fetch(`/api/invoices`, {

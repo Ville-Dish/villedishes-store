@@ -2,8 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma/client";
 import { isValidOrderStatus } from "@/lib/utils";
 import { generateOrderNumber } from "@/lib/helper";
-import { email } from "zod";
-import { phoneNumber } from "better-auth/plugins";
 
 const orderInclude = {
   shippingInfo: true,

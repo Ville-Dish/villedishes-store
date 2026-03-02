@@ -104,6 +104,7 @@ export const InvoiceDetails = ({
 }) => {
   const [updatedInvoice, setUpdatedInvoice] = useState<Invoice>(invoice);
 
+  // TODO: review for trpc integration
   const [newProducts, setNewProducts] = useState<
     Array<{
       id: string;
