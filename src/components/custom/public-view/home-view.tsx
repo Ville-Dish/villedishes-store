@@ -5,14 +5,14 @@ import { ChefHat, Clock, Rabbit, Truck } from "lucide-react";
 import Link from "next/link";
 
 import { Banner } from "@/components/custom/banner";
-import { ProductCard } from "@/components/custom/products/product-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
 import { useProductsParams } from "@/features/products/hooks/use-products-params";
 import { useTRPC } from "@/trpc/client";
 import { Suspense } from "react";
-import { ProductCardSkeletonGrid } from "../products/product-card-skeleton";
+import { ProductCardSkeletonGrid } from "@/features/products/components/product-card-skeleton";
+import { ProductCard } from "@/features/products/components/product-card";
 
 //function to render No products
 const RenderNoProductsFound = () => (
