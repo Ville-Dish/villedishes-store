@@ -8,7 +8,6 @@ export const productSchema = z.object({
     message: "Product category is required",
   }),
   price: z.number().min(0, "Price must be a positive number"),
-  image: z.url("Image is required."),
   category: z.string().min(1, {
     message: "Product category is required",
   }),
@@ -16,10 +15,13 @@ export const productSchema = z.object({
   rating: z.number().min(0),
 });
 
-export const createProductSchema = productSchema;
+export const createProductSchema = productSchema.extend({
+  image: z.url("Image is required."),
+});
 
 export const updateProductSchema = productSchema.extend({
   id: z.string().optional(),
+  image: z.url().optional(),
 });
 
 export type CreateProductInput = z.infer<typeof createProductSchema>;

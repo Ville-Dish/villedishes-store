@@ -95,9 +95,11 @@ export const ProductForm: React.FC<ProductFormProps> = ({
       onSuccess: async (data) => {
         form.reset();
         toast.success(`Product ${data.name} has been created successfully`);
-        queryClient.invalidateQueries(
+        await queryClient.invalidateQueries(
           trpc.products.getPaginatedProducts.queryOptions({}),
         );
+
+        onCancel();
       },
       onError: (error) => {
         toast.error(error.message || `Failed to create product`);
@@ -109,9 +111,11 @@ export const ProductForm: React.FC<ProductFormProps> = ({
     trpc.products.updateProduct.mutationOptions({
       onSuccess: async (data) => {
         toast.success(`Product ${data.name} has been updated successfully`);
-        queryClient.invalidateQueries(
+        await queryClient.invalidateQueries(
           trpc.products.getPaginatedProducts.queryOptions({}),
         );
+
+        onCancel();
       },
       onError: (error) => {
         toast.error(error.message || `Failed to update product`);

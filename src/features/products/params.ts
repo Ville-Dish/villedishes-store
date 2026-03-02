@@ -1,5 +1,11 @@
 import { PAGINATION, PRODUCT_INFO } from "@/config/constants";
-import { parseAsInteger, parseAsString } from "nuqs/server";
+import { parseAsInteger, parseAsString, parseAsStringEnum } from "nuqs/server";
+
+type SortField = "name" | "price" | "category" | "rating";
+type SortDirection = "asc" | "desc";
+
+const sortFieldValues: SortField[] = ["name", "price", "category", "rating"];
+const sortDirectionValues: SortDirection[] = ["asc", "desc"];
 
 export const productParams = {
   page: parseAsInteger
@@ -19,4 +25,12 @@ export const productParams = {
   maxPrice: parseAsInteger
     .withDefault(PRODUCT_INFO.maxPrice)
     .withOptions({ clearOnDefault: true }),
+  sortField: parseAsStringEnum<SortField>(sortFieldValues).withOptions({
+    clearOnDefault: true,
+  }),
+  sortDirection: parseAsStringEnum<SortDirection>(
+    sortDirectionValues,
+  ).withOptions({
+    clearOnDefault: true,
+  }),
 };

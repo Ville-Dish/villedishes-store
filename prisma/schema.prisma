@@ -103,9 +103,13 @@ model Product {
   assetId         String?
   category        String?
   rating          Float?
+  invoiceId       String?
+
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @default(now()) @updatedAt
+
   OrderProduct    OrderProduct[]
   InvoiceProducts InvoiceProducts[]
-  invoiceId       String?
 
   @@index([category])
   @@index([price])

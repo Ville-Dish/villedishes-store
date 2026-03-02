@@ -37,11 +37,22 @@ export const productsRouter = createTRPCRouter({
           .default(PAGINATION.DEFAULT_PAGE_SIZE),
         minPrice: z.number().default(0),
         maxPrice: z.number().default(1000),
+        sortField: z.enum(["name", "category", "rating", "price"]).nullish(),
+        sortDirection: z.enum(["asc", "desc"]).nullish(),
       }),
     )
     .query(async ({ input }) => {
-      const { category, rating, search, page, pageSize, minPrice, maxPrice } =
-        input;
+      const {
+        category,
+        rating,
+        search,
+        page,
+        pageSize,
+        minPrice,
+        maxPrice,
+        sortField,
+        sortDirection,
+      } = input;
 
       const where: Prisma.ProductWhereInput = {};
 
@@ -50,9 +61,21 @@ export const productsRouter = createTRPCRouter({
       }
 
       if (rating && rating !== "ALL") {
-        where.rating = {
-          lte: Number(rating),
-        };
+        const selected = Number(rating);
+
+        if (selected === 5) {
+          where.rating = 5;
+        } else if (selected === 1) {
+          where.rating = {
+            gte: 0.1,
+            lt: 2,
+          };
+        } else {
+          where.rating = {
+            gte: selected,
+            lt: selected + 1,
+          };
+        }
       }
 
       const whereCondition = { ...where };
@@ -71,6 +94,22 @@ export const productsRouter = createTRPCRouter({
         };
       }
 
+      // Build orderBy - "customer" sorts on a relation field so needs special handling
+      const dir = sortDirection ?? "desc";
+      let orderBy: Prisma.ProductOrderByWithRelationInput;
+
+      if (sortField === "name") {
+        orderBy = { name: dir };
+      } else if (sortField === "category") {
+        orderBy = { category: dir };
+      } else if (sortField === "rating") {
+        orderBy = { rating: dir };
+      } else if (sortField === "price") {
+        orderBy = { price: dir };
+      } else {
+        orderBy = { createdAt: "desc" };
+      }
+
       const [products, totalCount, categoriesList] = await Promise.all([
         prisma.product.findMany({
           skip: (page - 1) * pageSize,
@@ -81,6 +120,7 @@ export const productsRouter = createTRPCRouter({
           omit: {
             invoiceId: true,
           },
+          orderBy,
         }),
 
         prisma.product.count({
@@ -137,7 +177,9 @@ export const productsRouter = createTRPCRouter({
     )
     .mutation(async ({ input }) => {
       const validatedInput = createProductSchema.parse(input);
-      return await prisma.product.create({ data: { ...validatedInput } });
+      return await prisma.product.create({
+        data: { ...validatedInput },
+      });
     }),
 
   updateProduct: protectedProcedure
@@ -153,7 +195,7 @@ export const productsRouter = createTRPCRouter({
       const validatedInput = updateProductSchema.parse(input);
       return await prisma.product.update({
         where: { id: validatedInput.id },
-        data: validatedInput,
+        data: { ...validatedInput },
       });
     }),
 

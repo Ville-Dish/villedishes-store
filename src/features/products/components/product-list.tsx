@@ -53,6 +53,7 @@ import {
   Pencil,
   Plus,
   Trash,
+  XCircle,
 } from "lucide-react";
 import { lazy, Suspense, useState } from "react";
 import { toast } from "sonner";
@@ -64,7 +65,7 @@ const ProductForm = lazy(() =>
   })),
 );
 
-type SortField = "name" | "price" | "category" | null;
+type SortField = "name" | "price" | "category" | "rating" | null;
 type SortDirection = "asc" | "desc" | null;
 
 export const ProductList = () => {
@@ -72,8 +73,17 @@ export const ProductList = () => {
   const queryClient = useQueryClient();
 
   const [params, setParams] = useProductsParams();
-  const { page, pageSize, category, search, rating, minPrice, maxPrice } =
-    params;
+  const {
+    page,
+    pageSize,
+    category,
+    search,
+    rating,
+    minPrice,
+    maxPrice,
+    sortField,
+    sortDirection,
+  } = params;
 
   const [isCopyMode, setIsCopyMode] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -92,6 +102,8 @@ export const ProductList = () => {
       rating,
       minPrice,
       maxPrice,
+      sortField: sortField ?? undefined,
+      sortDirection: sortDirection ?? undefined,
     }),
   );
 
@@ -101,9 +113,6 @@ export const ProductList = () => {
   const totalPages = productsData?.totalPages || 1;
   const hasNextPage = productsData?.hasNextPage || false;
   const hasPreviousPage = productsData?.hasPreviousPage || false;
-
-  const [sortField, setSortField] = useState<SortField>(null);
-  const [sortDirection, setSortDirection] = useState<SortDirection>(null);
 
   // trpc
   const deleteMutation = useMutation(
@@ -123,16 +132,18 @@ export const ProductList = () => {
   // Add this sorting handler
   const handleSort = (field: SortField) => {
     if (sortField === field) {
-      // Cycle through: asc -> desc -> null
       if (sortDirection === "asc") {
-        setSortDirection("desc");
+        setParams({
+          ...params,
+          sortField: field,
+          sortDirection: "desc",
+          page: 1,
+        });
       } else if (sortDirection === "desc") {
-        setSortDirection(null);
-        setSortField(null);
+        setParams({ ...params, sortField: null, sortDirection: null, page: 1 });
       }
     } else {
-      setSortField(field);
-      setSortDirection("asc");
+      setParams({ ...params, sortField: field, sortDirection: "asc", page: 1 });
     }
   };
 
@@ -194,36 +205,32 @@ export const ProductList = () => {
     });
   };
 
-  const handleCloudinaryAssetDelete = async (assetId: string) => {
-    try {
-      const response = await fetch("/api/cloudinary/delete", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ assetId }),
-      });
+  const isFiltered =
+    category !== "ALL" ||
+    rating !== "ALL" ||
+    search !== "" ||
+    minPrice != 0 ||
+    maxPrice != PRODUCT_INFO.maxPrice;
 
-      if (!response.ok) {
-        const errorData = await response
-          .json()
-          .catch(() => ({ message: "Unknown error" }));
-        console.error("Error deleting Cloudinary resource:", errorData);
-      } else {
-        const data = await response
-          .json()
-          .catch(() => ({ message: "Success" }));
-        console.log("Deleted old asset:", data);
-      }
-    } catch (error) {
-      console.error("Error calling delete API:", error);
-    }
-  };
+  const handleCloudinaryAssetDelete = useMutation(
+    trpc.cloudinary.deleteAsset.mutationOptions({
+      onSuccess: () => {
+        toast.success("Old asset deleted successfully");
+      },
+      onError: (error) => {
+        toast.error(
+          error.message ?? "Failed to delete old asset from Cloudinary.",
+        );
+      },
+    }),
+  );
 
   const handleUpdateCancel = async (
     newAssetId?: string,
     oldAssetId?: string,
   ) => {
     if (newAssetId && oldAssetId && newAssetId !== oldAssetId) {
-      await handleCloudinaryAssetDelete(newAssetId);
+      await handleCloudinaryAssetDelete.mutateAsync({ assetId: newAssetId });
     }
     setEditingItem(null);
     setIsCopyMode(false);
@@ -243,6 +250,13 @@ export const ProductList = () => {
       <div className="flex items-center justify-between space-y-2">
         <h2 className="text-3xl font-bold tracking-tight">Products</h2>
         <div className="flex items-center space-x-2">
+          {isFiltered && (
+            <Button variant="outline" onClick={clearFilters}>
+              <XCircle className="size-4" />
+              Clear Filters
+            </Button>
+          )}
+
           <Input
             placeholder="Search products..."
             className="max-w-sm"
@@ -289,12 +303,15 @@ export const ProductList = () => {
       {/* Filters */}
       <div className="grid grid-cols-2 md:grid-cols-4 mb-4 gap-4">
         {/* Category */}
-        <Select onValueChange={(value) => handleCategoryChange(value)}>
+        <Select
+          value={category}
+          onValueChange={(value) => handleCategoryChange(value)}
+        >
           <SelectTrigger className="w-45">
             <SelectValue placeholder="Filter by Category" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Categories</SelectItem>
+            <SelectItem value="ALL">All Categories</SelectItem>
             {categories.map((category) => (
               <SelectItem key={category} value={category}>
                 {category}
@@ -304,17 +321,20 @@ export const ProductList = () => {
         </Select>
 
         {/* Rating */}
-        <Select onValueChange={(value) => handleRatingChange(value)}>
+        <Select
+          value={rating}
+          onValueChange={(value) => handleRatingChange(value)}
+        >
           <SelectTrigger className="w-45">
             <SelectValue placeholder="Filter by Rating" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="0">All Ratings</SelectItem>
-            <SelectItem value="1">1+ Star</SelectItem>
+            <SelectItem value="ALL">All Ratings</SelectItem>
+            <SelectItem value="1"> 1+ Star</SelectItem>
             <SelectItem value="2">2+ Stars</SelectItem>
             <SelectItem value="3">3+ Stars</SelectItem>
             <SelectItem value="4">4+ Stars</SelectItem>
-            <SelectItem value="5">5 Stars</SelectItem>
+            <SelectItem value="5">5+ Stars</SelectItem>
           </SelectContent>
         </Select>
 
@@ -364,7 +384,14 @@ export const ProductList = () => {
                   {sortField === "category" &&
                     (sortDirection === "asc" ? "↑" : "↓")}
                 </TableHead>
-                <TableHead>Rating</TableHead>
+                <TableHead
+                  onClick={() => handleSort("rating")}
+                  className="cursor-pointer"
+                >
+                  Rating{" "}
+                  {sortField === "category" &&
+                    (sortDirection === "asc" ? "↑" : "↓")}
+                </TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
