@@ -168,7 +168,6 @@ export const orderRouter = createTRPCRouter({
       }
 
       // Build orderBy - "customer" sorts on a relation field so needs special handling
-
       const dir = sortDirection ?? "desc";
       let orderBy: Prisma.OrderOrderByWithRelationInput;
 
