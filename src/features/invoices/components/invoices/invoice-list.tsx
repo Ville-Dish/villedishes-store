@@ -45,6 +45,7 @@ import {
   Pencil,
   Plus,
   TrashIcon,
+  XCircle,
 } from "lucide-react";
 import { lazy, useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -67,17 +68,27 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
-import { useLoading } from "@/context/LoadingContext";
 import { cn } from "@/lib/utils";
 import { InvoiceForm } from "./invoice-form";
 import { Invoice, MenuItem } from "@/lib/types";
 import { CategoryMappingDialog } from "@/features/invoices/components/category-mapping-dialog";
 import { ColumnMappingDialog } from "@/features/invoices/components/column-mapping-dialog";
+import { useTRPC } from "@/trpc/client";
+import {
+  useMutation,
+  useQueryClient,
+  useSuspenseQuery,
+} from "@tanstack/react-query";
+import { useInvoicesParams } from "@/features/invoices/hooks/use-invoices-params";
+import { useDebounce } from "@/hooks/use-debounce";
+import { PRODUCT_INFO } from "@/config/constants";
 
 const InvoiceDetails = lazy(() =>
-  import("@/components/custom/invoices/invoice-details").then((module) => ({
-    default: module.InvoiceDetails,
-  })),
+  import("@/features/invoices/components/invoices/invoice-details").then(
+    (module) => ({
+      default: module.InvoiceDetails,
+    }),
+  ),
 );
 
 type InvoiceProduct = {
@@ -86,15 +97,65 @@ type InvoiceProduct = {
   basePrice: number;
 };
 
-type SortField = "customerName" | "amount" | "dueDate" | null;
+type SortField =
+  | "invoiceNumber"
+  | "customerName"
+  | "amount"
+  | "dueDate"
+  | "status"
+  | null;
 type SortDirection = "asc" | "desc" | null;
 
 export const InvoiceList = () => {
-  const [invoices, setInvoices] = useState<Invoice[]>([]);
-  const [filteredInvoices, setFilteredInvoices] = useState<Invoice[]>([]);
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
 
-  // const { setIsLoading } = useLoading();
-  const [loading, setLoading] = useState(false);
+  const [params, setParams] = useInvoicesParams();
+
+  // destructure params
+  const {
+    page,
+    pageSize,
+    search,
+    status,
+    startDate,
+    endDate,
+    minPrice,
+    maxPrice,
+    sortField,
+    sortDirection,
+  } = params;
+
+  // Add debounced search
+  const debouncedSearch = useDebounce(params.search, 500);
+
+  // normalize dates
+  const normalizedStartDate = startDate ?? undefined;
+  const normalizedEndDate = endDate ?? undefined;
+
+  // get invoices
+  const { data: invoiceData, isLoading: loadingInvoices } = useSuspenseQuery(
+    trpc.invoices.getPaginatedInvoices.queryOptions({
+      startDate: normalizedStartDate,
+      endDate: normalizedEndDate,
+      status,
+      search: debouncedSearch,
+      page,
+      pageSize,
+      minPrice,
+      maxPrice,
+      sortField: sortField ?? undefined,
+      sortDirection: sortDirection ?? undefined,
+    }),
+  );
+
+  const invoices = invoiceData?.invoices;
+  const availableProducts = invoiceData?.products || [];
+  const totalCount = invoiceData?.totalCount || 0;
+  const totalPages = invoiceData?.totalPages || 1;
+  const hasNextPage = invoiceData?.hasNextPage || false;
+  const hasPreviousPage = invoiceData?.hasPreviousPage || false;
+
   const [dialogOpen, setDialogOpen] = useState(false);
 
   // PDF Preview
@@ -102,32 +163,6 @@ export const InvoiceList = () => {
   const [pdfPreviewOpen, setPdfPreviewOpen] = useState(false);
 
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
-
-  const [availableProducts, setAvailableProducts] = useState<InvoiceProduct[]>(
-    [],
-  );
-
-  // use params
-  const [searchTerm, setSearchTerm] = useState<string>("");
-
-  //Filter state
-  const [statusFilter, setStatusFilter] = useState<string>("");
-  const [dateRange, setDateRange] = useState<{
-    from: Date | undefined;
-    to: Date | undefined;
-  }>({
-    from: undefined,
-    to: undefined,
-  });
-  const [amountRange, setAmountRange] = useState<[number, number]>([0, 10000]);
-  const [maxAmount, setMaxAmount] = useState<number>(10000);
-
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(20);
-  const [totalPages, setTotalPages] = useState(1);
-
-  const [sortField, setSortField] = useState<SortField>(null);
-  const [sortDirection, setSortDirection] = useState<SortDirection>(null);
 
   // Category Mapping state
   const [categoryMappings, setCategoryMappings] = useState<
@@ -142,261 +177,117 @@ export const InvoiceList = () => {
   // Add this sorting handler
   const handleSort = (field: SortField) => {
     if (sortField === field) {
-      // Cycle through: asc -> desc -> null
       if (sortDirection === "asc") {
-        setSortDirection("desc");
+        setParams({
+          ...params,
+          sortField: field,
+          sortDirection: "desc",
+          page: 1,
+        });
       } else if (sortDirection === "desc") {
-        setSortDirection(null);
-        setSortField(null);
+        setParams({ ...params, sortField: null, sortDirection: null, page: 1 });
       }
     } else {
-      setSortField(field);
-      setSortDirection("asc");
+      setParams({ ...params, sortField: field, sortDirection: "asc", page: 1 });
     }
   };
 
-  // Add this after the existing useEffect hooks
-  useEffect(() => {
-    // Update URL when page changes (only for pages > 1)
-    if (currentPage > 1) {
-      window.history.pushState({}, "", `?page=${currentPage}`);
-    } else {
-      window.history.pushState({}, "", window.location.pathname);
-    }
-  }, [currentPage]);
+  const handleStatusFilterChange = (value: typeof params.status) => {
+    setParams({
+      ...params,
+      status: value,
+      page: 1,
+    });
+  };
 
-  // Add this effect to handle initial page from URL
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const page = parseInt(params.get("page") || "1");
-    setCurrentPage(page);
-  }, []);
+  const handlePageChange = (page: number) => {
+    setParams({
+      ...params,
+      page,
+    });
+  };
 
-  // TODO: use trpc getPaginatedInvoices
-  // Fetch invoices from the API
-  useEffect(() => {
-    const fetchInvoices = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch("/api/invoices", { method: "GET" });
-        const data = await response.json();
-        if (response.ok) {
-          setInvoices(data.data || []);
-          setFilteredInvoices(data.data || []);
+  const handleSearchChange = (value: string) => {
+    setParams({
+      ...params,
+      search: value,
+      page: 1,
+    });
+  };
 
-          // Calculate the maximum amount for the slider
-          const maxInvoiceAmount = Math.max(
-            ...data.data.map((invoice: Invoice) => invoice.amount),
-          );
-          const roundedMaxAmount = Math.ceil(maxInvoiceAmount / 1000) * 1000; // Round up to the nearest thousand
-          setMaxAmount(roundedMaxAmount);
-          setAmountRange([0, roundedMaxAmount]);
-        } else {
-          console.error("Failed to fetch invoices:", data.message);
-        }
-      } catch (error) {
-        console.error("Error fetching invoices:", error);
-      } finally {
-        setLoading(false);
-        // setIsLoading(false);
-      }
-    };
-    fetchInvoices();
-  }, []);
+  const handlePriceSliderChange = (value: number[]) => {
+    setParams({ ...params, minPrice: value[0], maxPrice: value[1], page: 1 });
+  };
 
-  // Fetch available products from the API
-  useEffect(() => {
-    const fetchAvailableProducts = async () => {
-      try {
-        const response = await fetch("/api/products", { method: "GET" });
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const products = (await response.json()).data.map(
-          (product: MenuItem) => ({
-            id: product.id,
-            name: product.name,
-            basePrice: product.price, // Assuming 'price' is the field in the database
-          }),
+  const handleDateChange = (
+    startDate: Date | undefined,
+    endDate: Date | undefined,
+  ) => {
+    setParams({
+      ...params,
+      startDate: startDate ?? null,
+      endDate: endDate ?? null,
+      page: 1,
+    });
+  };
+
+  const clearFilters = () => {
+    setParams({
+      page: 1,
+      pageSize: params.pageSize,
+      search: "",
+      status: "ALL",
+      startDate: null,
+      endDate: null,
+      minPrice: 0,
+      maxPrice: PRODUCT_INFO.maxPrice,
+    });
+  };
+
+  const isFiltered =
+    status !== "ALL" ||
+    search !== "" ||
+    startDate != null ||
+    endDate != null ||
+    minPrice != 0 ||
+    maxPrice != PRODUCT_INFO.maxPrice;
+
+  // use update trpc code
+  const updateInvoiceMutation = useMutation(
+    trpc.invoices.updateInvoice.mutationOptions({
+      onSuccess: async () => {
+        toast.success("Invoice updated successfully");
+        await queryClient.invalidateQueries(
+          trpc.invoices.getPaginatedInvoices.queryOptions({}),
         );
-        setAvailableProducts(products);
-      } catch (error) {
-        console.error("Error fetching products:", error);
-      }
-    };
+      },
+      onError: (error) => {
+        toast.error(error.message ?? "Failed to update invoice");
+      },
+    }),
+  );
 
-    fetchAvailableProducts();
-  }, []);
-
-  const applyFiltersAndSearch = useCallback(() => {
-    let filtered = [...invoices];
-
-    // Apply search
-    if (searchTerm.trim() !== "") {
-      filtered = filtered.filter((invoice) =>
-        Object.values(invoice).some((value) =>
-          String(value).toLowerCase().includes(searchTerm.toLowerCase()),
-        ),
-      );
-    }
-
-    // Apply status filter
-    if (statusFilter && statusFilter !== "all") {
-      filtered = filtered.filter((invoice) => invoice.status === statusFilter);
-    }
-
-    // Apply date range filter
-    if (dateRange.from && dateRange.to) {
-      filtered = filtered.filter((invoice) => {
-        const invoiceDate = new Date(invoice.dateCreated);
-        return invoiceDate >= dateRange.from! && invoiceDate <= dateRange.to!;
-      });
-    }
-
-    // Apply amount range filter
-    filtered = filtered.filter(
-      (invoice) =>
-        invoice.amount >= amountRange[0] && invoice.amount <= amountRange[1],
-    );
-
-    // Apply sorting
-    if (sortField && sortDirection) {
-      filtered.sort((a, b) => {
-        if (sortField === "customerName") {
-          return sortDirection === "asc"
-            ? a.customerName.localeCompare(b.customerName)
-            : b.customerName.localeCompare(a.customerName);
-        }
-        if (sortField === "amount") {
-          return sortDirection === "asc"
-            ? a.amount - b.amount
-            : b.amount - a.amount;
-        }
-        if (sortField === "dueDate") {
-          const dateA = new Date(a.dueDate).getTime();
-          const dateB = new Date(b.dueDate).getTime();
-          return sortDirection === "asc" ? dateA - dateB : dateB - dateA;
-        }
-        return 0;
-      });
-    }
-
-    // Update total pages
-    setTotalPages(Math.ceil(filtered.length / itemsPerPage));
-
-    // Apply pagination
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    filtered = filtered.slice(startIndex, endIndex);
-
-    setFilteredInvoices(filtered);
-  }, [
-    searchTerm,
-    statusFilter,
-    dateRange,
-    amountRange,
-    invoices,
-    currentPage,
-    itemsPerPage,
-    sortField,
-    sortDirection,
-  ]);
-
-  // Add this pagination handler
-  // TODO: Update with params
-  const handlePageChange = (newPage: number) => {
-    setCurrentPage(newPage);
-    window.scrollTo(0, 0);
-  };
-
-  useEffect(() => {
-    applyFiltersAndSearch();
-  }, [applyFiltersAndSearch]);
-
-  // TODO: use update trpc code
   const handleUpdateInvoice = async (updatedInvoice: Invoice) => {
-    try {
-      const response = await fetch(`/api/invoices`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(updatedInvoice),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to update invoice");
-      }
-
-      const result = await response.json();
-
-      // Ensure the returned data has all the necessary fields
-      const updatedData = {
-        ...result.data,
-        products: updatedInvoice.products, // Preserve products if not returned from API
-      };
-
-      // Update the invoices state
-      setInvoices((prevInvoices) =>
-        prevInvoices.map((inv) =>
-          inv.id === updatedInvoice.id ? updatedData : inv,
-        ),
-      );
-
-      // Update filtered invoices
-      setFilteredInvoices((prevFiltered) =>
-        prevFiltered.map((inv) =>
-          inv.id === updatedInvoice.id ? result.data : inv,
-        ),
-      );
-
-      // Update selected invoice if it's the one being edited
-      if (selectedInvoice?.id === updatedInvoice.id) {
-        setSelectedInvoice(updatedData);
-      }
-
-      return updatedData; // Return the updated data
-    } catch (error) {
-      console.error("Error updating invoice:", error);
-      toast.error("Failed to update invoice");
-      throw error;
-    }
+    updateInvoiceMutation.mutate(updatedInvoice);
   };
 
-  // TODO: use delete trpc code
+  // use delete trpc code
+  const deleteInvoiceMutation = useMutation(
+    trpc.invoices.deleteInvoice.mutationOptions({
+      onSuccess: async () => {
+        toast.success("Invoice deleted successfully");
+        await queryClient.invalidateQueries(
+          trpc.invoices.getPaginatedInvoices.queryOptions({}),
+        );
+      },
+      onError: (error) => {
+        toast.error(error.message ?? "Failed to delete invoice");
+      },
+    }),
+  );
+
   const handleDeleteInvoice = async (id: string) => {
-    try {
-      const response = await fetch(`/api/invoices`, {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ id }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to delete invoice");
-      }
-
-      const result = await response.json();
-
-      // Ensure the returned data has all the necessary fields
-      const deletedInvoice = result.data as Invoice;
-
-      // Update the invoices state
-      setInvoices((prevInvoices) =>
-        prevInvoices.filter((inv) => inv.id !== deletedInvoice.id),
-      );
-
-      // Update filtered invoices
-      setFilteredInvoices((prevFiltered) =>
-        prevFiltered.filter((inv) => inv.id !== deletedInvoice.id),
-      );
-    } catch (error) {
-      console.error("Error deleting invoice:", error);
-      toast.error("Failed to delete invoice");
-      throw error;
-    }
+    deleteInvoiceMutation.mutate({ id });
   };
 
   const handleViewInvoice = (invoice: Invoice) => {
@@ -474,33 +365,23 @@ export const InvoiceList = () => {
     return invoices.findIndex((inv) => inv.id === invoice.id);
   };
 
+  // ─── Pagination display helpers ───────────────────────────────────────────────
+  // "Showing X to Y of Z entries"
+  const firstEntry = totalCount === 0 ? 0 : (page - 1) * pageSize + 1;
+  const lastEntry = Math.min(page * pageSize, totalCount);
+
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 max-w-7xl mx-auto">
-      <div className="flex flex-col sm:flex-row items-center justify-between space-y-2 sm:space-y-0">
+      <div className="flex items-center justify-between">
         <h2 className="text-3xl font-bold tracking-tight mr-4">Invoices</h2>
-        <div className="grid grid-cols-2 pr-8 md:grid-cols-4 gap-4">
-          <Button
-            onClick={() => setShowCategoryDialog(true)}
-            variant="outline"
-            className="cursor-pointer"
-          >
-            Category Names
-          </Button>
 
-          <Button
-            onClick={() => setShowColumnDialog(true)}
-            variant="outline"
-            className="cursor-pointer"
-          >
-            Column Settings
-          </Button>
-
-          <Input
-            placeholder="Search invoices..."
-            className="max-w-50"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+        <div className="space-x-1">
+          {isFiltered && (
+            <Button variant="outline" onClick={clearFilters}>
+              <XCircle className="size-4" />
+              Clear Filters
+            </Button>
+          )}
 
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
@@ -524,52 +405,85 @@ export const InvoiceList = () => {
           </Dialog>
         </div>
       </div>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <Button
+          onClick={() => setShowCategoryDialog(true)}
+          variant="outline"
+          className="cursor-pointer"
+        >
+          Category Names
+        </Button>
 
-      <div className="grid grid-cols-2 pr-8 md:grid-cols-3 gap-4">
-        <Select onValueChange={(value) => setStatusFilter(value)}>
-          <SelectTrigger className="w-45">
+        <Button
+          onClick={() => setShowColumnDialog(true)}
+          variant="outline"
+          className="cursor-pointer"
+        >
+          Column Settings
+        </Button>
+
+        <Input
+          placeholder="Search invoices..."
+          className="col-span-2"
+          value={search}
+          onChange={(e) => handleSearchChange(e.target.value)}
+        />
+      </div>
+
+      {/* Filters */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {/* Status */}
+        <Select
+          value={status}
+          onValueChange={(value) =>
+            handleStatusFilterChange(value as typeof params.status)
+          }
+        >
+          <SelectTrigger className="col-span-1">
             <SelectValue placeholder="Filter by Status" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Statuses</SelectItem>
+            <SelectItem value="ALL">All Statuses</SelectItem>
+            <SelectItem value="PENDING">Pending</SelectItem>
             <SelectItem value="PAID">Paid</SelectItem>
             <SelectItem value="UNPAID">Unpaid</SelectItem>
-            <SelectItem value="DUE">Due</SelectItem>
+            <SelectItem value="OVERDUE">Due</SelectItem>
           </SelectContent>
         </Select>
+
+        {/* Date range */}
         <div className="col-span-1">
           <DatePickerWithRange
-            date={{
-              from: dateRange.from,
-              to: dateRange.to,
-            }}
+            date={
+              normalizedStartDate || normalizedEndDate
+                ? {
+                    from: normalizedStartDate,
+                    to: normalizedEndDate,
+                  }
+                : undefined
+            }
             setDate={(newDateRange) => {
-              setDateRange({
-                from: newDateRange?.from || undefined,
-                to: newDateRange?.to || undefined,
-              });
+              handleDateChange(newDateRange?.from, newDateRange?.to);
             }}
           />
         </div>
-        <div className="w-full flex items-center gap-2 col-span-2 md:col-span-1">
-          <Label htmlFor="amount-range">Amount Range:</Label>
-          <div className="flex-1 flex items-center space-x-2">
-            <span className="text-sm font-medium">${amountRange[0]}</span>
-            <Slider
-              id="amount-range"
-              min={0}
-              max={maxAmount}
-              step={20}
-              value={amountRange}
-              onValueChange={(value: number[]) =>
-                setAmountRange(value as [number, number])
-              }
-              className="flex-1"
-              variant="both"
-            />
-            <span className="text-sm font-medium">${amountRange[1]}</span>
-          </div>
+
+        {/* price range */}
+        <div className="col-span-2 flex items-center space-x-2 md:justify-self-end">
+          <span>Price Range:</span>
+          <Slider
+            min={0}
+            max={PRODUCT_INFO.maxPrice}
+            step={10}
+            value={[minPrice, maxPrice]}
+            onValueChange={handlePriceSliderChange}
+            className="w-50"
+          />
+          <span>
+            ${minPrice} - ${maxPrice}
+          </span>
         </div>
+
         <div />
       </div>
 
@@ -578,7 +492,19 @@ export const InvoiceList = () => {
           <TableHeader>
             <TableRow>
               <TableHead>S/N</TableHead>
-              <TableHead>Invoice Number</TableHead>
+              <TableHead
+                className="cursor-pointer hover:bg-muted/50"
+                onClick={() => handleSort("invoiceNumber")}
+              >
+                <div className="flex items-center">
+                  Invoice Number
+                  {sortField === "invoiceNumber" && (
+                    <span className="ml-2">
+                      {sortDirection === "asc" ? "↑" : "↓"}
+                    </span>
+                  )}
+                </div>
+              </TableHead>
               <TableHead
                 className="cursor-pointer hover:bg-muted/50"
                 onClick={() => handleSort("customerName")}
@@ -618,12 +544,24 @@ export const InvoiceList = () => {
                   )}
                 </div>
               </TableHead>
-              <TableHead>Status</TableHead>
+              <TableHead
+                className="cursor-pointer hover:bg-muted/50"
+                onClick={() => handleSort("status")}
+              >
+                <div className="flex items-center">
+                  Status
+                  {sortField === "status" && (
+                    <span className="ml-2">
+                      {sortDirection === "asc" ? "↑" : "↓"}
+                    </span>
+                  )}
+                </div>
+              </TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {loading ? (
+            {loadingInvoices ? (
               <TableRow>
                 <TableCell colSpan={7} className="h-24 text-center">
                   <div className="flex justify-center items-center">
@@ -631,18 +569,18 @@ export const InvoiceList = () => {
                   </div>
                 </TableCell>
               </TableRow>
-            ) : filteredInvoices.length === 0 ? (
+            ) : invoices.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={7} className="h-24 text-center">
                   <p className="text-lg text-muted-foreground">
-                    {searchTerm
+                    {search
                       ? "No matching invoices found"
                       : "There are no invoices yet"}
                   </p>
                 </TableCell>
               </TableRow>
             ) : (
-              filteredInvoices.map((invoice) => (
+              invoices.map((invoice) => (
                 <TableRow key={invoice.id}>
                   <TableCell>{getInvoiceIndex(invoice) + 1}</TableCell>
                   <TableCell>{invoice.invoiceNumber}</TableCell>
@@ -661,7 +599,7 @@ export const InvoiceList = () => {
                           "bg-green-500 border-green-500 hover:bg-green-600":
                             invoice.status === "PAID",
                           "bg-[#da281c] border-[#da281c] hover:bg-[#b4443c]":
-                            invoice.status === "DUE",
+                            invoice.status === "OVERDUE",
                           "bg-[#fe9e1d] border-[#fe9e1d] hover:bg-[#c6893a]":
                             invoice.status === "PENDING",
                         },
@@ -825,40 +763,38 @@ export const InvoiceList = () => {
         </Table>
 
         {/* Add pagination controls */}
-        {!loading && (
-          <div className="flex items-center justify-between px-4 py-4 border-t">
+        {!loadingInvoices && (
+          <div className="flex flex-col md:flex-row gap-2 items-center justify-between px-4 py-4 border-t">
             <div className="text-sm text-muted-foreground">
-              Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
-              {(currentPage - 1) * itemsPerPage + filteredInvoices.length} of{" "}
-              {invoices.length} entries
+              Showing {firstEntry} to {lastEntry} of {totalCount} entries
             </div>
             <div className="flex space-x-2">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => handlePageChange(1)}
-                disabled={currentPage === 1}
+                disabled={page === 1}
               >
-                <ChevronsLeft className="h-4 w-4" />
+                <ChevronsLeft className="size-4" />
               </Button>
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => handlePageChange(currentPage - 1)}
-                disabled={currentPage === 1}
+                onClick={() => handlePageChange(page - 1)}
+                disabled={!hasPreviousPage}
               >
                 Previous
               </Button>
               <div className="flex items-center space-x-1">
                 <span className="text-sm font-medium">
-                  Page {currentPage} of {totalPages}
+                  Page {page} of {totalPages}
                 </span>
               </div>
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => handlePageChange(currentPage + 1)}
-                disabled={currentPage >= totalPages}
+                onClick={() => handlePageChange(page + 1)}
+                disabled={!hasNextPage}
               >
                 Next
               </Button>
@@ -866,9 +802,9 @@ export const InvoiceList = () => {
                 variant="outline"
                 size="sm"
                 onClick={() => handlePageChange(totalPages)}
-                disabled={currentPage >= totalPages}
+                disabled={page >= totalPages}
               >
-                <ChevronsRight className="h-4 w-4" />
+                <ChevronsRight className="size-4" />
               </Button>
             </div>
           </div>

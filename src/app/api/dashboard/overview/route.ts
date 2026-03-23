@@ -23,7 +23,7 @@ type ResponseData = {
 // Helper function to serialize BigInt
 const serializeBigInt = (data: DataStructure): DataStructure => {
   return JSON.parse(
-    JSON.stringify(data, (_, v) => (typeof v === "bigint" ? v.toString() : v))
+    JSON.stringify(data, (_, v) => (typeof v === "bigint" ? v.toString() : v)),
   );
 };
 
@@ -37,53 +37,39 @@ export async function GET(req: Request) {
       throw new Error("Invalid year parameter");
     }
 
+    const startDate = new Date(year, 0, 1).toISOString();
+    const endDate = new Date(year, 11, 31, 23, 59, 59, 999).toISOString();
+
     // Fetch monthly revenue projections for the specified year
-    const monthlyRevenue = await prisma.monthlyProjection.findMany({
-      where: {
-        revenue: {
-          year: year,
-        },
-      },
-      select: {
-        month: true,
-        actual: true,
-      },
-      orderBy: {
-        month: "asc",
-      },
-    });
-
-    // Transform the monthly revenue data to match the desired format
-    const revenueGrowthData: RevenueGrowthData[] = monthlyRevenue.map(
-      (item) => ({
-        month: item.month,
-        revenue: parseFloat(item.actual.toFixed(1)),
-      })
-    );
-
-    // Fetch product performance data for specified year
-    let productPerformance: ProductPerformanceData[] = [];
-    try {
-      const startDate = `${year}-01-01`;
-      const endDate = `${year}-12-31`;
-
-      const [orderProducts, invoiceProducts] = await Promise.all([
-        prisma.orderProduct.groupBy({
-          by: ["productId"],
+    const [monthlyRevenue, orderProducts, invoiceProducts] =
+      await prisma.$transaction([
+        prisma.monthlyProjection.findMany({
           where: {
-            order: {
-              orderDate: {
-                gte: startDate,
-                lte: endDate,
-              },
-              status: {
-                in: ["PENDING", "FULFILLED"],
-              },
+            revenue: {
+              year,
             },
           },
-          _sum: {
-            quantity: true,
+          select: {
+            month: true,
+            actual: true,
           },
+          orderBy: {
+            month: "asc",
+          },
+        }),
+
+        prisma.orderProduct.groupBy({
+          by: ["productId"],
+          orderBy: {
+            productId: "asc",
+          },
+          where: {
+            order: {
+              orderDate: { gte: startDate, lte: endDate },
+              status: { in: ["PENDING", "FULFILLED"] },
+            },
+          },
+          _sum: { quantity: true },
         }),
 
         // Fetch invoice products
@@ -103,46 +89,58 @@ export async function GET(req: Request) {
         }),
       ]);
 
-      const productQuantities = new Map<string, number>();
+    // Aggregate product quantities from both sources
+    const productQuantities = new Map<string, number>();
+    const productNames = new Map<string, string>();
 
-      orderProducts.forEach((op) => {
-        productQuantities.set(op.productId, op._sum.quantity || 0);
-      });
-
-      // Aggregate quantities from invoice products
-      invoiceProducts.forEach((ip) => {
-        ip.Product.forEach((product) => {
-          const currentQuantity = productQuantities.get(product.id) || 0;
-          productQuantities.set(product.id, currentQuantity + ip.quantity);
-        });
-      });
-
-      const productsWithNames = await prisma.product.findMany({
-        where: {
-          id: { in: Array.from(productQuantities.keys()) },
-        },
-        select: { id: true, name: true },
-      });
-
-      productPerformance = productsWithNames
-        .map((product) => ({
-          name: product.name,
-          value: productQuantities.get(product.id) || 0,
-        }))
-        .sort((a, b) => b.value - a.value)
-        .slice(0, 5);
-    } catch (queryError) {
-      console.error("Error in product performance query:", queryError);
+    for (const op of orderProducts) {
+      productQuantities.set(op.productId, op._sum?.quantity ?? 0);
     }
 
+    for (const ip of invoiceProducts) {
+      for (const product of ip.Product) {
+        productNames.set(product.id, product.name);
+        productQuantities.set(
+          product.id,
+          (productQuantities.get(product.id) ?? 0) + ip.quantity,
+        );
+      }
+    }
+
+    // Fetch names only for orderProducts that weren't covered by invoiceProducts
+    const missingIds = [...productQuantities.keys()].filter(
+      (id) => !productNames.has(id),
+    );
+    if (missingIds.length > 0) {
+      const missingProducts = await prisma.product.findMany({
+        where: { id: { in: missingIds } },
+        select: { id: true, name: true },
+      });
+      for (const p of missingProducts) {
+        productNames.set(p.id, p.name);
+      }
+    }
+
+    const productPerformanceData: ProductPerformanceData[] = [
+      ...productQuantities.entries(),
+    ]
+      .map(([id, value]) => ({ name: productNames.get(id) ?? id, value }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 5);
+
+    const revenueGrowthData: RevenueGrowthData[] = monthlyRevenue.map(
+      ({ month, actual }) => ({
+        month,
+        revenue: parseFloat(actual.toFixed(1)),
+      }),
+    );
+
     const response: ResponseData = {
-      revenueGrowthData: revenueGrowthData,
-      productPerformanceData: productPerformance,
+      revenueGrowthData,
+      productPerformanceData,
     };
 
-    const serializedResponse = serializeBigInt(response);
-
-    return NextResponse.json(serializedResponse);
+    return NextResponse.json(serializeBigInt(response));
   } catch (error) {
     console.error("Error fetching dashboard overview data:", error);
     return NextResponse.json(
@@ -150,7 +148,7 @@ export async function GET(req: Request) {
         message: "Error fetching dashboard overview data",
         error: error instanceof Error ? error.message : String(error),
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

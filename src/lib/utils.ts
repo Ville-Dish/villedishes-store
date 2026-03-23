@@ -51,7 +51,7 @@ export enum InvoiceStatus {
   PAID = "PAID",
   UNPAID = "UNPAID",
   PENDING = "PENDING",
-  OVERDUE = "DUE",
+  OVERDUE = "OVERDUE",
 }
 
 export function isValidInvoiceStatus(status: string): status is InvoiceStatus {

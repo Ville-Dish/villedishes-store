@@ -20,7 +20,6 @@ import {
 } from "@/lib/schemas/orderSchema";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { safeParseAsync } from "zod";
 import {
   Form,
   FormControl,
@@ -35,10 +34,6 @@ export const VerifyPaymentView = () => {
   const queryClient = useQueryClient();
   const router = useRouter();
   const searchParams = useSearchParams();
-  // // const { verifyOrder } = useOrderStore();
-  // const [verificationCode, setVerificationCode] = useState("");
-  // const [isVerifying, setIsVerifying] = useState(false);
-  // const [orderId, setOrderId] = useState<string | null>(null);
 
   const form = useForm<VerifyPaymentValue>({
     resolver: zodResolver(verifyPaymentSchema),
@@ -109,8 +104,7 @@ export const VerifyPaymentView = () => {
 
         sendConfirmationEmail.mutate({
           type: "order_confirmation",
-          // to: orderDetails.shippingInfo.email,
-          to: "abiolah.toria@gmail.com",
+          to: orderDetails.shippingInfo.email,
           ...emailData,
         });
 

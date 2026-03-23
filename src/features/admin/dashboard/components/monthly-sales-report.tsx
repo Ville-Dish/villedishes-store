@@ -18,11 +18,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { MonthlySalesReportProps } from "@/lib/types";
 
 export const MonthlySalesReport = ({
   monthlySales,
   topProducts,
-}: MonthlySalesReport) => {
+}: MonthlySalesReportProps) => {
   if (!monthlySales || monthlySales.length === 0) {
     return <p>No data available for the Monthly Sales Report.</p>;
   }

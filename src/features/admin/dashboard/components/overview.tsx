@@ -1,5 +1,6 @@
 "use client";
 
+import { overviewProps } from "@/lib/types";
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis } from "recharts";
 
 export const Overview = ({ data }: overviewProps) => {

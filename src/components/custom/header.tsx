@@ -6,8 +6,8 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Shield } from "lucide-react";
 import { useRouter } from "next/navigation";
-import AdminAvatar from "@/components/custom/admin_avatar";
-import { AdminNavbarMenu } from "@/components/custom/admin_navbar_menu";
+import AdminAvatar from "@/features/admin/components/admin_avatar";
+import { AdminNavbarMenu } from "@/features/admin/components/admin_navbar_menu";
 import { NavbarMenu } from "@/components/custom/navbar_menu";
 import ShoppingCart from "@/components/custom/shopping-cart";
 

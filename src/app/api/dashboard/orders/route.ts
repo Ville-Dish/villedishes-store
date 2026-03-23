@@ -20,11 +20,13 @@ export async function GET(req: Request) {
     const defaultStartDate = new Date(today);
     defaultStartDate.setDate(today.getDate() - 30);
 
-    const startDate =
-      searchParams.get("startDate") ||
-      defaultStartDate.toISOString().split("T")[0];
-    const endDate =
-      searchParams.get("endDate") || today.toISOString().split("T")[0];
+    const startDate = searchParams.get("startDate")
+      ? new Date(searchParams.get("startDate")!).toISOString()
+      : new Date(defaultStartDate.setHours(0, 0, 0, 0)).toISOString();
+
+    const endDate = searchParams.get("endDate")
+      ? new Date(`${searchParams.get("endDate")}T23:59:59.999`).toISOString()
+      : new Date(today.setHours(23, 59, 59, 999)).toISOString();
 
     // Construct the where clause
     const whereClause = {
@@ -79,13 +81,6 @@ export async function GET(req: Request) {
       ]),
     ]);
 
-    const recentOrders: OrderDashboardData[] = orders.map((order) => ({
-      customer: `${order.shippingInfo.firstName} ${order.shippingInfo.lastName}`,
-      order: order.orderNumber || "",
-      orderDate: order.orderDate || "",
-      total: order.total,
-    }));
-
     const [
       totalOrderStats,
       revenueStats,
@@ -94,6 +89,16 @@ export async function GET(req: Request) {
       fulfilled,
       cancelled,
     ] = aggregations;
+
+    const recentOrders = orders.map(
+      (order) =>
+        ({
+          customer: `${order.shippingInfo.firstName} ${order.shippingInfo.lastName}`,
+          order: order.orderNumber ?? "",
+          orderDate: order.orderDate?.toISOString() ?? "",
+          total: order.total,
+        }) satisfies OrderDashboardData,
+    );
 
     const response = {
       totalOrders: totalOrderStats._count,
@@ -114,7 +119,7 @@ export async function GET(req: Request) {
         message: "Error fetching orders",
         error: error instanceof Error ? error.message : String(error),
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

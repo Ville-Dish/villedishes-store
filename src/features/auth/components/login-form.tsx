@@ -1,5 +1,6 @@
 "use client";
-import React, { useState } from "react";
+
+import { useState, useTransition } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -31,7 +32,6 @@ import {
   OctagonAlertIcon,
 } from "lucide-react";
 import Link from "next/link";
-import { signInAction } from "@/actions/authActions";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTRPC } from "@/trpc/client";
@@ -40,12 +40,10 @@ export const LoginForm = () => {
   const queryClient = useQueryClient();
   const trpc = useTRPC();
   const router = useRouter();
+  const [isPending, startTransition] = useTransition();
 
   const [showPassword, setShowPassword] = useState(false);
-  const [isloading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  //   const isLoading = login.isPending;
 
   const form = useForm<LoginSchema>({
     resolver: zodResolver(loginSchema),
@@ -54,12 +52,18 @@ export const LoginForm = () => {
       password: "",
     },
   });
+  const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
   const login = useMutation(
     trpc.auth.login.mutationOptions({
       onSuccess: async () => {
+        await queryClient.invalidateQueries(trpc.auth.session.queryOptions());
+
+        await delay(5000);
         toast.success("Login Successful");
-        router.push("/admin/dashboard");
+        startTransition(() => {
+          router.push("/admin/dashboard");
+        });
       },
       onError: (error) => {
         setError(error.message);
@@ -81,6 +85,8 @@ export const LoginForm = () => {
 
     login.mutate({ email, password });
   };
+
+  const isLoading = login.isPending || isPending;
 
   return (
     <Card className="w-full max-w-md shadow-lg">
@@ -120,7 +126,7 @@ export const LoginForm = () => {
                       name="email"
                       type="email"
                       placeholder="Enter your email"
-                      disabled={isloading}
+                      disabled={isLoading}
                     />
                   </FormControl>
                   <FormMessage />
@@ -151,7 +157,7 @@ export const LoginForm = () => {
                         name="password"
                         type={showPassword ? "text" : "password"}
                         placeholder="Enter your password"
-                        disabled={isloading}
+                        disabled={isLoading}
                       />
 
                       <Button
@@ -160,7 +166,7 @@ export const LoginForm = () => {
                         size="sm"
                         className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent text-gray-600"
                         onClick={() => setShowPassword(!showPassword)}
-                        disabled={isloading || !form.watch("password")}
+                        disabled={isLoading || !form.watch("password")}
                       >
                         {showPassword ? (
                           <EyeIcon className="size-4" />
@@ -178,9 +184,9 @@ export const LoginForm = () => {
             <Button
               type="submit"
               className="w-full mt-2 bg-[#1aa879] hover:bg-[#1aa879]/90 cursor-pointer"
-              disabled={isloading}
+              disabled={isLoading}
             >
-              {isloading ? (
+              {isLoading ? (
                 <>
                   <Loader2Icon className="size-4 animate-spin" />
                   Signing in...

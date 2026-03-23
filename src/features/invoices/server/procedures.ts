@@ -6,46 +6,64 @@ import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
+// const generateInvoiceNumber = async () => {
+//   return await prisma.$transaction(async (tx) => {
+//     const maxInvoice = await tx.invoice.findFirst({
+//       orderBy: {
+//         invoiceNumber: "desc",
+//       },
+//       select: {
+//         invoiceNumber: true,
+//       },
+//     });
+
+//     let nextNumber = 1;
+//     if (maxInvoice?.invoiceNumber) {
+//       const numericPart = parseInt(maxInvoice.invoiceNumber.split("-")[1], 10);
+//       if (!isNaN(numericPart)) {
+//         nextNumber = numericPart + 1;
+//       }
+//     }
+
+//     const newInvoiceNumber = `INV-${String(nextNumber).padStart(4, "0")}`;
+
+//     // Create a placeholder invoice to reserve the number
+//     await tx.invoice.create({
+//       data: {
+//         invoiceNumber: newInvoiceNumber,
+//         customerName: "Placeholder",
+//         customerEmail: "placeholder@example.com",
+//         customerPhone: "0000000000",
+//         amount: 0,
+//         amountPaid: 0,
+//         amountDue: 0,
+//         discountPercentage: 0,
+//         status: "PENDING",
+//         dateCreated: new Date().toISOString().split("T")[0],
+//         dueDate: new Date().toISOString().split("T")[0],
+//       },
+//     });
+
+//     return newInvoiceNumber;
+//   });
+// };
+
 const generateInvoiceNumber = async () => {
-  return await prisma.$transaction(async (tx) => {
-    const maxInvoice = await tx.invoice.findFirst({
-      orderBy: {
-        invoiceNumber: "desc",
-      },
-      select: {
-        invoiceNumber: true,
-      },
-    });
-
-    let nextNumber = 1;
-    if (maxInvoice?.invoiceNumber) {
-      const numericPart = parseInt(maxInvoice.invoiceNumber.split("-")[1], 10);
-      if (!isNaN(numericPart)) {
-        nextNumber = numericPart + 1;
-      }
-    }
-
-    const newInvoiceNumber = `INV-${String(nextNumber).padStart(4, "0")}`;
-
-    // Create a placeholder invoice to reserve the number
-    await tx.invoice.create({
-      data: {
-        invoiceNumber: newInvoiceNumber,
-        customerName: "Placeholder",
-        customerEmail: "placeholder@example.com",
-        customerPhone: "0000000000",
-        amount: 0,
-        amountPaid: 0,
-        amountDue: 0,
-        discountPercentage: 0,
-        status: "PENDING",
-        dateCreated: new Date().toISOString().split("T")[0],
-        dueDate: new Date().toISOString().split("T")[0],
-      },
-    });
-
-    return newInvoiceNumber;
+  const maxInvoice = await prisma.invoice.findFirst({
+    orderBy: { invoiceNumber: "desc" },
+    select: { invoiceNumber: true },
   });
+
+  let nextNumber = 1;
+
+  if (maxInvoice?.invoiceNumber) {
+    const numericPart = parseInt(maxInvoice.invoiceNumber.split("-")[1], 10);
+    if (!isNaN(numericPart)) {
+      nextNumber = numericPart + 1;
+    }
+  }
+
+  return `INV-${String(nextNumber).padStart(4, "0")}`;
 };
 
 export const invoiceRouter = createTRPCRouter({
@@ -161,6 +179,16 @@ export const invoiceRouter = createTRPCRouter({
         endDate: z.date().optional(),
         minPrice: z.number().default(0),
         maxPrice: z.number().default(1000),
+        sortField: z
+          .enum([
+            "invoiceNumber",
+            "customerName",
+            "amount",
+            "dueDate",
+            "status",
+          ])
+          .optional(),
+        sortDirection: z.enum(["asc", "desc"]).optional(),
       }),
     )
     .query(async ({ ctx, input }) => {
@@ -181,11 +209,17 @@ export const invoiceRouter = createTRPCRouter({
         pageSize,
         minPrice,
         maxPrice,
+        sortField,
+        sortDirection,
       } = input;
 
       const where: Prisma.InvoiceWhereInput = {};
 
       const whereCondition = { ...where };
+
+      if (status && status !== "ALL") {
+        whereCondition.status = status;
+      }
 
       if (search && search !== "") {
         whereCondition.OR = [
@@ -213,19 +247,38 @@ export const invoiceRouter = createTRPCRouter({
 
       // Date filter (orderDate is stored as string YYYY-MM-DD)
       if (startDate || endDate) {
-        where.dueDate = {};
+        whereCondition.dueDate = {};
 
         if (startDate) {
-          where.dueDate.gte = startDate.toISOString();
+          whereCondition.dueDate.gte = startDate.toISOString();
         }
 
         if (endDate) {
-          where.dueDate.lte = endDate.toISOString();
+          whereCondition.dueDate.lte = endDate.toISOString();
         }
       }
 
+      // Build orderBy - "customer" sorts on a relation field so needs special handling
+      const dir = sortDirection ?? "desc";
+      let orderBy: Prisma.InvoiceOrderByWithRelationInput;
+
+      if (sortField === "invoiceNumber") {
+        orderBy = { invoiceNumber: dir };
+      } else if (sortField === "customerName") {
+        orderBy = { customerName: dir };
+      } else if (sortField === "amount") {
+        orderBy = { amount: dir };
+      } else if (sortField === "status") {
+        orderBy = { status: dir };
+      } else if (sortField === "dueDate") {
+        orderBy = { dueDate: dir };
+      } else {
+        // default: orderDate desc
+        orderBy = { dateCreated: dir };
+      }
+
       // Retrieve all invoices
-      const [rawInvoices, totalCount, products] = await Promise.all([
+      const [rawInvoices, totalCount, rawProducts] = await Promise.all([
         prisma.invoice.findMany({
           skip: (page - 1) * pageSize,
           take: pageSize,
@@ -239,6 +292,7 @@ export const invoiceRouter = createTRPCRouter({
               },
             },
           },
+          orderBy,
         }),
 
         prisma.invoice.count({
@@ -247,7 +301,13 @@ export const invoiceRouter = createTRPCRouter({
           },
         }),
 
-        prisma.product.findMany(),
+        prisma.product.findMany({
+          select: {
+            id: true,
+            name: true,
+            price: true,
+          },
+        }),
       ]);
 
       const currentDate = new Date();
@@ -319,12 +379,20 @@ export const invoiceRouter = createTRPCRouter({
               name: ip.Product?.[0]?.name,
               basePrice: ip.basePrice,
               quantity: ip.quantity,
+              price: ip.basePrice * ip.quantity,
               discount: ip.discount,
-              category: ip.Product?.[0]?.category,
+              category: ip.Product?.[0]?.category ?? "Other",
             })),
           };
         }),
       );
+
+      // Transform products for filter dropdown
+      const products = rawProducts.map((product) => ({
+        id: product.id,
+        name: product.name,
+        basePrice: product.price, // 👈 rename here
+      }));
 
       // ───── PAGINATION METADATA ─────
       const totalPages = Math.ceil(totalCount / pageSize);
@@ -350,7 +418,7 @@ export const invoiceRouter = createTRPCRouter({
         customerName: z.string().min(1, "Customer name is required"),
         customerEmail: z.string().email("Invalid email"),
         customerPhone: z.string().min(1, "Customer phone is required"),
-        dueDate: z.string().min(1, "Due date is required"), // stored as YYYY-MM-DD
+        dueDate: z.date().min(1, "Due date is required"), // stored as YYYY-MM-DD
         status: z
           .enum(["PENDING", "UNPAID", "PAID", "OVERDUE"])
           .optional()
@@ -404,7 +472,7 @@ export const invoiceRouter = createTRPCRouter({
           amount,
           discountPercentage,
           dateCreated: new Date().toISOString().split("T")[0], // YYYY-MM-DD
-          dueDate,
+          dueDate: new Date(dueDate).toISOString().split("T")[0], // YYYY-MM-DD
           status,
           invoiceNumber,
         },

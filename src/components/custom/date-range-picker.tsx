@@ -10,6 +10,8 @@ import { Calendar } from "../ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
+import { useDashboardParams } from "@/features/admin/dashboard/hooks/use-dashboard-params";
+import { thirtyDaysAgo, today } from "@/features/admin/dashboard/params";
 
 export function DatePickerWithRange({
   className,
@@ -20,6 +22,7 @@ export function DatePickerWithRange({
   setDate: (date: DateRange | undefined) => void;
 }) {
   const [open, setOpen] = useState(false);
+  const [params, setParams] = useDashboardParams();
   // Internal pending selection — only committed when Done is clicked
   const [pendingDate, setPendingDate] = useState<DateRange | undefined>(date);
 
@@ -37,6 +40,11 @@ export function DatePickerWithRange({
     setPendingDate(undefined);
     setDate(undefined);
     setOpen(false);
+    setParams({
+      ...params,
+      startDate: thirtyDaysAgo,
+      endDate: today,
+    });
   };
   return (
     <div className={cn("grid gap-2", className)}>

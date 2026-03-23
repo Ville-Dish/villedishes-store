@@ -12,6 +12,23 @@ type InvoiceFilter = "ALL" | InvoiceStatus;
 
 const statusValues: InvoiceFilter[] = ["ALL", ...Object.values(InvoiceStatus)];
 
+type SortField =
+  | "invoiceNumber"
+  | "customerName"
+  | "amount"
+  | "dueDate"
+  | "status";
+type SortDirection = "asc" | "desc";
+
+const sortFieldValues: SortField[] = [
+  "invoiceNumber",
+  "customerName",
+  "status",
+  "amount",
+  "dueDate",
+];
+const sortDirectionValues: SortDirection[] = ["asc", "desc"];
+
 export const invoiceParams = {
   page: parseAsInteger
     .withDefault(PAGINATION.DEFAULT_PAGE)
@@ -29,4 +46,12 @@ export const invoiceParams = {
   maxPrice: parseAsInteger
     .withDefault(PRODUCT_INFO.maxPrice)
     .withOptions({ clearOnDefault: true }),
+  sortField: parseAsStringEnum<SortField>(sortFieldValues).withOptions({
+    clearOnDefault: true,
+  }),
+  sortDirection: parseAsStringEnum<SortDirection>(
+    sortDirectionValues,
+  ).withOptions({
+    clearOnDefault: true,
+  }),
 };

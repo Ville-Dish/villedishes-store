@@ -76,6 +76,8 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { useMutation } from "@tanstack/react-query";
+import { useTRPC } from "@/trpc/client";
 
 const allowsHalfQuantity = (productName?: string, popoverOpen?: boolean) => {
   if (!productName || popoverOpen) return false;
@@ -102,6 +104,8 @@ export const InvoiceDetails = ({
   categoryMappings?: Record<string, string>;
   columnMappings?: ColumnMappings;
 }) => {
+  const trpc = useTRPC();
+
   const [updatedInvoice, setUpdatedInvoice] = useState<Invoice>(invoice);
 
   // TODO: review for trpc integration
@@ -551,50 +555,52 @@ export const InvoiceDetails = ({
     calculateTotal,
   ]);
 
-  const handleSendInvoiceEmail = async (data: SendInvoiceValue) => {
-    try {
-      setSending(true);
-
-      const parsed = sendInvoiceSchema.safeParse(data);
-      if (!parsed.success) {
-        toast.error("Failed to send Invoice email", {
-          description: "Please check the email address format",
-        });
-        return;
-      }
-
-      const response = await fetch("/api/emails/invoice", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          from: adminEmail,
-          to: parsed.data.email,
-          subject: `Your Invoice ${updatedInvoice.invoiceNumber} from VilleDishes is ready`,
-          customerName: updatedInvoice.customerName,
-          invoiceNumber: updatedInvoice.invoiceNumber,
-          invoice: updatedInvoice,
-          displayMode: emailDisplayMode,
-          categoryMappings,
-          columnMappings,
-        }),
-      });
-
-      if (response.ok) {
+  const sendMail = useMutation(
+    trpc.mail.sendEmail.mutationOptions({
+      onSuccess: () => {
         setSendInvoiceOpen(false);
-        toast.success("Invoice sent successfully");
-      } else {
-        throw new Error("Failed to send invoice");
-      }
-    } catch (error) {
-      console.error("Error sending invoice email:", error);
-      toast.error("Failed to send invoice email", {
-        description: "Please try again later",
+        toast.success("Invoice Sent", {
+          description:
+            "An email with the invoice details has been sent to the customer.",
+        });
+        setSending(false);
+      },
+      onError: (error) => {
+        console.error("Error sending invoice email:", error);
+        toast.error("Failed to send invoice email", {
+          description:
+            error instanceof Error
+              ? error.message
+              : "An unknown error occurred",
+        });
+      },
+    }),
+  );
+
+  const handleSendInvoiceEmail = async (data: SendInvoiceValue) => {
+    setSending(true);
+    const parsed = sendInvoiceSchema.safeParse(data);
+    if (!parsed.success) {
+      toast.error("Failed to send Invoice email", {
+        description: "Please check the email address format",
       });
-    } finally {
-      setSending(false);
+      return;
     }
+
+    const emailData = {
+      customerName: updatedInvoice.customerName,
+      invoiceNumber: updatedInvoice.invoiceNumber,
+      invoice: updatedInvoice,
+      displayMode: emailDisplayMode,
+      categoryMappings,
+      columnMappings,
+    };
+
+    sendMail.mutate({
+      type: "invoice",
+      to: parsed.data.email,
+      ...emailData,
+    });
   };
 
   const trayFractionToNumber = (value: string) => {

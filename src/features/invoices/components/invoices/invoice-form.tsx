@@ -23,19 +23,21 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { CustomPhoneInput } from "../phone-input";
+import { CustomPhoneInput } from "../../../../components/custom/phone-input";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { cn, formatDate } from "@/lib/utils";
+import { cn, formatDate, InvoiceStatus } from "@/lib/utils";
 import { addMonths, format } from "date-fns";
 import { CalendarIcon, Loader2Icon } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { toast } from "sonner";
 import { Invoice } from "@/lib/types";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useTRPC } from "@/trpc/client";
 
 interface InvoiceFormProps {
   setDialog: (value: boolean) => void;
@@ -46,6 +48,9 @@ export const InvoiceForm = ({
   setDialog,
   setSelectedInvoice,
 }: InvoiceFormProps) => {
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
+
   const [isLoading, setIsLoading] = useState(false);
   const form = useForm<CreateInvoiceSchema>({
     resolver: zodResolver(createInvoiceSchema),
@@ -55,15 +60,34 @@ export const InvoiceForm = ({
       customerPhone: "",
       amount: 1,
       dueDate: new Date(),
-      status: "PENDING",
+      status: "PENDING" as InvoiceStatus,
+      dateCreated: new Date(),
     },
   });
 
+  // create invoice function - use trpc code
+  const createInvoiceMutation = useMutation(
+    trpc.invoices.createInvoice.mutationOptions({
+      onSuccess: (data) => {
+        toast.success(
+          "Invoice created successfully! Complete the invoice in Invoice Details",
+        );
+        form.reset();
+        setDialog(false);
+        setSelectedInvoice(data);
+        queryClient.invalidateQueries(
+          trpc.invoices.getPaginatedInvoices.queryOptions({}),
+        );
+      },
+      onError: (error) => {
+        toast.error(`Failed to create invoice: ${error.message}`);
+      },
+    }),
+  );
+
   // TODO: use add trpc code
   const onSubmit = async (values: CreateInvoiceSchema) => {
-    const validatedFields = await createInvoiceSchema.safeParseAsync({
-      values,
-    });
+    const validatedFields = await createInvoiceSchema.safeParseAsync(values);
 
     if (!validatedFields.success) {
       toast.error(
@@ -72,38 +96,7 @@ export const InvoiceForm = ({
       return;
     }
 
-    setIsLoading(true);
-
-    try {
-      const response = await fetch("/api/invoices", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...validatedFields.data,
-          dateCreated: new Date().toISOString().split("T")[0],
-        }),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        toast.error(`Failed to create invoice: ${result.message}`);
-      }
-
-      toast.success(
-        "Invoice created successfully! Complete the invoice in Invoice Details",
-      );
-      form.reset();
-      setDialog(false);
-
-      // Open the edit invoice
-      setSelectedInvoice(result.data);
-    } catch (error) {
-      toast.error("An unexpected error occurred. Please try again.");
-      console.error("Error creating invoice:", error);
-    } finally {
-      setIsLoading(false);
-    }
+    await createInvoiceMutation.mutateAsync(validatedFields.data);
   };
 
   return (
@@ -202,9 +195,12 @@ export const InvoiceForm = ({
                   </FormLabel>
                   <FormControl>
                     <Input
+                      type="number"
                       {...field}
+                      value={field.value ?? ""}
                       id="amount"
-                      name="amout"
+                      name="amount"
+                      onChange={(e) => field.onChange(Number(e.target.value))}
                       //   placeholder="Customer Phone"
                       disabled={isLoading}
                     />
@@ -217,7 +213,7 @@ export const InvoiceForm = ({
             {/* Due Date */}
             <FormField
               control={form.control}
-              name="amount"
+              name="dueDate"
               render={({ field }) => {
                 const today = new Date();
                 today.setHours(0, 0, 0, 0);
@@ -244,11 +240,7 @@ export const InvoiceForm = ({
                               )}
                             >
                               {field.value ? (
-                                format(
-                                  // new Date(field.value),
-                                  new Date(Date.now()),
-                                  "PPP",
-                                )
+                                format(new Date(field.value), "PPP")
                               ) : (
                                 <span>Select a date</span>
                               )}

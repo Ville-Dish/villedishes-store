@@ -246,23 +246,16 @@ export const ProductList = () => {
   const lastEntry = Math.min(page * pageSize, totalCount);
 
   return (
-    <div className="flex-1 space-y-4 p-8 pt-6">
+    <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
       <div className="flex items-center justify-between space-y-2">
         <h2 className="text-3xl font-bold tracking-tight">Products</h2>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-1">
           {isFiltered && (
             <Button variant="outline" onClick={clearFilters}>
               <XCircle className="size-4" />
               Clear Filters
             </Button>
           )}
-
-          <Input
-            placeholder="Search products..."
-            className="max-w-sm"
-            value={search}
-            onChange={(e) => handleSearchChange(e.target.value)}
-          />
 
           {/* Add Product Dialog */}
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen} modal={false}>
@@ -300,6 +293,13 @@ export const ProductList = () => {
         </div>
       </div>
 
+      <Input
+        placeholder="Search products..."
+        className="w-full"
+        value={search}
+        onChange={(e) => handleSearchChange(e.target.value)}
+      />
+
       {/* Filters */}
       <div className="grid grid-cols-2 md:grid-cols-4 mb-4 gap-4">
         {/* Category */}
@@ -307,7 +307,7 @@ export const ProductList = () => {
           value={category}
           onValueChange={(value) => handleCategoryChange(value)}
         >
-          <SelectTrigger className="w-45">
+          <SelectTrigger className="col-span-1">
             <SelectValue placeholder="Filter by Category" />
           </SelectTrigger>
           <SelectContent>
@@ -325,7 +325,7 @@ export const ProductList = () => {
           value={rating}
           onValueChange={(value) => handleRatingChange(value)}
         >
-          <SelectTrigger className="w-45">
+          <SelectTrigger className="col-span-1">
             <SelectValue placeholder="Filter by Rating" />
           </SelectTrigger>
           <SelectContent>
@@ -348,7 +348,7 @@ export const ProductList = () => {
             onValueChange={handlePriceSliderChange}
             className="w-50"
           />
-          <span>
+          <span className="text-sm">
             ${minPrice} - ${maxPrice}
           </span>
         </div>
@@ -472,7 +472,7 @@ export const ProductList = () => {
 
           {/* Add pagination controls */}
           {!loadingProducts && (
-            <div className="flex items-center justify-between px-4 py-4 border-t">
+            <div className="flex flex-col md:flex-row gap-2 items-center justify-between px-4 py-4 border-t">
               <div className="text-sm text-muted-foreground">
                 Showing {firstEntry} to {lastEntry} of {totalCount} entries
               </div>

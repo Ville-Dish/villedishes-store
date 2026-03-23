@@ -1,11 +1,14 @@
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { OrderDashboardProps } from "@/lib/types";
 
-export const RecentOrders = ({ data }: orderDashboardProps) => {
+export const RecentOrders = ({ data }: OrderDashboardProps) => {
   return (
     <div className="space-y-8 justify-center items-center">
       {data.length === 0 ? (
         <div className="flex justify-center items-center h-24">
-          <p className="text-sm text-muted-foreground">No recent orders found</p>
+          <p className="text-sm text-muted-foreground">
+            No recent orders found
+          </p>
         </div>
       ) : (
         data.map((sale, index) => (
@@ -23,7 +26,8 @@ export const RecentOrders = ({ data }: orderDashboardProps) => {
               <p className="text-sm text-muted-foreground">{sale.customer}</p>
             </div>
             <div className="ml-auto font-medium">
-              CAD$ {sale.total.toLocaleString('en-US', { maximumFractionDigits: 2 })}
+              CAD${" "}
+              {sale.total.toLocaleString("en-US", { maximumFractionDigits: 2 })}
             </div>
           </div>
         ))

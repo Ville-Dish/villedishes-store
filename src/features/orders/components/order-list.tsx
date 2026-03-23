@@ -125,8 +125,7 @@ export const OrderList = () => {
         if (data.status === "FULFILLED") {
           sendMail.mutate({
             type: "order_fulfillment",
-            // to: data.shippingInfo.email,
-            to: "abiolah.toria@gmail.com",
+            to: data.shippingInfo.email,
             customerName: `${data.shippingInfo.firstName} ${data.shippingInfo.lastName}`,
             orderNumber: data.orderNumber ?? "",
             subtotal: data.subtotal,
@@ -139,8 +138,7 @@ export const OrderList = () => {
         if (data.status === "CANCELLED") {
           sendMail.mutate({
             type: "order_cancellation_confirmation",
-            // to: data.shippingInfo.email,
-            to: "abiolah.toria@gmail.com",
+            to: data.shippingInfo.email,
             customerName: `${data.shippingInfo.firstName} ${data.shippingInfo.lastName}`,
             orderNumber: data.orderNumber ?? "",
             total: data.total,
@@ -268,7 +266,7 @@ export const OrderList = () => {
       </div>
 
       {/* Status & Date */}
-      <div className="flex space-x-4 mb-4">
+      <div className="flex items-center justify-between space-x-4 mb-4">
         {/* Status */}
         <Select
           value={status}
@@ -276,7 +274,7 @@ export const OrderList = () => {
             handleStatusFilterChange(value as typeof params.status)
           }
         >
-          <SelectTrigger className="w-45">
+          <SelectTrigger className="flex-1">
             <SelectValue placeholder="Filter by Status" />
           </SelectTrigger>
           <SelectContent>
@@ -290,6 +288,7 @@ export const OrderList = () => {
 
         {/* Date Filter */}
         <DatePickerWithRange
+          className="flex-1"
           date={
             normalizedStartDate || normalizedEndDate
               ? {
@@ -444,7 +443,7 @@ export const OrderList = () => {
 
         {/* Pagination */}
         {!loadingOrders && (
-          <div className="flex items-center justify-between px-4 py-4 border-t">
+          <div className="flex flex-col md:flex-row gap-2 items-center justify-between px-4 py-4 border-t">
             <div className="text-sm text-muted-foreground">
               Showing {firstEntry} to {lastEntry} of {totalCount} entries
             </div>

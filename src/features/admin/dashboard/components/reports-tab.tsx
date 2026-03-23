@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, Suspense, useCallback } from "react";
+import { Suspense } from "react";
 
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 
@@ -11,8 +11,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { toast } from "sonner";
-import { ReportsSection } from "@/components/custom/dashboard/report-accordion";
+import { ReportItem } from "@/lib/types";
+import { useTRPC } from "@/trpc/client";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { ReportsSection } from "./report-accordion";
 
 type ReportData = {
   type: string;
@@ -20,9 +22,19 @@ type ReportData = {
 };
 
 interface ReportTabProps {
-  data: ReportData[];
+  selectedYear: number;
+  selectedMonth: number;
 }
-export const ReportsTab = ({ data }: ReportTabProps) => {
+export const ReportsTab = ({ selectedMonth, selectedYear }: ReportTabProps) => {
+  const trpc = useTRPC();
+
+  const { data = [] } = useSuspenseQuery(
+    trpc.dashboard.reportData.queryOptions({
+      year: selectedYear,
+      month: selectedMonth,
+    }),
+  );
+
   return (
     <Card>
       <CardHeader>

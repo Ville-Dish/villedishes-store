@@ -8,11 +8,10 @@ export async function POST(req: Request) {
     const { from, to, name, phone, email, notes, products, date } =
       await req.json();
 
-    // console.log({ from, to, name, phone, email, notes, products, date });
     if (!from || !to || !products || !Array.isArray(products)) {
       return NextResponse.json(
         { message: "Missing email parameters" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -24,7 +23,7 @@ export async function POST(req: Request) {
         note: notes,
         cateringDate: new Date(date),
         products,
-      })
+      }),
     );
 
     const options = {
@@ -38,13 +37,13 @@ export async function POST(req: Request) {
     await sendEmail(options);
     return NextResponse.json(
       { message: "Email sent successfully" },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error) {
     console.error("Error sending mail:", error);
     return NextResponse.json(
       { message: "Error sending email", error },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

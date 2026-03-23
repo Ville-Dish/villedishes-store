@@ -14,6 +14,7 @@ export const createTRPCContext = cache(
     return { req: opts?.req, session };
   },
 );
+
 // Avoid exporting the entire t-object
 // since it's not very descriptive.
 // For instance, the use of a t variable
@@ -38,16 +39,10 @@ const authMiddleware = middleware(async ({ ctx, next }) => {
 });
 
 // Public rate limiting middleware (IP-based)
-const publicMiddleware = middleware(async ({ ctx, next }) => {
-  if (ctx.req) {
-    console.log("Public");
-  }
-
-  return next({ ctx });
-});
+//
 
 // Public procedure (no auth required)
-export const publicProcedure = baseProcedure.use(publicMiddleware);
+export const publicProcedure = baseProcedure;
 
 // Protected procedure (auth required)
 export const protectedProcedure = baseProcedure.use(authMiddleware);

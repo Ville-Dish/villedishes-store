@@ -126,7 +126,7 @@ interface Invoice {
   amountDue: number;
   dateCreated: string;
   dueDate: string;
-  status: "PAID" | "UNPAID" | "DUE" | "PENDING";
+  status: InvoiceStatus;
   products?: Array<{
     id: string;
     name: string;
@@ -145,7 +145,7 @@ type InvoiceDetailsProps = {
 };
 
 type revenueGrowthData = {
-  name: string;
+  month: string;
   revenue: number;
 };
 type revenueGrowthProps = {
@@ -170,15 +170,15 @@ type overviewProps = {
   data: overviewData[];
 };
 
-type orderDashboardData = {
+type OrderDashboardData = {
   customer: string;
   order: string;
   orderDate: string;
   total: number;
 };
 
-type orderDashboardProps = {
-  data: orderDashboardData[];
+type OrderDashboardProps = {
+  data: OrderDashboardData[];
 };
 
 type MonthlySales = {
@@ -195,7 +195,7 @@ type TopProducts = {
   unitsSold: number;
 };
 
-type MonthlySalesReport = {
+type MonthlySalesReportProps = {
   monthlySales: MonthlySales[];
   topProducts: TopProducts[];
 };

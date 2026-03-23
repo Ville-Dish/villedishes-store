@@ -1,9 +1,12 @@
-import { Toaster } from "@/components/ui/sonner";
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
-import "./globals.css";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+
 import { TRPCReactProvider } from "@/trpc/client";
+import { Toaster } from "@/components/ui/sonner";
+
+import "./globals.css";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -41,6 +44,7 @@ export default function RootLayout({
           <Toaster />
         </body>
       </html>
+      <ReactQueryDevtools initialIsOpen={false} />
     </TRPCReactProvider>
   );
 }

@@ -120,6 +120,7 @@ export const CheckoutView = () => {
               referenceNumber: order.referenceNumber || "",
               verificationCode: order.verificationCode || "",
             };
+
             sendVerificationEmail.mutate({
               type: "verify_payment",
               to: adminEmail,

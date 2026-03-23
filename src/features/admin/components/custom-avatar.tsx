@@ -14,7 +14,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { signOut } from "@/lib/auth-client";
 
 interface CustomAvatarProps {
-  avatarFallback?: string;
+  avatarFallback: string;
 }
 
 export const CustomAvatar = ({ avatarFallback }: CustomAvatarProps) => {
@@ -31,7 +31,6 @@ export const CustomAvatar = ({ avatarFallback }: CustomAvatarProps) => {
   };
 
   const handleSettings = () => {
-    console.log("Clicked Setting Button");
     try {
       router.push("/admin/settings");
     } catch (error) {
@@ -51,7 +50,9 @@ export const CustomAvatar = ({ avatarFallback }: CustomAvatarProps) => {
               src="https://github.com/shadcn.png"
               alt="Admin Avatar"
             />
-            <AvatarFallback>{avatarFallback?.toUpperCase()}</AvatarFallback>
+            <AvatarFallback suppressHydrationWarning>
+              {avatarFallback?.toUpperCase()}
+            </AvatarFallback>
           </Avatar>
         </Button>
       </PopoverTrigger>

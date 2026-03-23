@@ -9,7 +9,8 @@ export default function AdminAvatar() {
   const avatarFallback =
     session?.user?.userName?.charAt(0) ||
     session?.user?.email?.charAt(0) ||
-    session?.user?.name?.charAt(0);
+    session?.user?.name?.charAt(0) ||
+    "U";
 
   return <CustomAvatar avatarFallback={avatarFallback} />;
 }

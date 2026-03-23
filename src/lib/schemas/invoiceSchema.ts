@@ -1,7 +1,7 @@
 import z from "zod";
-import { isValidEmail, isValidPhoneNumber } from "../utils";
+import { InvoiceStatus, isValidEmail, isValidPhoneNumber } from "../utils";
 
-export type InvoiceStatus = ["PAID", "UNPAID", "DUE", "PENDING"];
+// export type InvoiceStatus = ["PAID", "UNPAID", "DUE", "PENDING"];
 
 export const invoiceProductSchema = z.object({
   id: z.string().optional(), // existing products
@@ -26,10 +26,11 @@ export const createInvoiceSchema = z.object({
     }),
 
   amount: z.number().positive("Amount is required"),
+  // amount: z.coerce.number().positive("Amount is required"),
 
-  dueDate: z.date({ message: "Service date is required" }),
+  dueDate: z.date({ message: "Due date is required" }),
 
-  status: z.enum(["PAID", "UNPAID", "DUE", "PENDING"]).optional(),
+  status: z.enum(InvoiceStatus).optional(),
 
   // System-generated fields
   invoiceNumber: z.string().optional(),
@@ -41,7 +42,7 @@ export const createInvoiceSchema = z.object({
     },
     {
       message: "Please select a valid date that is today or later",
-    }
+    },
   ),
 
   // Default monetary fields
@@ -85,7 +86,7 @@ export const updateInvoiceSchema = z.object({
   serviceCharge: z.number().int().min(0).default(0),
   miscellaneous: z.number().int().min(0).default(0),
 
-  dueDate: z.string().min(1, "Due date is required"),
+  dueDate: z.string(),
   status: z.string().min(1, "Status is required"),
 
   InvoiceProducts: z.array(invoiceProductSchema).optional(),

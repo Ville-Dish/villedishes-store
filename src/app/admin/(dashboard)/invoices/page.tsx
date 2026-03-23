@@ -1,4 +1,4 @@
-import { InvoiceList } from "@/components/custom/invoices/invoice-list";
+import { InvoiceList } from "@/features/invoices/components/invoices/invoice-list";
 import { invoicesParamsLoader } from "@/features/invoices/params-loader";
 import { requireAuth } from "@/lib/session/server-session";
 import { prefetch, trpc } from "@/trpc/server";

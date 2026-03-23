@@ -88,14 +88,12 @@ export async function GET(req: Request) {
       totalInvoiceRevenue: totalInvoiceRevenue._sum?.amountPaid || 0,
     };
 
-    // console.log("Response:", JSON.stringify(response, null, 2));
-
     return NextResponse.json(response);
   } catch (error) {
     console.error("Error fetching invoice data:", error);
     return NextResponse.json(
       { message: "Error fetching invoice data", error },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

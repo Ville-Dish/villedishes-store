@@ -30,7 +30,7 @@ import { lazy, Suspense, useState } from "react";
 import { MonthlySalesReport } from "./monthly-sales-report";
 
 const QuarterlyFinancialStatement = lazy(() =>
-  import("@/components/custom/dashboard/quarterly-financial").then(
+  import("@/features/admin/dashboard/components/quarterly-financial").then(
     (module) => ({
       default: module.QuarterlyFinancialStatement,
     }),
@@ -38,9 +38,11 @@ const QuarterlyFinancialStatement = lazy(() =>
 );
 
 const AnnualPerformanceReview = lazy(() =>
-  import("@/components/custom/dashboard/annual-performance").then((module) => ({
-    default: module.AnnualPerformanceReview,
-  })),
+  import("@/features/admin/dashboard/components/annual-performance").then(
+    (module) => ({
+      default: module.AnnualPerformanceReview,
+    }),
+  ),
 );
 
 type MonthlySales = {

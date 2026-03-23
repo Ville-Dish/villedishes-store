@@ -1,29 +1,35 @@
 "use client";
 
-import { useState, Suspense, useCallback } from "react";
+import { Suspense } from "react";
 
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 
-import { RevenueGrowth } from "@/components/custom/dashboard/revenue-growth";
-import { ProductPerformance } from "@/components/custom/dashboard/product-performance";
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useTRPC } from "@/trpc/client";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { RevenueGrowth } from "./revenue-growth";
+import { ProductPerformance } from "./product-performance";
 
 interface PerformanceTabProps {
-  data: {
-    revenueGrowthData: never[];
-    productPerformanceData: never[];
-  };
+  selectedYear: number;
 }
 
-export const PerformanceTab = ({ data }: PerformanceTabProps) => {
+export const PerformanceTab = ({ selectedYear }: PerformanceTabProps) => {
+  const trpc = useTRPC();
+
+  const { data, isFetching } = useSuspenseQuery(
+    trpc.dashboard.performanceMetricsData.queryOptions({
+      year: selectedYear,
+    }),
+  );
+
   return (
     <div className="grid gap-4">
       <Card className="col-span-full">
         <CardHeader>
           <CardTitle>Revenue Growth</CardTitle>
         </CardHeader>
-        <CardContent className="h-[400px] sm:h-[450px] md:h-[500px]">
+        <CardContent className="h-100 sm:h-112.5 md:h-125">
           <ErrorBoundary>
             <Suspense
               fallback={
@@ -39,7 +45,7 @@ export const PerformanceTab = ({ data }: PerformanceTabProps) => {
         <CardHeader>
           <CardTitle>Product Performance</CardTitle>
         </CardHeader>
-        <CardContent className="h-[400px] sm:h-[450px] md:h-[500px]">
+        <CardContent className="h-100 sm:h-112.5 md:h-125">
           <ErrorBoundary>
             <Suspense
               fallback={

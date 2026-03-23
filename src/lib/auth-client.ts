@@ -5,6 +5,8 @@ import {
   inferAdditionalFields,
 } from "better-auth/client/plugins";
 import { auth } from "./auth";
+import { env } from "@/env/client";
+
 export const {
   signIn,
   signUp,
@@ -16,6 +18,6 @@ export const {
   twoFactor,
 } = createAuthClient({
   /** The base URL of the server (optional if you're using the same domain) */
-  baseURL: process.env.BETTER_AUTH_URL || "",
+  baseURL: env.NEXT_PUBLIC_APP_URL,
   plugins: [twoFactorClient(), inferAdditionalFields<typeof auth>()],
 });
