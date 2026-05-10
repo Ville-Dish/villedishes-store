@@ -1,4 +1,5 @@
 "use client";
+
 import { Button } from "@/components/ui/button";
 import {
   Carousel,
@@ -9,9 +10,6 @@ import {
 } from "@/components/ui/carousel";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-import { SettingsForm } from "@/components/custom/settings/settings-form";
-import { SettingsTable } from "@/components/custom/settings/settings-table";
-import { YearlyRevenueAccordion } from "@/components/custom/settings/yearly-revenue-accordion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -26,6 +24,16 @@ import {
 } from "lucide-react";
 import React, { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+import { Expense, Income, YearlyRevenue } from "@/lib/types";
+import { YearlyRevenueAccordion } from "./yearly-revenue-accordion";
+import { SettingsForm } from "./settings-form";
+import { SettingsTable } from "./settings-table";
+import { useTRPC } from "@/trpc/client";
+import {
+  useMutation,
+  useQueryClient,
+  useSuspenseQuery,
+} from "@tanstack/react-query";
 
 const settingsValue = [
   { name: "General Settings", icon: Settings },
@@ -35,13 +43,10 @@ const settingsValue = [
 ];
 
 export const SettingsView = () => {
-    const [isLargeScreen, setIsLargeScreen] = useState(false);
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
 
-  const [revenueProjections, setRevenueProjections] = useState<YearlyRevenue[]>(
-    []
-  );
-  const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [incomes, setIncomes] = useState<Income[]>([]);
+  const [isLargeScreen, setIsLargeScreen] = useState(false);
 
   const [showForm, setShowForm] = useState<
     "Revenue" | "Income" | "Expense" | null
@@ -69,208 +74,112 @@ export const SettingsView = () => {
     }
   }, [handleResize]);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [revenueResponse, expenseResponse, incomesResponse] =
-          await Promise.all([
-            fetch("/api/admin/revenue"),
-            fetch("/api/admin/expense"),
-            fetch("/api/admin/income"),
-          ]);
+  // trpc calls
+  // revenue
+  const { data: revenueProjections, isLoading: isRevenueLoading } =
+    useSuspenseQuery(trpc.adminSettingss.getAllRevenueData.queryOptions());
 
-        const [revenueData, expenseData, incomeData] = await Promise.all([
-          revenueResponse.json(),
-          expenseResponse.json(),
-          incomesResponse.json(),
-        ]);
+  // expense
+  const { data: expenses, isLoading: isExpenseLoading } = useSuspenseQuery(
+    trpc.adminSettingss.getAllExpenseData.queryOptions(),
+  );
 
-        setRevenueProjections(revenueData);
-        setExpenses(expenseData);
-        setIncomes(incomeData);
-      } catch (error) {
-        console.error("Failed to fetch data", error);
-      }
-    };
+  // income
+  const { data: incomes, isLoading: isIncomeLoading } = useSuspenseQuery(
+    trpc.adminSettingss.getAllIncomeData.queryOptions(),
+  );
 
-    fetchData();
-  }, []);
+  const deleteExpenseMutation = useMutation(
+    trpc.adminSettingss.deleteExpense.mutationOptions({
+      onSuccess: async () => {
+        toast.success("Expense deleted successfully");
+        queryClient.invalidateQueries(
+          trpc.adminSettingss.getAllExpenseData.queryOptions(),
+        );
+      },
+      onError: (error) => {
+        toast.error(error.message ?? "Failed to delete expense.");
+      },
+    }),
+  );
 
-  //Database functions
-  const addRevenueProjection = async (
-    event: React.FormEvent<HTMLFormElement>
-  ) => {
-    event.preventDefault();
-    const form = event.currentTarget;
-    const formData = new FormData(form);
-    const year = parseInt(formData.get("year") as string);
-    const yearlyTarget = parseFloat(formData.get("yearlyTarget") as string);
+  const deleteIncomeMutation = useMutation(
+    trpc.adminSettingss.deleteIncome.mutationOptions({
+      onSuccess: async () => {
+        toast.success("Income deleted successfully");
+        queryClient.invalidateQueries(
+          trpc.adminSettingss.getAllIncomeData.queryOptions(),
+        );
+      },
+      onError: (error) => {
+        toast.error(error.message ?? "Failed to delete income.");
+      },
+    }),
+  );
 
-    const monthlyTarget = yearlyTarget / 12;
-    const months = [
-      "January",
-      "February",
-      "March",
-      "April",
-      "May",
-      "June",
-      "July",
-      "August",
-      "September",
-      "October",
-      "November",
-      "December",
-    ];
+  const deleteRevenueMutation = useMutation(
+    trpc.adminSettingss.deleteRevenue.mutationOptions({
+      onSuccess: async () => {
+        toast.success("Revenue deleted successfully");
+        queryClient.invalidateQueries(
+          trpc.adminSettingss.getAllRevenueData.queryOptions(),
+        );
+      },
+      onError: (error) => {
+        toast.error(error.message ?? "Failed to delete revenue.");
+      },
+    }),
+  );
 
-    const newProjection: YearlyRevenue = {
-      year,
-      yearlyTarget,
-      monthlyProjections: months.map((month) => ({
-        month,
-        projection: monthlyTarget,
-        actual: 0,
-      })),
-    };
-
-    try {
-      const response = await fetch("/api/admin/revenue", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(newProjection),
-      });
-
-      if (response.ok) {
-        const createdRevenue = await response.json();
-        setRevenueProjections([...revenueProjections, createdRevenue]);
-        form.reset();
-        setShowForm(null);
-      } else {
-        console.error("Failed to create revenue projection");
-      }
-    } catch (error) {
-      console.error("Error creating revenue projection:", error);
+  const deleteItem = (id: string, type: "Income" | "Expense" | "Revenue") => {
+    if (type === "Income") {
+      deleteIncomeMutation.mutate({ id });
+    } else if (type === "Expense") {
+      deleteExpenseMutation.mutate({ id });
+    } else if (type === "Revenue") {
+      deleteRevenueMutation.mutate({ id });
     }
   };
+
+  // trpc to update monthly projections after updating revenue
+  const updateRevenueMutation = useMutation(
+    trpc.adminSettingss.updateRevenue.mutationOptions({
+      onSuccess: async () => {
+        toast.success("Revenue updated successfully");
+        queryClient.invalidateQueries(
+          trpc.adminSettingss.getAllRevenueData.queryOptions(),
+        );
+      },
+      onError: (error) => {
+        toast.error(error.message ?? "Failed to update revenue.");
+      },
+    }),
+  );
 
   const updateMonthlyProjections = async (
     year: number,
-    updatedProjections: YearlyRevenue["monthlyProjections"]
+    updatedProjections: YearlyRevenue["monthlyProjections"],
   ) => {
-    const revenueToUpdate = revenueProjections.find(
-      (proj) => proj.year === year
+    const revenueToUpdate = revenueProjections?.find(
+      (rev) => rev.year === year,
     );
-    if (!revenueToUpdate) return;
-
-    try {
-      const response = await fetch("/api/admin/revenue", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          id: revenueToUpdate.id,
-          year: revenueToUpdate.year,
-          yearlyTarget: revenueToUpdate.yearlyTarget,
-          monthlyProjections: updatedProjections,
-        }),
-      });
-
-      if (response.ok) {
-        const updatedRevenue = await response.json();
-        setRevenueProjections((prevProjections) =>
-          prevProjections.map((proj) =>
-            proj.year === year ? updatedRevenue : proj
-          )
-        );
-      } else {
-        console.error("Failed to update revenue projection");
-      }
-    } catch (error) {
-      console.error("Error updating revenue projection:", error);
+    if (!revenueToUpdate) {
+      toast.error("Revenue data not found for the specified year.");
+      return;
     }
-  };
 
-  const addOrUpdateItem = async (
-    event: React.FormEvent<HTMLFormElement>,
-    type: "Income" | "Expense"
-  ) => {
-    event.preventDefault();
-    const form = event.currentTarget;
-    const formData = new FormData(form);
-    const newItem = {
-      id: editItem?.id,
-      name: formData.get("name") as string,
-      category: formData.get("category") as string,
-      amount: parseFloat(formData.get("amount") as string),
-      date: formData.get("date") as string,
-    };
-
-    const url = `/api/admin/${type.toLowerCase()}`;
-    const method = editItem ? "PUT" : "POST";
+    const { id } = revenueToUpdate;
 
     try {
-      const response = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newItem),
+      updateRevenueMutation.mutate({
+        id,
+        monthlyProjections: updatedProjections.map((mp) => ({
+          id: mp.id!,
+          projection: mp.projection,
+        })),
       });
-
-      if (response.ok) {
-        const result = await response.json();
-        if (type === "Income") {
-          setIncomes(
-            editItem
-              ? incomes.map((item) => (item.id === result.id ? result : item))
-              : [...incomes, result]
-          );
-        } else {
-          setExpenses(
-            editItem
-              ? expenses.map((item) => (item.id === result.id ? result : item))
-              : [...expenses, result]
-          );
-        }
-        form.reset();
-        setShowForm(null);
-        setEditItem(null);
-        setIsDialogOpen(false);
-      } else {
-        console.error(
-          `Failed to ${editItem ? "update" : "create"} ${type.toLowerCase()}`
-        );
-      }
     } catch (error) {
-      console.error(
-        `Error ${editItem ? "updating" : "creating"} ${type.toLowerCase()}:`,
-        error
-      );
-    }
-  };
-
-  const deleteItem = async (id: string, type: "Income" | "Expense") => {
-    try {
-      console.log(type);
-      console.log(id);
-      const response = await fetch(`/api/admin/${type.toLowerCase()}`, {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: id }),
-      });
-      console.log("After Delete method invocation", response);
-
-      if (response.ok) {
-        if (type === "Income") {
-          setIncomes(incomes.filter((item) => item.id !== id));
-        } else {
-          setExpenses(expenses.filter((item) => item.id !== id));
-        }
-      } else {
-        console.error(`Failed to delete ${type.toLowerCase()}`);
-      }
-    } catch (error) {
-      console.error(`Error deleting ${type.toLowerCase()}:`, error);
+      toast.error("Failed to update monthly projections.");
     }
   };
 
@@ -280,7 +189,7 @@ export const SettingsView = () => {
   };
 
   const updateGeneralSettings = async (
-    event: React.FormEvent<HTMLFormElement>
+    event: React.FormEvent<HTMLFormElement>,
   ) => {
     event.preventDefault();
     const form = event.currentTarget;
@@ -431,7 +340,6 @@ export const SettingsView = () => {
                 {showForm === "Revenue" && (
                   <SettingsForm
                     variant="Revenue"
-                    onSubmit={addRevenueProjection}
                     onClose={() => setShowForm(null)}
                     isEditing={false}
                   />
@@ -461,7 +369,6 @@ export const SettingsView = () => {
                 {showForm === "Expense" && (
                   <SettingsForm
                     variant="Expense"
-                    onSubmit={(e) => addOrUpdateItem(e, "Expense")}
                     onClose={() => setShowForm(null)}
                     initialData={null}
                     isEditing={false}
@@ -494,7 +401,6 @@ export const SettingsView = () => {
                 {showForm === "Income" && (
                   <SettingsForm
                     variant="Income"
-                    onSubmit={(e) => addOrUpdateItem(e, "Income")}
                     onClose={() => setShowForm(null)}
                     initialData={null}
                     isEditing={false}
@@ -518,7 +424,6 @@ export const SettingsView = () => {
           </DialogTitle>
           <SettingsForm
             variant={editItem?.type || "Income"}
-            onSubmit={(e) => addOrUpdateItem(e, editItem?.type || "Income")}
             onClose={() => {
               setIsDialogOpen(false);
               setEditItem(null);
@@ -530,4 +435,4 @@ export const SettingsView = () => {
       </Dialog>
     </div>
   );
-}
+};

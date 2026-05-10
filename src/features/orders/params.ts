@@ -1,5 +1,5 @@
 import { PAGINATION, PRODUCT_INFO } from "@/config/constants";
-import { OrderStatus } from "@/lib/utils";
+import { OrderStatus } from "@/generated/prisma/enums";
 import {
   parseAsInteger,
   parseAsIsoDate,

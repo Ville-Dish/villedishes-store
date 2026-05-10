@@ -1,6 +1,6 @@
 import { PAGINATION, PRODUCT_INFO } from "@/config/constants";
-// import { InvoiceStatus } from "@/lib/schemas/invoiceSchema";
-import { InvoiceStatus } from "@/lib/utils";
+import { INVOICE_STATUSES, InvoiceStatus } from "@/lib/utils";
+
 import {
   parseAsInteger,
   parseAsIsoDate,
@@ -10,7 +10,7 @@ import {
 
 type InvoiceFilter = "ALL" | InvoiceStatus;
 
-const statusValues: InvoiceFilter[] = ["ALL", ...Object.values(InvoiceStatus)];
+const statusValues: InvoiceFilter[] = ["ALL", ...INVOICE_STATUSES];
 
 type SortField =
   | "invoiceNumber"

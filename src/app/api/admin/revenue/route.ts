@@ -39,21 +39,21 @@ export async function GET() {
 
             const calculatedActual = await calculateMonthlyRevenue(
               revenue.year,
-              monthIndex
+              monthIndex,
             );
 
             return {
               ...mp,
               actual: calculatedActual,
             };
-          })
+          }),
         );
 
         return {
           ...revenue,
           monthlyProjections: updatedMonthlyProjections,
         };
-      })
+      }),
     );
 
     return NextResponse.json(updatedRevenues);
@@ -61,7 +61,7 @@ export async function GET() {
     console.error("Failed to fetch revenues:", error);
     return NextResponse.json(
       { error: "Failed to fetch revenues" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -79,7 +79,7 @@ export async function POST(request: Request) {
     ) {
       return NextResponse.json(
         { error: "Invalid input data" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -107,7 +107,7 @@ export async function POST(request: Request) {
     console.error("Failed to create revenue:", error);
     return NextResponse.json(
       { error: "Failed to create revenue" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -163,14 +163,14 @@ export async function PUT(request: Request) {
 
         const calculatedActual = await calculateMonthlyRevenue(
           updatedRevenue.year,
-          monthIndex
+          monthIndex,
         );
 
         return {
           ...mp,
           actual: calculatedActual,
         };
-      })
+      }),
     );
 
     // Update the revenue with recalculated projections
@@ -194,7 +194,7 @@ export async function PUT(request: Request) {
     console.error("Failed to update revenue:", error);
     return NextResponse.json(
       { error: "Failed to update revenue" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -210,7 +210,7 @@ export async function DELETE(request: Request) {
     console.error("Failed to delete revenue:", error);
     return NextResponse.json(
       { error: "Failed to delete revenue" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

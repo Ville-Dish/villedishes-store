@@ -8,6 +8,8 @@ import { productsRouter } from "@/features/products/server/procedures";
 import { invoiceRouter } from "@/features/invoices/server/procedures";
 import { cloudinaryRouter } from "@/features/cloudinay/server/procedures";
 import { dashboardProcedures } from "@/features/admin/dashboard/server/procedures";
+import { reviewsRouter } from "@/features/review/server/procedures";
+import { adminSettingsProcedures } from "@/features/admin/server/procedures";
 
 export const appRouter = createTRPCRouter({
   testimonials: testimonialsRouter,
@@ -18,6 +20,8 @@ export const appRouter = createTRPCRouter({
   invoices: invoiceRouter,
   cloudinary: cloudinaryRouter,
   dashboard: dashboardProcedures,
+  adminSettingss: adminSettingsProcedures,
+  review: reviewsRouter,
 });
 
 // export type definition of API

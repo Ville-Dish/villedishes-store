@@ -15,3 +15,44 @@ export const DiscountType = {
 } as const
 
 export type DiscountType = (typeof DiscountType)[keyof typeof DiscountType]
+
+
+export const OrderStatus = {
+  UNVERIFIED: 'UNVERIFIED',
+  PENDING: 'PENDING',
+  SHIPPED: 'SHIPPED',
+  DELIVERED: 'DELIVERED',
+  FULFILLED: 'FULFILLED',
+  CANCELLATION_REQUESTED: 'CANCELLATION_REQUESTED',
+  CANCELLED: 'CANCELLED'
+} as const
+
+export type OrderStatus = (typeof OrderStatus)[keyof typeof OrderStatus]
+
+
+export const OrderType = {
+  PICKUP: 'PICKUP',
+  DELIVERY: 'DELIVERY',
+  DINE_IN: 'DINE_IN'
+} as const
+
+export type OrderType = (typeof OrderType)[keyof typeof OrderType]
+
+
+export const PaymentMethod = {
+  CARD: 'CARD',
+  ETRANSFER: 'ETRANSFER'
+} as const
+
+export type PaymentMethod = (typeof PaymentMethod)[keyof typeof PaymentMethod]
+
+
+export const InvoiceStatus = {
+  PAID: 'PAID',
+  UNPAID: 'UNPAID',
+  PENDING: 'PENDING',
+  OVERDUE: 'OVERDUE',
+  CANCELLED: 'CANCELLED'
+} as const
+
+export type InvoiceStatus = (typeof InvoiceStatus)[keyof typeof InvoiceStatus]

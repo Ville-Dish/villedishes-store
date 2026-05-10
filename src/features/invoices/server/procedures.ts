@@ -1,52 +1,13 @@
 import { PAGINATION, PRODUCT_INFO } from "@/config/constants";
-import { DiscountType, Prisma } from "@/generated/prisma/client";
+import { DiscountType, InvoiceStatus, Prisma } from "@/generated/prisma/client";
 import prisma from "@/lib/prisma/client";
-import { InvoiceStatus, isValidInvoiceStatus } from "@/lib/utils";
 import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
-// const generateInvoiceNumber = async () => {
-//   return await prisma.$transaction(async (tx) => {
-//     const maxInvoice = await tx.invoice.findFirst({
-//       orderBy: {
-//         invoiceNumber: "desc",
-//       },
-//       select: {
-//         invoiceNumber: true,
-//       },
-//     });
-
-//     let nextNumber = 1;
-//     if (maxInvoice?.invoiceNumber) {
-//       const numericPart = parseInt(maxInvoice.invoiceNumber.split("-")[1], 10);
-//       if (!isNaN(numericPart)) {
-//         nextNumber = numericPart + 1;
-//       }
-//     }
-
-//     const newInvoiceNumber = `INV-${String(nextNumber).padStart(4, "0")}`;
-
-//     // Create a placeholder invoice to reserve the number
-//     await tx.invoice.create({
-//       data: {
-//         invoiceNumber: newInvoiceNumber,
-//         customerName: "Placeholder",
-//         customerEmail: "placeholder@example.com",
-//         customerPhone: "0000000000",
-//         amount: 0,
-//         amountPaid: 0,
-//         amountDue: 0,
-//         discountPercentage: 0,
-//         status: "PENDING",
-//         dateCreated: new Date().toISOString().split("T")[0],
-//         dueDate: new Date().toISOString().split("T")[0],
-//       },
-//     });
-
-//     return newInvoiceNumber;
-//   });
-// };
+const isValidInvoiceStatus = (status: string): status is InvoiceStatus => {
+  return Object.values(InvoiceStatus).includes(status as InvoiceStatus);
+};
 
 const generateInvoiceNumber = async () => {
   const maxInvoice = await prisma.invoice.findFirst({
@@ -419,10 +380,7 @@ export const invoiceRouter = createTRPCRouter({
         customerEmail: z.string().email("Invalid email"),
         customerPhone: z.string().min(1, "Customer phone is required"),
         dueDate: z.date().min(1, "Due date is required"), // stored as YYYY-MM-DD
-        status: z
-          .enum(["PENDING", "UNPAID", "PAID", "OVERDUE"])
-          .optional()
-          .default("PENDING"),
+        status: z.enum(InvoiceStatus).optional().default("PENDING"),
         amount: z.number().nonnegative().optional().default(0),
         discountPercentage: z.number().min(0).optional().default(0),
       }),
@@ -527,7 +485,15 @@ export const invoiceRouter = createTRPCRouter({
         });
       }
 
-      const { id, products, status, dueDate, ...rest } = input;
+      const {
+        id,
+        products,
+        status,
+        dueDate,
+        amountPaid: inputAmountPaid,
+        amountDue: inputAmountDue,
+        ...rest
+      } = input;
 
       const updateData: Prisma.InvoiceUpdateInput = {
         ...(rest.customerName && { customerName: rest.customerName }),
@@ -618,15 +584,16 @@ export const invoiceRouter = createTRPCRouter({
           });
         }
 
-        let amountPaid = invoiceRecord.amountPaid;
-        let amountDue = invoiceRecord.amountDue;
+        let amountPaid: number;
+        let amountDue: number;
 
         if (computedStatus === InvoiceStatus.PAID) {
           amountPaid = invoiceRecord.amount;
           amountDue = 0;
         } else {
-          amountPaid = 0;
-          amountDue = invoiceRecord.amount;
+          // ✅ Honor what the client sent; fall back to existing DB values
+          amountPaid = inputAmountPaid ?? invoiceRecord.amountPaid;
+          amountDue = inputAmountDue ?? invoiceRecord.amountDue;
         }
 
         // 5️⃣ Final update

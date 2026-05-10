@@ -1,3 +1,4 @@
+import { OrderStatus, PaymentMethod } from "@/generated/prisma/enums";
 import z from "zod";
 
 /**
@@ -62,7 +63,7 @@ export const orderDetailsSchema = z.object({
   total: z.number(),
   orderDate: z.string(),
   orderNumber: z.string().optional(),
-  status: z.enum(["UNVERIFIED", "PENDING", "CANCELLED", "FULFILLED"]),
+  status: z.enum(OrderStatus),
   shippingInfo: shippingInfoSchema,
   referenceNumber: z.string(),
   verificationCode: z.string(),
@@ -74,3 +75,49 @@ export const verifyPaymentSchema = z.object({
 });
 
 export type VerifyPaymentValue = z.infer<typeof verifyPaymentSchema>;
+
+export const cancelOrderRequestSchema = z
+  .object({
+    orderId: z.string(),
+    paymentType: z.enum(PaymentMethod),
+    interacEmail: z.email().optional(),
+    cancellationReason: z.string(),
+  })
+  .refine(
+    (data) => {
+      if (data.paymentType === "ETRANSFER") {
+        return !!data.interacEmail && data.interacEmail.length > 0;
+      }
+      return true;
+    },
+    {
+      message: "Interac email is required for e-transfer refunds",
+      path: ["interacEmail"],
+    },
+  );
+
+export type CancelOrderRequestValue = z.infer<typeof cancelOrderRequestSchema>;
+
+export const cancelOrderProcessSchema = z.object({
+  orderId: z.string(),
+  refundReferenceNumber: z.string(),
+});
+
+export type CancelOrderProcessValue = z.infer<typeof cancelOrderProcessSchema>;
+
+export const reviewSchema = z.object({
+  orderId: z.string().min(1, "Order ID is required"),
+  author: z.string().min(1, "Your name is required"),
+  isAnonymous: z.boolean().default(false),
+  reviews: z
+    .array(
+      z.object({
+        orderProductId: z.string().min(1),
+        rating: z.number().min(1, "Rating is required").max(5),
+        comment: z.string().optional().default(""),
+      }),
+    )
+    .min(1, "At least one review is required"),
+});
+
+export type ReviewValue = z.infer<typeof reviewSchema>;

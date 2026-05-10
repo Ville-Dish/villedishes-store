@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
 import {
   Form,
   FormControl,
@@ -30,7 +30,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { cn, formatDate, InvoiceStatus } from "@/lib/utils";
+import { cn, formatDate } from "@/lib/utils";
 import { addMonths, format } from "date-fns";
 import { CalendarIcon, Loader2Icon } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
@@ -38,6 +38,7 @@ import { toast } from "sonner";
 import { Invoice } from "@/lib/types";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTRPC } from "@/trpc/client";
+import { InvoiceStatus } from "@/generated/prisma/client";
 
 interface InvoiceFormProps {
   setDialog: (value: boolean) => void;
@@ -60,7 +61,7 @@ export const InvoiceForm = ({
       customerPhone: "",
       amount: 1,
       dueDate: new Date(),
-      status: "PENDING" as InvoiceStatus,
+      status: "UNPAID" as InvoiceStatus,
       dateCreated: new Date(),
     },
   });
@@ -85,7 +86,6 @@ export const InvoiceForm = ({
     }),
   );
 
-  // TODO: use add trpc code
   const onSubmit = async (values: CreateInvoiceSchema) => {
     const validatedFields = await createInvoiceSchema.safeParseAsync(values);
 
@@ -166,7 +166,7 @@ export const InvoiceForm = ({
               render={({ field, fieldState }) => (
                 <FormItem className="space-y-2">
                   <FormLabel className="after:content-['*'] after:text-sm after:text-red-500 after:-ml-1 -mt-1">
-                    Customer Email
+                    Customer Phone Number
                   </FormLabel>
                   <FormControl>
                     <CustomPhoneInput

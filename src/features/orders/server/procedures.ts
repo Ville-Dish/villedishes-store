@@ -1,5 +1,5 @@
 import { PAGINATION, PRODUCT_INFO } from "@/config/constants";
-import { Prisma } from "@/generated/prisma/client";
+import { OrderStatus, Prisma } from "@/generated/prisma/client";
 import prisma from "@/lib/prisma/client";
 import {
   checkoutSchema,
@@ -7,7 +7,8 @@ import {
   shippingInfoSchema,
   verifyPaymentSchema,
 } from "@/lib/schemas/orderSchema";
-import { isValidOrderStatus, OrderStatus } from "@/lib/utils";
+import { isValidEmail } from "@/lib/utils";
+
 import {
   createTRPCRouter,
   protectedProcedure,
@@ -15,6 +16,10 @@ import {
 } from "@/trpc/init";
 import { TRPCError } from "@trpc/server";
 import z from "zod";
+
+export function isValidOrderStatus(status: string): status is OrderStatus {
+  return Object.values(OrderStatus).includes(status as OrderStatus);
+}
 
 // Helper function to generate order number
 const generateOrderNumber = async () => {
@@ -43,6 +48,10 @@ const generateOrderNumber = async () => {
 
     return `ORD-${String(nextNumber).padStart(4, "0")}`;
   });
+};
+
+const addHours = (date: Date | string, hours: number) => {
+  return new Date(new Date(date).getTime() + hours * 60 * 60 * 1000);
 };
 
 export const orderRouter = createTRPCRouter({
@@ -81,14 +90,7 @@ export const orderRouter = createTRPCRouter({
         sortDirection: z.enum(["asc", "desc"]).optional(),
       }),
     )
-    .query(async ({ ctx, input }) => {
-      const session = ctx.session;
-      if (!session || !session.user) {
-        throw new TRPCError({
-          code: "UNAUTHORIZED",
-          message: "Unauthorized for this feature!",
-        });
-      }
+    .query(async ({ input }) => {
       const {
         startDate,
         endDate,
@@ -221,6 +223,82 @@ export const orderRouter = createTRPCRouter({
         totalPages,
         hasNextPage,
         hasPreviousPage,
+      };
+    }),
+
+  getOrder: publicProcedure
+    .input(
+      z.object({
+        orderId: z.string(),
+      }),
+    )
+    .query(async ({ input }) => {
+      const { orderId } = input;
+
+      const order = await prisma.order.findUnique({
+        where: { orderId },
+        include: {
+          shippingInfo: true,
+          products: {
+            select: {
+              id: true,
+              quantity: true,
+              product: {
+                select: {
+                  name: true,
+                  price: true,
+                },
+              },
+            },
+          },
+        },
+      });
+
+      if (!order) return null;
+
+      const now = new Date();
+
+      let timeRemaining: string | null = null;
+      let canCancel = false;
+
+      if (order.scheduledAt) {
+        const diffMs = order.scheduledAt.getTime() - now.getTime();
+        const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+
+        const cancellableStatuses: OrderStatus[] = [
+          OrderStatus.UNVERIFIED,
+          OrderStatus.PENDING,
+        ];
+
+        canCancel = cancellableStatuses.includes(order.status) && diffHours > 0;
+
+        // canCancel =
+        //   cancellableStatuses.includes(order.status) &&
+        //   diffHours > 0 &&
+        //   diffHours <= 24;
+
+        if (canCancel) {
+          if (diffHours >= 24) {
+            const days = Math.floor(diffHours / 24);
+            const hours = diffHours % 24;
+            timeRemaining = `${days}d ${hours}h remaining`;
+          } else {
+            timeRemaining = `${diffHours}h remaining`;
+          }
+        }
+      }
+
+      return {
+        ...order,
+        timeRemaining,
+        canCancel,
+        products: order.products.map((item) => ({
+          id: item.id,
+          name: item.product.name,
+          quantity: item.quantity,
+          basePrice: item.product.price,
+          price: item.product.price * item.quantity,
+        })),
       };
     }),
 
@@ -420,15 +498,7 @@ export const orderRouter = createTRPCRouter({
         newStatus: z.enum(OrderStatus),
       }),
     )
-    .mutation(async ({ ctx, input }) => {
-      const session = ctx.session;
-      if (!session || !session.user) {
-        throw new TRPCError({
-          code: "UNAUTHORIZED",
-          message: "Unauthorized for this feature!",
-        });
-      }
-
+    .mutation(async ({ input }) => {
       const { orderId, newStatus } = input;
 
       if (!orderId) {
@@ -445,6 +515,13 @@ export const orderRouter = createTRPCRouter({
         });
       }
 
+      if (newStatus === "CANCELLED" || newStatus === "CANCELLATION_REQUESTED") {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Order cannot be cancelled from this action",
+        });
+      }
+
       // Fetch the order from the database
       const order = await prisma.order.findUnique({
         where: { orderId },
@@ -456,6 +533,8 @@ export const orderRouter = createTRPCRouter({
           message: "Order not found",
         });
       }
+
+      // TODO: Check if status is CANCEL_REQUEST, if so, only allow changing to CANCELLED, and require refund reference number (need to add this field in the database). If refund reference number is not provided, throw error. If refund reference number is provided, save it in the database.
 
       const updatedOrder = await prisma.order.update({
         where: {
@@ -487,5 +566,155 @@ export const orderRouter = createTRPCRouter({
       });
 
       return updatedOrder;
+    }),
+
+  requestCancelOrder: publicProcedure
+    .input(
+      z.object({
+        orderId: z.string(),
+        reason: z.string(),
+        interacEmail: z
+          .email()
+          .optional()
+          .refine((email) => {
+            if (!email) return true; // allow empty if not e-transfer
+            return isValidEmail(email);
+          }, "Please enter a valid email address"),
+      }),
+    )
+    .mutation(async ({ input }) => {
+      const { orderId, reason, interacEmail } = input;
+
+      // TODO: Find order by orderId, if not found throw error
+      const order = await prisma.order.findUniqueOrThrow({
+        where: {
+          orderId,
+        },
+      });
+
+      // 2️⃣ Validate scheduledAt exists
+      if (!order.scheduledAt) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Order is not scheduled yet",
+        });
+      }
+
+      // TODO: check if order is eligible for cancellation (status is PENDING or UNVERIFIED, and time is less than 24 hours from orderDate + 48 hours), if not throw error
+      // 3️⃣ Check allowed statuses
+      const validStatuses: OrderStatus[] = [
+        OrderStatus.UNVERIFIED,
+        OrderStatus.PENDING,
+      ];
+
+      const validStatus = validStatuses.includes(order.status);
+
+      // 4️⃣ Check time window (within 24 hours BEFORE scheduledAt)
+      const now = new Date();
+      const diffInMs = order.scheduledAt.getTime() - now.getTime();
+      const diffInHours = diffInMs / (1000 * 60 * 60);
+
+      const within24Hours = diffInHours > 0 && diffInHours <= 24;
+
+      if (!validStatus || !within24Hours) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message:
+            "Order cannot be cancelled. It must be UNVERIFIED or PENDING and within 24 hours of scheduled time.",
+        });
+      }
+      // 5️⃣ Update order
+      const updatedOrder = await prisma.order.update({
+        where: { orderId },
+        data: {
+          status: OrderStatus.CANCELLATION_REQUESTED,
+          cancellationReason: reason,
+          cancellationRequestedAt: new Date(),
+        },
+        select: {
+          orderNumber: true,
+          orderDate: true,
+          total: true,
+          shippingInfo: {
+            select: {
+              firstName: true,
+              lastName: true,
+              email: true,
+            },
+          },
+        },
+      });
+
+      return { success: true, order: updatedOrder };
+    }),
+
+  processOrderCancel: protectedProcedure
+    .input(
+      z.object({
+        orderId: z.string(),
+        refundReferenceNumber: z.string(),
+      }),
+    )
+    .mutation(async ({ input }) => {
+      const { orderId, refundReferenceNumber } = input;
+      // update the cancellation date to 2 days after the cancellationRequestedAt and set the refundReferenceNumber
+      if (!orderId) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Order ID required.",
+        });
+      }
+
+      if (!refundReferenceNumber) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Refund Reference Number required",
+        });
+      }
+
+      const order = await prisma.order.findUniqueOrThrow({
+        where: { orderId },
+      });
+
+      if (!order) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Order not available",
+        });
+      }
+
+      if (
+        order.status !== OrderStatus.CANCELLATION_REQUESTED &&
+        !order.cancellationRequestedAt
+      ) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Order not available for cancellation",
+        });
+      }
+
+      if (!order.cancellationRequestedAt) return null;
+      const cancellationDate = addHours(order.cancellationRequestedAt, 48);
+
+      const update = await prisma.order.update({
+        where: { orderId },
+        data: {
+          refundReferenceNumber,
+          cancellationDate,
+        },
+        select: {
+          orderNumber: true,
+          total: true,
+          shippingInfo: {
+            select: {
+              firstName: true,
+              lastName: true,
+              email: true,
+            },
+          },
+        },
+      });
+
+      return { success: 200 };
     }),
 });

@@ -35,28 +35,37 @@ export const formattedCurrency = new Intl.NumberFormat("en-CA", {
   currency: "CAD",
 });
 
-export enum OrderStatus {
-  UNVERIFIED = "UNVERIFIED",
-  PENDING = "PENDING",
-  CANCELLED = "CANCELLED",
-  FULFILLED = "FULFILLED",
-  CANCEL_REQUEST = "CANCEL_REQUEST",
-}
+export const ORDER_STATUSES = [
+  "UNVERIFIED",
+  "PENDING",
+  "SHIPPED",
+  "DELIVERED",
+  "FULFILLED",
+  "CANCELLATION_REQUESTED",
+  "CANCELLED",
+] as const;
 
-export function isValidOrderStatus(status: string): status is OrderStatus {
-  return Object.values(OrderStatus).includes(status as OrderStatus);
-}
+export type OrderStatus = (typeof ORDER_STATUSES)[number];
 
-export enum InvoiceStatus {
-  PAID = "PAID",
-  UNPAID = "UNPAID",
-  PENDING = "PENDING",
-  OVERDUE = "OVERDUE",
-}
+export const INVOICE_STATUSES = [
+  "PAID",
+  "UNPAID",
+  "PENDING",
+  "OVERDUE",
+  "CANCELLED",
+] as const;
 
-export function isValidInvoiceStatus(status: string): status is InvoiceStatus {
-  return Object.values(InvoiceStatus).includes(status as InvoiceStatus);
-}
+export type InvoiceStatus = (typeof INVOICE_STATUSES)[number];
+
+export const isValidInvoiceStatus = (
+  status: string,
+): status is InvoiceStatus => {
+  return INVOICE_STATUSES.includes(status as InvoiceStatus);
+};
+
+export const PAYMENT_METHOD = ["CARD", "ETRANSFER"];
+
+export type PaymentMethod = (typeof PAYMENT_METHOD)[number];
 
 // Validate Canadian postal code
 export function isValidPostalCode(

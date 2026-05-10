@@ -11,6 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { MonthlyRevenue } from "@/lib/types";
 
 interface MonthlyRevenueProjectionsProps {
   year: number;
@@ -49,12 +50,17 @@ export const MonthlyRevenueProjections: React.FC<
       const updatedProjections = localProjections.map((mp) =>
         mp.month === editingMonth
           ? { ...mp, projection: parseFloat(editValue) }
-          : mp
+          : mp,
       );
       setLocalProjections(updatedProjections);
       onUpdate(updatedProjections);
       setEditingMonth(null);
     }
+  };
+
+  const cancelEdit = () => {
+    setEditingMonth(null);
+    setEditValue("");
   };
 
   const totalActual = localProjections.reduce((sum, mp) => sum + mp.actual, 0);
@@ -106,7 +112,7 @@ export const MonthlyRevenueProjections: React.FC<
             {localProjections
               .sort(
                 (a, b) =>
-                  monthOrder.indexOf(a.month) - monthOrder.indexOf(b.month)
+                  monthOrder.indexOf(a.month) - monthOrder.indexOf(b.month),
               )
               .map(({ month, projection, actual }, index) => (
                 <TableRow key={month}>
@@ -133,16 +139,28 @@ export const MonthlyRevenueProjections: React.FC<
                   <TableCell>
                     {isEditable(index) ? (
                       editingMonth === month ? (
-                        <Button
-                          onClick={handleSave}
-                          className="bg-[#1cd396] hover:bg-[#a3f0d6]"
-                        >
-                          Save
-                        </Button>
+                        <div className="flex space-x-2">
+                          {/* Save button */}
+                          <Button
+                            onClick={handleSave}
+                            className="bg-[#1cd396] hover:bg-[#a3f0d6] cursor-pointer"
+                          >
+                            Save
+                          </Button>
+
+                          {/* cancel button */}
+                          <Button
+                            onClick={cancelEdit}
+                            // className="bg-green-500 hover:bg-red-600"
+                            className="bg-[#eb1e28] hover:bg-[#e93820] cursor-pointer"
+                          >
+                            Cancel
+                          </Button>
+                        </div>
                       ) : (
                         <Button
                           onClick={() => handleEdit(month, projection)}
-                          className="bg-[#fe9e1d] hover:bg-[#b08c5c]"
+                          className="bg-[#fe9e1d] hover:bg-[#b08c5c] cursor-pointer"
                         >
                           Edit
                         </Button>

@@ -23,6 +23,7 @@ import { z } from "zod";
 import { CustomPhoneInput } from "../phone-input";
 import { useTRPC } from "@/trpc/client";
 import { useMutation } from "@tanstack/react-query";
+import { ADMIN_EMAIL } from "@/config/constants";
 
 export const ContactForm = () => {
   const trpc = useTRPC();
@@ -72,7 +73,7 @@ export const ContactForm = () => {
     // sendContactEmail(contactData);
     sendContactMail.mutate({
       type: "contact",
-      to: testEmail,
+      to: ADMIN_EMAIL,
       ...contactData,
     });
   };
@@ -172,7 +173,7 @@ export const ContactForm = () => {
                         <FormItem>
                           <FormControl>
                             <CustomPhoneInput
-                              placeholder="(123) 456-7890"
+                              placeholder="(123) 456-7890*"
                               defaultCountry="CA"
                               value={field.value}
                               onChange={field.onChange}

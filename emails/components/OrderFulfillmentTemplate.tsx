@@ -32,7 +32,7 @@ type OrderFulfillmentEmailProps = {
   shippingFee: number;
   total: number;
   items: OrderItem[];
-  feedbackLink?: string;
+  feedbackLink?: string; // include review link
 };
 
 const OrderFulfillmentTemplate = ({

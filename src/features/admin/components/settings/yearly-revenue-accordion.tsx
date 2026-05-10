@@ -6,6 +6,15 @@ import {
 } from "@/components/ui/accordion";
 import React from "react";
 import { MonthlyRevenueProjections } from "./monthly-revenue-projections";
+import { YearlyRevenue } from "@/lib/types";
+
+interface YearlyRevenueAccordionProps {
+  revenueProjections: YearlyRevenue[];
+  onUpdate: (
+    year: number,
+    updatedProjections: YearlyRevenue["monthlyProjections"],
+  ) => void;
+}
 
 export const YearlyRevenueAccordion: React.FC<YearlyRevenueAccordionProps> = ({
   revenueProjections,

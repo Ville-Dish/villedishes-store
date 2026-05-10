@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import {
@@ -16,7 +15,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { testEmail } from "@/lib/constantData";
 import {
   Popover,
   PopoverContent,
@@ -26,19 +24,23 @@ import { Badge } from "@/components/ui/badge";
 import { CalendarIcon, Check, CheckCircle, X } from "lucide-react";
 import { MdFoodBank } from "react-icons/md";
 import { Calendar } from "@/components/ui/calendar";
-import { cn, formatDate } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { addMonths, format } from "date-fns";
 import Image from "next/image";
 import { CateringFormData, cateringSchema } from "@/lib/schemas/contactSchema";
 import { PageHeader } from "@/app/(home)/page-header";
 import { CustomPhoneInput } from "../phone-input";
-import { useMutation } from "@tanstack/react-query";
+import {
+  useMutation,
+  useQueries,
+  useSuspenseQuery,
+} from "@tanstack/react-query";
 import { useTRPC } from "@/trpc/client";
+import { ADMIN_EMAIL } from "@/config/constants";
 
 export const CateringForm = () => {
   const trpc = useTRPC();
 
-  const [products, setProducts] = useState<MenuItem[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
 
   const form = useForm<CateringFormData>({
@@ -54,24 +56,28 @@ export const CateringForm = () => {
   });
 
   // Fetch products from the API
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const response = await fetch("/api/menu", { method: "GET" });
-        const data = await response.json();
+  // useEffect(() => {
+  //   const fetchProducts = async () => {
+  //     try {
+  //       const response = await fetch("/api/menu", { method: "GET" });
+  //       const data = await response.json();
 
-        if (response.ok) {
-          setProducts(data.data);
-        } else {
-          console.error("Error fetching products:", data.message);
-        }
-      } catch (error) {
-        console.error("Error fetching products:", error);
-      }
-    };
+  //       if (response.ok) {
+  //         setProducts(data.data);
+  //       } else {
+  //         console.error("Error fetching products:", data.message);
+  //       }
+  //     } catch (error) {
+  //       console.error("Error fetching products:", error);
+  //     }
+  //   };
 
-    fetchProducts();
-  }, []);
+  //   fetchProducts();
+  // }, []);
+
+  const { data: products, isLoading } = useSuspenseQuery(
+    trpc.products.getAllProducts.queryOptions(),
+  );
 
   const sendCateringEmail = useMutation(
     trpc.mail.sendEmail.mutationOptions({
@@ -108,7 +114,7 @@ export const CateringForm = () => {
     console.log({ cateringData });
     sendCateringEmail.mutate({
       type: "catering",
-      to: testEmail,
+      to: ADMIN_EMAIL,
       ...cateringData,
     });
   };
@@ -210,7 +216,7 @@ export const CateringForm = () => {
                       <FormItem>
                         <FormControl>
                           <CustomPhoneInput
-                            placeholder="(123) 456-7890"
+                            placeholder="(123) 456-7890*"
                             defaultCountry="CA"
                             value={field.value}
                             onChange={field.onChange}

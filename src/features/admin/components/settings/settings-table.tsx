@@ -7,8 +7,16 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Expense, Income } from "@/lib/types";
 import { Eye, Trash } from "lucide-react";
 import React from "react";
+
+interface SettingsTableProps {
+  variant: "Income" | "Expense";
+  data: Income[] | Expense[];
+  onEdit: (item: Income | Expense) => void;
+  onDelete: (id: string) => void;
+}
 
 export const SettingsTable: React.FC<SettingsTableProps> = ({
   variant,
@@ -36,7 +44,9 @@ export const SettingsTable: React.FC<SettingsTableProps> = ({
             <TableCell>{transaction.name}</TableCell>
             <TableCell>{transaction.category}</TableCell>
             <TableCell>${transaction.amount.toLocaleString()}</TableCell>
-            <TableCell>{transaction.date}</TableCell>
+            <TableCell>
+              {new Date(transaction.date).toISOString().split("T")[0]}
+            </TableCell>
             <TableCell className="flex mx-auto">
               <Button variant="ghost" onClick={() => onEdit(item)}>
                 <Eye className="h-4 w-4 text-[#fe9e1d]" />

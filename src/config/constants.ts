@@ -2,6 +2,8 @@ export const PASSWORD_LENGTH = 8;
 
 export const APP_NAME = "VilleDishes";
 
+export const ADMIN_EMAIL = "villedishes@gmail.com";
+
 export const PAGINATION = {
   DEFAULT_PAGE: 1,
   DEFAULT_PAGE_SIZE: 9,

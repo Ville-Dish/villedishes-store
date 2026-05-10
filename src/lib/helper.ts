@@ -5,7 +5,7 @@ import prisma from "./prisma/client";
 // import { PrismaClient } from "@prisma/client";
 
 // const prisma = new PrismaClient();
-
+// TODO: Delete file  after route.ts
 export async function generateInvoiceNumber() {
   return await prisma.$transaction(async (tx) => {
     const maxInvoice = await tx.invoice.findFirst({
@@ -110,8 +110,8 @@ export async function calculateMonthlyRevenue(year: number, month: number) {
     prisma.income.findMany({
       where: {
         date: {
-          gte: startDate.toISOString().split("T")[0],
-          lte: endDate.toISOString().split("T")[0],
+          gte: startDate.toISOString(),
+          lte: endDate.toISOString(),
         },
       },
       select: {

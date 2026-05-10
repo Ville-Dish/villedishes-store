@@ -52,6 +52,7 @@ export const VerifyPaymentView = () => {
     form.setValue("orderId", id);
   }, [searchParams, form]);
 
+  // Update so admin can either enter the delivery date manually or it will be automatically calculated
   const calculateEstimatedDelivery = (date: string | Date) => {
     const base = new Date(date);
     return new Date(base.getTime() + 48 * 3600000).toISOString().split("T")[0];

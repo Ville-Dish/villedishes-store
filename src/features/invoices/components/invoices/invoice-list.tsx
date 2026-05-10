@@ -24,7 +24,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Table,
@@ -47,7 +46,7 @@ import {
   TrashIcon,
   XCircle,
 } from "lucide-react";
-import { lazy, useCallback, useEffect, useState } from "react";
+import { lazy, useState } from "react";
 import { toast } from "sonner";
 
 import {
@@ -70,7 +69,7 @@ import {
 import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
 import { InvoiceForm } from "./invoice-form";
-import { Invoice, MenuItem } from "@/lib/types";
+import { Invoice } from "@/lib/types";
 import { CategoryMappingDialog } from "@/features/invoices/components/category-mapping-dialog";
 import { ColumnMappingDialog } from "@/features/invoices/components/column-mapping-dialog";
 import { useTRPC } from "@/trpc/client";
@@ -255,11 +254,13 @@ export const InvoiceList = () => {
   // use update trpc code
   const updateInvoiceMutation = useMutation(
     trpc.invoices.updateInvoice.mutationOptions({
-      onSuccess: async () => {
+      onSuccess: async (data) => {
         toast.success("Invoice updated successfully");
+        setSelectedInvoice(null);
         await queryClient.invalidateQueries(
           trpc.invoices.getPaginatedInvoices.queryOptions({}),
         );
+        console.log("Updated Invoice", { data });
       },
       onError: (error) => {
         toast.error(error.message ?? "Failed to update invoice");
@@ -268,6 +269,7 @@ export const InvoiceList = () => {
   );
 
   const handleUpdateInvoice = async (updatedInvoice: Invoice) => {
+    console.log("Updating Invoice", { updatedInvoice });
     updateInvoiceMutation.mutate(updatedInvoice);
   };
 

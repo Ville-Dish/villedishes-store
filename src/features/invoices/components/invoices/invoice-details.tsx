@@ -54,7 +54,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { adminEmail } from "@/lib/constantData";
 import { formattedCurrency } from "@/lib/utils";
-import { InvoiceStatus, isValidInvoiceStatus } from "@/lib/utils";
+import { isValidInvoiceStatus } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -78,6 +78,7 @@ import {
 } from "@/components/ui/form";
 import { useMutation } from "@tanstack/react-query";
 import { useTRPC } from "@/trpc/client";
+import { InvoiceStatus } from "@/generated/prisma/enums";
 
 const allowsHalfQuantity = (productName?: string, popoverOpen?: boolean) => {
   if (!productName || popoverOpen) return false;
@@ -520,6 +521,8 @@ export const InvoiceDetails = ({
         products: currentProducts,
       };
 
+      console.log("Details Page", { updatedInvoiceData });
+
       await onUpdate(updatedInvoiceData);
 
       // Update local state to reflect changes
@@ -527,12 +530,12 @@ export const InvoiceDetails = ({
       setInvoiceAmount(total);
       setAmountDue(total - amountPaid);
 
-      toast.success("Invoice updated successfully");
+      // toast.success("Invoice updated successfully");
     } catch (error) {
       console.error("Error updating invoice:", error);
-      toast.error("Error trying to update invoice", {
-        description: "Failed to update invoice",
-      });
+      // toast.error("Error trying to update invoice", {
+      //   description: "Failed to update invoice",
+      // });
     } finally {
       setUpdating(false);
     }
@@ -723,7 +726,6 @@ export const InvoiceDetails = ({
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={InvoiceStatus.PENDING}>Pending</SelectItem>
                   <SelectItem value={InvoiceStatus.UNPAID}>Unpaid</SelectItem>
                   <SelectItem value={InvoiceStatus.OVERDUE}>Due</SelectItem>
                   <SelectItem value={InvoiceStatus.PAID}>Paid</SelectItem>

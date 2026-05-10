@@ -39,7 +39,7 @@ export type ExpenseMinAggregateOutputType = {
   name: string | null
   category: string | null
   amount: number | null
-  date: string | null
+  date: Date | null
 }
 
 export type ExpenseMaxAggregateOutputType = {
@@ -47,7 +47,7 @@ export type ExpenseMaxAggregateOutputType = {
   name: string | null
   category: string | null
   amount: number | null
-  date: string | null
+  date: Date | null
 }
 
 export type ExpenseCountAggregateOutputType = {
@@ -184,7 +184,7 @@ export type ExpenseGroupByOutputType = {
   name: string
   category: string
   amount: number
-  date: string
+  date: Date
   _count: ExpenseCountAggregateOutputType | null
   _avg: ExpenseAvgAggregateOutputType | null
   _sum: ExpenseSumAggregateOutputType | null
@@ -215,7 +215,7 @@ export type ExpenseWhereInput = {
   name?: Prisma.StringFilter<"Expense"> | string
   category?: Prisma.StringFilter<"Expense"> | string
   amount?: Prisma.FloatFilter<"Expense"> | number
-  date?: Prisma.StringFilter<"Expense"> | string
+  date?: Prisma.DateTimeFilter<"Expense"> | Date | string
 }
 
 export type ExpenseOrderByWithRelationInput = {
@@ -234,7 +234,7 @@ export type ExpenseWhereUniqueInput = Prisma.AtLeast<{
   name?: Prisma.StringFilter<"Expense"> | string
   category?: Prisma.StringFilter<"Expense"> | string
   amount?: Prisma.FloatFilter<"Expense"> | number
-  date?: Prisma.StringFilter<"Expense"> | string
+  date?: Prisma.DateTimeFilter<"Expense"> | Date | string
 }, "id">
 
 export type ExpenseOrderByWithAggregationInput = {
@@ -258,7 +258,7 @@ export type ExpenseScalarWhereWithAggregatesInput = {
   name?: Prisma.StringWithAggregatesFilter<"Expense"> | string
   category?: Prisma.StringWithAggregatesFilter<"Expense"> | string
   amount?: Prisma.FloatWithAggregatesFilter<"Expense"> | number
-  date?: Prisma.StringWithAggregatesFilter<"Expense"> | string
+  date?: Prisma.DateTimeWithAggregatesFilter<"Expense"> | Date | string
 }
 
 export type ExpenseCreateInput = {
@@ -266,7 +266,7 @@ export type ExpenseCreateInput = {
   name: string
   category: string
   amount: number
-  date: string
+  date: Date | string
 }
 
 export type ExpenseUncheckedCreateInput = {
@@ -274,7 +274,7 @@ export type ExpenseUncheckedCreateInput = {
   name: string
   category: string
   amount: number
-  date: string
+  date: Date | string
 }
 
 export type ExpenseUpdateInput = {
@@ -282,7 +282,7 @@ export type ExpenseUpdateInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   category?: Prisma.StringFieldUpdateOperationsInput | string
   amount?: Prisma.FloatFieldUpdateOperationsInput | number
-  date?: Prisma.StringFieldUpdateOperationsInput | string
+  date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type ExpenseUncheckedUpdateInput = {
@@ -290,7 +290,7 @@ export type ExpenseUncheckedUpdateInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   category?: Prisma.StringFieldUpdateOperationsInput | string
   amount?: Prisma.FloatFieldUpdateOperationsInput | number
-  date?: Prisma.StringFieldUpdateOperationsInput | string
+  date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type ExpenseCreateManyInput = {
@@ -298,7 +298,7 @@ export type ExpenseCreateManyInput = {
   name: string
   category: string
   amount: number
-  date: string
+  date: Date | string
 }
 
 export type ExpenseUpdateManyMutationInput = {
@@ -306,7 +306,7 @@ export type ExpenseUpdateManyMutationInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   category?: Prisma.StringFieldUpdateOperationsInput | string
   amount?: Prisma.FloatFieldUpdateOperationsInput | number
-  date?: Prisma.StringFieldUpdateOperationsInput | string
+  date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type ExpenseUncheckedUpdateManyInput = {
@@ -314,7 +314,7 @@ export type ExpenseUncheckedUpdateManyInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   category?: Prisma.StringFieldUpdateOperationsInput | string
   amount?: Prisma.FloatFieldUpdateOperationsInput | number
-  date?: Prisma.StringFieldUpdateOperationsInput | string
+  date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type ExpenseCountOrderByAggregateInput = {
@@ -393,7 +393,7 @@ export type $ExpensePayload<ExtArgs extends runtime.Types.Extensions.InternalArg
     name: string
     category: string
     amount: number
-    date: string
+    date: Date
   }, ExtArgs["result"]["expense"]>
   composites: {}
 }
@@ -821,7 +821,7 @@ export interface ExpenseFieldRefs {
   readonly name: Prisma.FieldRef<"Expense", 'String'>
   readonly category: Prisma.FieldRef<"Expense", 'String'>
   readonly amount: Prisma.FieldRef<"Expense", 'Float'>
-  readonly date: Prisma.FieldRef<"Expense", 'String'>
+  readonly date: Prisma.FieldRef<"Expense", 'DateTime'>
 }
     
 

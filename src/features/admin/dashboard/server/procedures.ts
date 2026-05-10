@@ -106,7 +106,9 @@ export const dashboardProcedures = createTRPCRouter({
           _sum: { total: true },
           where: {
             ...whereOrderClause,
-            status: { notIn: ["UNVERIFIED", "CANCELLED", "CANCEL_REQUEST"] },
+            status: {
+              notIn: ["UNVERIFIED", "CANCELLED", "CANCELLATION_REQUESTED"],
+            },
           },
         }),
 
@@ -332,8 +334,11 @@ export const dashboardProcedures = createTRPCRouter({
       const year = input.year || currentYear;
       const month = input.month || currentMonth;
 
-      const startDate = `${year}-${month.toString().padStart(2, "0")}-01`;
-      const endDate = `${year}-${month.toString().padStart(2, "0")}-31`;
+      // const startDate = `${year}-${month.toString().padStart(2, "0")}-01`;
+      // const endDate = `${year}-${month.toString().padStart(2, "0")}-31`;
+
+      const startDate = new Date(year, month - 1, 1); // e.g. 2026-05-01T00:00:00.000Z
+      const endDate = new Date(year, month, 0, 23, 59, 59, 999); // last day of month, end of day
 
       const [
         projectedRevenue,
@@ -858,7 +863,7 @@ export const dashboardProcedures = createTRPCRouter({
         }),
 
         prisma.review.groupBy({
-          by: ["productId"],
+          by: ["orderProductId"],
           _avg: { rating: true },
         }),
 

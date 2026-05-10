@@ -270,6 +270,7 @@ type ImageUploadProps = {
 };
 
 interface MonthlyRevenue {
+  id?: string;
   month: string;
   projection: number;
   actual: number;
@@ -287,7 +288,7 @@ interface Income {
   name: string;
   category: string;
   amount: number;
-  date: string;
+  date: Date | string;
 }
 
 interface Expense {
@@ -295,39 +296,7 @@ interface Expense {
   name: string;
   category: string;
   amount: number;
-  date: string;
-}
-
-interface YearlyRevenueAccordionProps {
-  revenueProjections: YearlyRevenue[];
-  onUpdate: (
-    year: number,
-    updatedProjections: YearlyRevenue["monthlyProjections"],
-  ) => void;
-}
-
-interface MonthlyRevenueProjectionsProps {
-  year: number;
-  yearlyTarget: number;
-  monthlyProjections: MonthlyRevenue[];
-  onUpdate: (updatedProjections: MonthlyRevenue[]) => void;
-  currentYear: number;
-  currentMonth: number;
-}
-
-interface SettingsTableProps {
-  variant: "Income" | "Expense";
-  data: Income[] | Expense[];
-  onEdit: (item: Income | Expense) => void;
-  onDelete: (id: string) => void;
-}
-
-interface SettingsFormProps {
-  variant: "Revenue" | "Income" | "Expense";
-  onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
-  onClose: () => void;
-  isYearlyProjection?: boolean;
-  setIsYearlyProjection?: (value: boolean) => void;
+  date: Date | string;
 }
 
 interface RevenueData {

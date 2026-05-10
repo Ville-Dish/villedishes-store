@@ -66,7 +66,7 @@ export type InvoiceMinAggregateOutputType = {
   miscellaneous: number | null
   dateCreated: string | null
   dueDate: string | null
-  status: string | null
+  status: $Enums.InvoiceStatus | null
 }
 
 export type InvoiceMaxAggregateOutputType = {
@@ -87,7 +87,7 @@ export type InvoiceMaxAggregateOutputType = {
   miscellaneous: number | null
   dateCreated: string | null
   dueDate: string | null
-  status: string | null
+  status: $Enums.InvoiceStatus | null
 }
 
 export type InvoiceCountAggregateOutputType = {
@@ -303,7 +303,7 @@ export type InvoiceGroupByOutputType = {
   miscellaneous: number
   dateCreated: string
   dueDate: string
-  status: string
+  status: $Enums.InvoiceStatus
   _count: InvoiceCountAggregateOutputType | null
   _avg: InvoiceAvgAggregateOutputType | null
   _sum: InvoiceSumAggregateOutputType | null
@@ -347,7 +347,7 @@ export type InvoiceWhereInput = {
   miscellaneous?: Prisma.FloatFilter<"Invoice"> | number
   dateCreated?: Prisma.StringFilter<"Invoice"> | string
   dueDate?: Prisma.StringFilter<"Invoice"> | string
-  status?: Prisma.StringFilter<"Invoice"> | string
+  status?: Prisma.EnumInvoiceStatusFilter<"Invoice"> | $Enums.InvoiceStatus
   InvoiceProducts?: Prisma.InvoiceProductsListRelationFilter
 }
 
@@ -394,7 +394,7 @@ export type InvoiceWhereUniqueInput = Prisma.AtLeast<{
   miscellaneous?: Prisma.FloatFilter<"Invoice"> | number
   dateCreated?: Prisma.StringFilter<"Invoice"> | string
   dueDate?: Prisma.StringFilter<"Invoice"> | string
-  status?: Prisma.StringFilter<"Invoice"> | string
+  status?: Prisma.EnumInvoiceStatusFilter<"Invoice"> | $Enums.InvoiceStatus
   InvoiceProducts?: Prisma.InvoiceProductsListRelationFilter
 }, "id" | "id" | "invoiceNumber">
 
@@ -445,7 +445,7 @@ export type InvoiceScalarWhereWithAggregatesInput = {
   miscellaneous?: Prisma.FloatWithAggregatesFilter<"Invoice"> | number
   dateCreated?: Prisma.StringWithAggregatesFilter<"Invoice"> | string
   dueDate?: Prisma.StringWithAggregatesFilter<"Invoice"> | string
-  status?: Prisma.StringWithAggregatesFilter<"Invoice"> | string
+  status?: Prisma.EnumInvoiceStatusWithAggregatesFilter<"Invoice"> | $Enums.InvoiceStatus
 }
 
 export type InvoiceCreateInput = {
@@ -466,7 +466,7 @@ export type InvoiceCreateInput = {
   miscellaneous?: number
   dateCreated: string
   dueDate: string
-  status: string
+  status: $Enums.InvoiceStatus
   InvoiceProducts?: Prisma.InvoiceProductsCreateNestedManyWithoutInvoiceInput
 }
 
@@ -488,7 +488,7 @@ export type InvoiceUncheckedCreateInput = {
   miscellaneous?: number
   dateCreated: string
   dueDate: string
-  status: string
+  status: $Enums.InvoiceStatus
   InvoiceProducts?: Prisma.InvoiceProductsUncheckedCreateNestedManyWithoutInvoiceInput
 }
 
@@ -510,7 +510,7 @@ export type InvoiceUpdateInput = {
   miscellaneous?: Prisma.FloatFieldUpdateOperationsInput | number
   dateCreated?: Prisma.StringFieldUpdateOperationsInput | string
   dueDate?: Prisma.StringFieldUpdateOperationsInput | string
-  status?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumInvoiceStatusFieldUpdateOperationsInput | $Enums.InvoiceStatus
   InvoiceProducts?: Prisma.InvoiceProductsUpdateManyWithoutInvoiceNestedInput
 }
 
@@ -532,7 +532,7 @@ export type InvoiceUncheckedUpdateInput = {
   miscellaneous?: Prisma.FloatFieldUpdateOperationsInput | number
   dateCreated?: Prisma.StringFieldUpdateOperationsInput | string
   dueDate?: Prisma.StringFieldUpdateOperationsInput | string
-  status?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumInvoiceStatusFieldUpdateOperationsInput | $Enums.InvoiceStatus
   InvoiceProducts?: Prisma.InvoiceProductsUncheckedUpdateManyWithoutInvoiceNestedInput
 }
 
@@ -554,7 +554,7 @@ export type InvoiceCreateManyInput = {
   miscellaneous?: number
   dateCreated: string
   dueDate: string
-  status: string
+  status: $Enums.InvoiceStatus
 }
 
 export type InvoiceUpdateManyMutationInput = {
@@ -575,7 +575,7 @@ export type InvoiceUpdateManyMutationInput = {
   miscellaneous?: Prisma.FloatFieldUpdateOperationsInput | number
   dateCreated?: Prisma.StringFieldUpdateOperationsInput | string
   dueDate?: Prisma.StringFieldUpdateOperationsInput | string
-  status?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumInvoiceStatusFieldUpdateOperationsInput | $Enums.InvoiceStatus
 }
 
 export type InvoiceUncheckedUpdateManyInput = {
@@ -596,7 +596,7 @@ export type InvoiceUncheckedUpdateManyInput = {
   miscellaneous?: Prisma.FloatFieldUpdateOperationsInput | number
   dateCreated?: Prisma.StringFieldUpdateOperationsInput | string
   dueDate?: Prisma.StringFieldUpdateOperationsInput | string
-  status?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumInvoiceStatusFieldUpdateOperationsInput | $Enums.InvoiceStatus
 }
 
 export type InvoiceCountOrderByAggregateInput = {
@@ -693,6 +693,10 @@ export type EnumDiscountTypeFieldUpdateOperationsInput = {
   set?: $Enums.DiscountType
 }
 
+export type EnumInvoiceStatusFieldUpdateOperationsInput = {
+  set?: $Enums.InvoiceStatus
+}
+
 export type InvoiceCreateNestedOneWithoutInvoiceProductsInput = {
   create?: Prisma.XOR<Prisma.InvoiceCreateWithoutInvoiceProductsInput, Prisma.InvoiceUncheckedCreateWithoutInvoiceProductsInput>
   connectOrCreate?: Prisma.InvoiceCreateOrConnectWithoutInvoiceProductsInput
@@ -727,7 +731,7 @@ export type InvoiceCreateWithoutInvoiceProductsInput = {
   miscellaneous?: number
   dateCreated: string
   dueDate: string
-  status: string
+  status: $Enums.InvoiceStatus
 }
 
 export type InvoiceUncheckedCreateWithoutInvoiceProductsInput = {
@@ -748,7 +752,7 @@ export type InvoiceUncheckedCreateWithoutInvoiceProductsInput = {
   miscellaneous?: number
   dateCreated: string
   dueDate: string
-  status: string
+  status: $Enums.InvoiceStatus
 }
 
 export type InvoiceCreateOrConnectWithoutInvoiceProductsInput = {
@@ -785,7 +789,7 @@ export type InvoiceUpdateWithoutInvoiceProductsInput = {
   miscellaneous?: Prisma.FloatFieldUpdateOperationsInput | number
   dateCreated?: Prisma.StringFieldUpdateOperationsInput | string
   dueDate?: Prisma.StringFieldUpdateOperationsInput | string
-  status?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumInvoiceStatusFieldUpdateOperationsInput | $Enums.InvoiceStatus
 }
 
 export type InvoiceUncheckedUpdateWithoutInvoiceProductsInput = {
@@ -806,7 +810,7 @@ export type InvoiceUncheckedUpdateWithoutInvoiceProductsInput = {
   miscellaneous?: Prisma.FloatFieldUpdateOperationsInput | number
   dateCreated?: Prisma.StringFieldUpdateOperationsInput | string
   dueDate?: Prisma.StringFieldUpdateOperationsInput | string
-  status?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumInvoiceStatusFieldUpdateOperationsInput | $Enums.InvoiceStatus
 }
 
 
@@ -957,7 +961,7 @@ export type $InvoicePayload<ExtArgs extends runtime.Types.Extensions.InternalArg
     miscellaneous: number
     dateCreated: string
     dueDate: string
-    status: string
+    status: $Enums.InvoiceStatus
   }, ExtArgs["result"]["invoice"]>
   composites: {}
 }
@@ -1399,7 +1403,7 @@ export interface InvoiceFieldRefs {
   readonly miscellaneous: Prisma.FieldRef<"Invoice", 'Float'>
   readonly dateCreated: Prisma.FieldRef<"Invoice", 'String'>
   readonly dueDate: Prisma.FieldRef<"Invoice", 'String'>
-  readonly status: Prisma.FieldRef<"Invoice", 'String'>
+  readonly status: Prisma.FieldRef<"Invoice", 'InvoiceStatus'>
 }
     
 

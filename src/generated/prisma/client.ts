@@ -65,6 +65,11 @@ export type Verification = Prisma.VerificationModel
  */
 export type TwoFactor = Prisma.TwoFactorModel
 /**
+ * Model CompanySettings
+ * 
+ */
+export type CompanySettings = Prisma.CompanySettingsModel
+/**
  * Model Product
  * 
  */

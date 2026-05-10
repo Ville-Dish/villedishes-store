@@ -56,6 +56,7 @@ export const ModelName = {
   Account: 'Account',
   Verification: 'Verification',
   TwoFactor: 'TwoFactor',
+  CompanySettings: 'CompanySettings',
   Product: 'Product',
   Review: 'Review',
   Order: 'Order',
@@ -157,6 +158,23 @@ export const TwoFactorScalarFieldEnum = {
 export type TwoFactorScalarFieldEnum = (typeof TwoFactorScalarFieldEnum)[keyof typeof TwoFactorScalarFieldEnum]
 
 
+export const CompanySettingsScalarFieldEnum = {
+  id: 'id',
+  companyName: 'companyName',
+  about: 'about',
+  founderNotes: 'founderNotes',
+  supportEmail: 'supportEmail',
+  supportPhone: 'supportPhone',
+  website: 'website',
+  address: 'address',
+  logoUrl: 'logoUrl',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type CompanySettingsScalarFieldEnum = (typeof CompanySettingsScalarFieldEnum)[keyof typeof CompanySettingsScalarFieldEnum]
+
+
 export const ProductScalarFieldEnum = {
   id: 'id',
   name: 'name',
@@ -179,7 +197,8 @@ export const ReviewScalarFieldEnum = {
   rating: 'rating',
   comment: 'comment',
   author: 'author',
-  productId: 'productId'
+  orderProductId: 'orderProductId',
+  createdAt: 'createdAt'
 } as const
 
 export type ReviewScalarFieldEnum = (typeof ReviewScalarFieldEnum)[keyof typeof ReviewScalarFieldEnum]
@@ -192,13 +211,20 @@ export const OrderScalarFieldEnum = {
   tax: 'tax',
   shippingFee: 'shippingFee',
   total: 'total',
-  referenceNumber: 'referenceNumber',
   paymentDate: 'paymentDate',
+  paymentMethod: 'paymentMethod',
+  orderDate: 'orderDate',
+  referenceNumber: 'referenceNumber',
   verificationCode: 'verificationCode',
   orderNumber: 'orderNumber',
-  orderDate: 'orderDate',
-  shippingInfoId: 'shippingInfoId',
-  status: 'status'
+  orderType: 'orderType',
+  status: 'status',
+  scheduledAt: 'scheduledAt',
+  cancellationRequestedAt: 'cancellationRequestedAt',
+  cancellationDate: 'cancellationDate',
+  cancellationReason: 'cancellationReason',
+  refundReferenceNumber: 'refundReferenceNumber',
+  shippingInfoId: 'shippingInfoId'
 } as const
 
 export type OrderScalarFieldEnum = (typeof OrderScalarFieldEnum)[keyof typeof OrderScalarFieldEnum]

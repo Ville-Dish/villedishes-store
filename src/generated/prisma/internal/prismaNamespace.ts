@@ -389,6 +389,7 @@ export const ModelName = {
   Account: 'Account',
   Verification: 'Verification',
   TwoFactor: 'TwoFactor',
+  CompanySettings: 'CompanySettings',
   Product: 'Product',
   Review: 'Review',
   Order: 'Order',
@@ -416,7 +417,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "session" | "account" | "verification" | "twoFactor" | "product" | "review" | "order" | "shippingInfo" | "orderProduct" | "invoice" | "invoiceProducts" | "expense" | "income" | "revenue" | "monthlyProjection" | "testimonial"
+    modelProps: "user" | "session" | "account" | "verification" | "twoFactor" | "companySettings" | "product" | "review" | "order" | "shippingInfo" | "orderProduct" | "invoice" | "invoiceProducts" | "expense" | "income" | "revenue" | "monthlyProjection" | "testimonial"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -787,6 +788,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.TwoFactorCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.TwoFactorCountAggregateOutputType> | number
+        }
+      }
+    }
+    CompanySettings: {
+      payload: Prisma.$CompanySettingsPayload<ExtArgs>
+      fields: Prisma.CompanySettingsFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.CompanySettingsFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CompanySettingsPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.CompanySettingsFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CompanySettingsPayload>
+        }
+        findFirst: {
+          args: Prisma.CompanySettingsFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CompanySettingsPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.CompanySettingsFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CompanySettingsPayload>
+        }
+        findMany: {
+          args: Prisma.CompanySettingsFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CompanySettingsPayload>[]
+        }
+        create: {
+          args: Prisma.CompanySettingsCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CompanySettingsPayload>
+        }
+        createMany: {
+          args: Prisma.CompanySettingsCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.CompanySettingsCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CompanySettingsPayload>[]
+        }
+        delete: {
+          args: Prisma.CompanySettingsDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CompanySettingsPayload>
+        }
+        update: {
+          args: Prisma.CompanySettingsUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CompanySettingsPayload>
+        }
+        deleteMany: {
+          args: Prisma.CompanySettingsDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.CompanySettingsUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.CompanySettingsUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CompanySettingsPayload>[]
+        }
+        upsert: {
+          args: Prisma.CompanySettingsUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CompanySettingsPayload>
+        }
+        aggregate: {
+          args: Prisma.CompanySettingsAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateCompanySettings>
+        }
+        groupBy: {
+          args: Prisma.CompanySettingsGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.CompanySettingsGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.CompanySettingsCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.CompanySettingsCountAggregateOutputType> | number
         }
       }
     }
@@ -1788,6 +1863,23 @@ export const TwoFactorScalarFieldEnum = {
 export type TwoFactorScalarFieldEnum = (typeof TwoFactorScalarFieldEnum)[keyof typeof TwoFactorScalarFieldEnum]
 
 
+export const CompanySettingsScalarFieldEnum = {
+  id: 'id',
+  companyName: 'companyName',
+  about: 'about',
+  founderNotes: 'founderNotes',
+  supportEmail: 'supportEmail',
+  supportPhone: 'supportPhone',
+  website: 'website',
+  address: 'address',
+  logoUrl: 'logoUrl',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type CompanySettingsScalarFieldEnum = (typeof CompanySettingsScalarFieldEnum)[keyof typeof CompanySettingsScalarFieldEnum]
+
+
 export const ProductScalarFieldEnum = {
   id: 'id',
   name: 'name',
@@ -1810,7 +1902,8 @@ export const ReviewScalarFieldEnum = {
   rating: 'rating',
   comment: 'comment',
   author: 'author',
-  productId: 'productId'
+  orderProductId: 'orderProductId',
+  createdAt: 'createdAt'
 } as const
 
 export type ReviewScalarFieldEnum = (typeof ReviewScalarFieldEnum)[keyof typeof ReviewScalarFieldEnum]
@@ -1823,13 +1916,20 @@ export const OrderScalarFieldEnum = {
   tax: 'tax',
   shippingFee: 'shippingFee',
   total: 'total',
-  referenceNumber: 'referenceNumber',
   paymentDate: 'paymentDate',
+  paymentMethod: 'paymentMethod',
+  orderDate: 'orderDate',
+  referenceNumber: 'referenceNumber',
   verificationCode: 'verificationCode',
   orderNumber: 'orderNumber',
-  orderDate: 'orderDate',
-  shippingInfoId: 'shippingInfoId',
-  status: 'status'
+  orderType: 'orderType',
+  status: 'status',
+  scheduledAt: 'scheduledAt',
+  cancellationRequestedAt: 'cancellationRequestedAt',
+  cancellationDate: 'cancellationDate',
+  cancellationReason: 'cancellationReason',
+  refundReferenceNumber: 'refundReferenceNumber',
+  shippingInfoId: 'shippingInfoId'
 } as const
 
 export type OrderScalarFieldEnum = (typeof OrderScalarFieldEnum)[keyof typeof OrderScalarFieldEnum]
@@ -2045,6 +2145,48 @@ export type ListIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel,
 
 
 /**
+ * Reference to a field of type 'PaymentMethod'
+ */
+export type EnumPaymentMethodFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'PaymentMethod'>
+    
+
+
+/**
+ * Reference to a field of type 'PaymentMethod[]'
+ */
+export type ListEnumPaymentMethodFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'PaymentMethod[]'>
+    
+
+
+/**
+ * Reference to a field of type 'OrderType'
+ */
+export type EnumOrderTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'OrderType'>
+    
+
+
+/**
+ * Reference to a field of type 'OrderType[]'
+ */
+export type ListEnumOrderTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'OrderType[]'>
+    
+
+
+/**
+ * Reference to a field of type 'OrderStatus'
+ */
+export type EnumOrderStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'OrderStatus'>
+    
+
+
+/**
+ * Reference to a field of type 'OrderStatus[]'
+ */
+export type ListEnumOrderStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'OrderStatus[]'>
+    
+
+
+/**
  * Reference to a field of type 'DiscountType'
  */
 export type EnumDiscountTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DiscountType'>
@@ -2055,6 +2197,20 @@ export type EnumDiscountTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$Pri
  * Reference to a field of type 'DiscountType[]'
  */
 export type ListEnumDiscountTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DiscountType[]'>
+    
+
+
+/**
+ * Reference to a field of type 'InvoiceStatus'
+ */
+export type EnumInvoiceStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'InvoiceStatus'>
+    
+
+
+/**
+ * Reference to a field of type 'InvoiceStatus[]'
+ */
+export type ListEnumInvoiceStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'InvoiceStatus[]'>
     
 
 /**
@@ -2157,6 +2313,7 @@ export type GlobalOmitConfig = {
   account?: Prisma.AccountOmit
   verification?: Prisma.VerificationOmit
   twoFactor?: Prisma.TwoFactorOmit
+  companySettings?: Prisma.CompanySettingsOmit
   product?: Prisma.ProductOmit
   review?: Prisma.ReviewOmit
   order?: Prisma.OrderOmit

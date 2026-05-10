@@ -1,7 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, Suspense } from "react";
-import { useRouter } from "next/navigation";
+import { useState, Suspense } from "react";
 import {
   Table,
   TableBody,
@@ -29,12 +28,11 @@ import {
 } from "@/components/ui/dialog";
 import { Eye, ChevronsLeft, ChevronsRight, XCircle } from "lucide-react";
 import { DatePickerWithRange } from "@/components/custom/date-range-picker";
-import { cn, formatDate } from "@/lib/utils";
+import { cn, formatDate, OrderStatus, ORDER_STATUSES } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useDebounce } from "@/hooks/use-debounce";
 import { OrderDetailsView } from "./order-details";
-import { OrderDetails, OrderInfo } from "@/lib/types";
-import { OrderStatus } from "@/lib/utils";
+import { OrderInfo } from "@/lib/types";
 import { OrderListSkeleton } from "./order-list-skeleton";
 import { useTRPC } from "@/trpc/client";
 import {
@@ -118,7 +116,6 @@ export const OrderList = () => {
   const updateStatusMutation = useMutation(
     trpc.orders.changeOrderStatus.mutationOptions({
       onSuccess: async (data) => {
-        toast.success(`Order ${data.orderNumber} status updated successfully`);
         toast.success("Order Status Updated", {
           description: `Order ${data.orderNumber} status updated successfully. An Order ${data.status === "FULFILLED" ? "Fulfillment" : data.status === "CANCELLED" ? "Cancellation" : ""} email has been sent to customer ${data.shippingInfo.firstName}`,
         });
@@ -133,15 +130,6 @@ export const OrderList = () => {
             shippingFee: data.shippingFee,
             total: data.total,
             items: data.products,
-          });
-        }
-        if (data.status === "CANCELLED") {
-          sendMail.mutate({
-            type: "order_cancellation_confirmation",
-            to: data.shippingInfo.email,
-            customerName: `${data.shippingInfo.firstName} ${data.shippingInfo.lastName}`,
-            orderNumber: data.orderNumber ?? "",
-            total: data.total,
           });
         }
         queryClient.invalidateQueries(
@@ -243,6 +231,8 @@ export const OrderList = () => {
   const firstEntry = totalCount === 0 ? 0 : (page - 1) * pageSize + 1;
   const lastEntry = Math.min(page * pageSize, totalCount);
 
+  const DISALLOWED_LIST_STATUSES: OrderStatus[] = ["CANCELLATION_REQUESTED"];
+
   return (
     <div className="flex-1 space-y-4 p-8 pt-6">
       <div className="flex items-center justify-between space-y-2">
@@ -279,10 +269,11 @@ export const OrderList = () => {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="ALL">All Statuses</SelectItem>
-            <SelectItem value="UNVERIFIED">Unverified</SelectItem>
-            <SelectItem value="PENDING">Pending</SelectItem>
-            <SelectItem value="CANCELLED">Cancelled</SelectItem>
-            <SelectItem value="FULFILLED">Fulfilled</SelectItem>
+            {ORDER_STATUSES.map((status) => (
+              <SelectItem key={status} value={status}>
+                {status}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
 
@@ -346,7 +337,7 @@ export const OrderList = () => {
                   className="cursor-pointer"
                 >
                   Status{" "}
-                  {sortField === "orderDate" &&
+                  {sortField === "status" &&
                     (sortDirection === "asc" ? "↑" : "↓")}
                 </TableHead>
                 <TableHead>Action</TableHead>
@@ -390,6 +381,12 @@ export const OrderList = () => {
                           {
                             "bg-[#da281c] border-[#da281c] hover:bg-[#b4443c]":
                               order.status === "CANCELLED",
+                            "bg-rose-500 border-rose-500 hover:bg-rose-600":
+                              order.status === "CANCELLATION_REQUESTED",
+                            "bg-cyan-500 border-cyan-500 hover:bg-cyan-600":
+                              order.status === "SHIPPED",
+                            "bg-teal-500 border-teal-500 hover:bg-teal-600":
+                              order.status === "DELIVERED",
                             "bg-green-500 border-green-500 hover:bg-green-600":
                               order.status === "FULFILLED",
                             "bg-[#fe9e1d] border-[#fe9e1d] hover:bg-[#c6893a]":
@@ -404,22 +401,33 @@ export const OrderList = () => {
                     </TableCell>
                     <TableCell>
                       <Select
-                        onValueChange={(value) =>
+                        onValueChange={(value) => {
+                          console.log(order.status);
                           handleStatusChange(
                             order.orderId as string,
                             value as OrderStatus,
-                          )
-                        }
+                          );
+                        }}
                         defaultValue={order.status}
                       >
                         <SelectTrigger className="w-45">
                           <SelectValue placeholder="Change status" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="UNVERIFIED">UNVERIFIED</SelectItem>
-                          <SelectItem value="PENDING">PENDING</SelectItem>
-                          <SelectItem value="FULFILLED">FULFILLED</SelectItem>
-                          <SelectItem value="CANCELLED">CANCELLED</SelectItem>
+                          {ORDER_STATUSES.filter(
+                            (status) =>
+                              !DISALLOWED_LIST_STATUSES.includes(status),
+                          ).map((status) => (
+                            <SelectItem
+                              key={status}
+                              value={status}
+                              disabled={status === "CANCELLED"}
+                            >
+                              {status === "CANCELLED"
+                                ? "CANCELLED (Use cancellation request)"
+                                : status}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </TableCell>

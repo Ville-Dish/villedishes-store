@@ -19,6 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { ADMIN_EMAIL } from "@/config/constants";
 import { adminEmail, shippingFee, taxRate } from "@/lib/constantData";
 import { checkoutSchema, CheckoutSchema } from "@/lib/schemas/orderSchema";
 import { OrderDetails, Product } from "@/lib/types";
@@ -123,7 +124,7 @@ export const CheckoutView = () => {
 
             sendVerificationEmail.mutate({
               type: "verify_payment",
-              to: adminEmail,
+              to: ADMIN_EMAIL,
               ...emailData,
             });
           }
