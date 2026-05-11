@@ -34,6 +34,21 @@ import {
   useQueryClient,
   useSuspenseQuery,
 } from "@tanstack/react-query";
+import { GeneralSettings } from "./general-tab";
+import { companySettingsSchema, CompanySettingsValue } from "../../lib/schema";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Textarea } from "@/components/ui/textarea";
+import { CustomPhoneInput } from "@/components/custom/phone-input";
+import ImageUpload from "@/components/custom/imageUpload/ImageUpload";
 
 const settingsValue = [
   { name: "General Settings", icon: Settings },
@@ -188,40 +203,6 @@ export const SettingsView = () => {
     setIsDialogOpen(true);
   };
 
-  const updateGeneralSettings = async (
-    event: React.FormEvent<HTMLFormElement>,
-  ) => {
-    event.preventDefault();
-    const form = event.currentTarget;
-    const formData = new FormData(form);
-    const updatedSettings = {
-      companyName: formData.get("company-name") as string,
-      email: formData.get("email") as string,
-      phone: formData.get("phone") as string,
-    };
-
-    setGeneralSettings(updatedSettings);
-
-    console.log({ generalSettings });
-    toast.success("General Settings updated successfully");
-
-    // try {
-    //   const response = await fetch("/api/admin/settings", {
-    //     method: "PUT",
-    //     headers: { "Content-Type": "application/json" },
-    //     body: JSON.stringify(updatedSettings),
-    //   });
-
-    //   if (response.ok) {
-    //     setGeneralSettings(updatedSettings);
-    //   } else {
-    //     console.error("Failed to update general settings");
-    //   }
-    // } catch (error) {
-    //   console.error("Error updating general settings:", error);
-    // }
-  };
-
   return (
     <div className="flex flex-col gap-4 p-4 md:p-6">
       <h2 className="font-semibold text-2xl md:text-3xl text-center mb-6">
@@ -279,49 +260,7 @@ export const SettingsView = () => {
 
         {/* General Settings Tab View */}
         <TabsContent value="General Settings" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>General Settings</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <form onSubmit={updateGeneralSettings}>
-                <div className="space-y-2">
-                  <Label htmlFor="company-name">Company Name</Label>
-                  <Input
-                    id="company-name"
-                    name="company-name"
-                    defaultValue={generalSettings.companyName}
-                    placeholder="Enter company name"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="email">Contact Email</Label>
-                  <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    defaultValue={generalSettings.email}
-                    placeholder="Enter contact email"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Customer Service Number</Label>
-                  <Input
-                    id="phone"
-                    name="phone"
-                    type="tel"
-                    defaultValue={generalSettings.phone}
-                    placeholder="Enter contact number"
-                  />
-                </div>
-                <div className="flex justify-end mt-2">
-                  <Button type="submit" variant="submit">
-                    Save Changes
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
+          <GeneralSettings />
         </TabsContent>
 
         {/* Revenue Projections Tab View */}

@@ -32,7 +32,7 @@ export const companySettingsSchema = z.object({
   companyName: z.string().min(1, "Company name is required"),
   about: z.string().optional(),
   founderNotes: z.string().optional(),
-  supportEmail: z.email("Please enter a valid email address").optional(),
+  supportEmail: z.email().optional(),
   supportPhone: z
     .string({ message: "Phone number is required" })
     .trim()
@@ -41,9 +41,10 @@ export const companySettingsSchema = z.object({
       message: "Please enter a valid phone number",
     })
     .optional(),
-  website: z.url("Please enter a valid URL").optional(),
+  website: z.url().optional(),
   address: z.string().optional(),
-  logoUrl: z.url("Please enter a valid URL").optional(),
+  logoUrl: z.url().optional(),
+  assetId: z.string().optional(),
 });
 
 export type CompanySettingsValue = z.infer<typeof companySettingsSchema>;

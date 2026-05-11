@@ -95,7 +95,7 @@ model TwoFactor {
 
 model CompanySettings {
   id             String   @id @default(cuid())
-  companyName    String
+  companyName    String   @unique
   about          String?  @db.Text
   founderNotes    String? @db.Text
   supportEmail   String?
@@ -103,6 +103,7 @@ model CompanySettings {
   website        String?
   address        String?
   logoUrl        String? @db.Text
+  assetId        String? @db.Text
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 }

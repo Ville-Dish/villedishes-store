@@ -42,6 +42,7 @@ import { useTRPC } from "@/trpc/client";
 import { useForm } from "react-hook-form";
 import { companySettingsSchema, CompanySettingsValue } from "../../lib/schema";
 import { zodResolver } from "@hookform/resolvers/zod";
+import ImageUpload from "@/components/custom/imageUpload/ImageUpload";
 
 interface GeneralSettingsProps {
   initialSettings?: Partial<CompanySettingsValue>;
@@ -95,13 +96,14 @@ function DisplayField({
   );
 }
 
-export const GeneralSettings = ({ initialSettings }: GeneralSettingsProps) => {
+export const GeneralSettings = () => {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
 
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [isEditingIdentity, setIsEditingIdentity] = useState(false);
   const [isEditingContact, setIsEditingContact] = useState(false);
+  const [isEditingAll, setIsEditingAll] = useState(false);
 
   const { data } = useSuspenseQuery(
     trpc.adminSettingss.getCompanySettings.queryOptions(),
@@ -111,14 +113,15 @@ export const GeneralSettings = ({ initialSettings }: GeneralSettingsProps) => {
     resolver: zodResolver(companySettingsSchema),
     defaultValues: {
       id: data?.id ?? "",
-      companyName: data?.companyName ?? initialSettings?.companyName ?? "",
-      about: data?.about ?? initialSettings?.about ?? "",
-      founderNotes: data?.founderNotes ?? initialSettings?.founderNotes ?? "",
-      supportEmail: data?.supportEmail ?? initialSettings?.supportEmail ?? "",
-      supportPhone: data?.supportPhone ?? initialSettings?.supportPhone ?? "",
-      website: data?.website ?? initialSettings?.website ?? "",
-      address: data?.address ?? initialSettings?.address ?? "",
-      logoUrl: data?.logoUrl ?? initialSettings?.logoUrl ?? "",
+      companyName: data?.companyName ?? "",
+      about: data?.about ?? "",
+      founderNotes: data?.founderNotes ?? "",
+      supportEmail: data?.supportEmail ?? "",
+      supportPhone: data?.supportPhone ?? "",
+      website: data?.website ?? "",
+      address: data?.address ?? "",
+      logoUrl: data?.logoUrl ?? "",
+      assetId: data?.assetId ?? "",
     },
   });
 
@@ -135,19 +138,6 @@ export const GeneralSettings = ({ initialSettings }: GeneralSettingsProps) => {
       },
     }),
   );
-
-  const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const result = reader.result as string;
-        setLogoPreview(result);
-        form.setValue("logoUrl", result);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
 
   const handleIdentitySubmit = form.handleSubmit((values) => {
     updateSettingsMutation.mutate(
@@ -172,6 +162,23 @@ export const GeneralSettings = ({ initialSettings }: GeneralSettingsProps) => {
     );
   });
 
+  // Saves both identity + contact in one shot
+  const handleSaveAll = form.handleSubmit((values) => {
+    updateSettingsMutation.mutate(
+      { ...values, id: values.id ?? "" },
+      {
+        onSuccess: () => {
+          setIsEditingIdentity(false);
+          setIsEditingContact(false);
+          setIsEditingAll(false);
+          setLogoPreview(null);
+        },
+      },
+    );
+  });
+
+  // ── Cancel helpers ────────────────────────────────────────────────────────
+
   const cancelIdentityEdit = () => {
     form.resetField("companyName");
     form.resetField("about");
@@ -179,6 +186,10 @@ export const GeneralSettings = ({ initialSettings }: GeneralSettingsProps) => {
     form.resetField("logoUrl");
     setIsEditingIdentity(false);
     setLogoPreview(null);
+    if (isEditingAll) {
+      setIsEditingContact(false);
+      setIsEditingAll(false);
+    }
   };
 
   const cancelContactEdit = () => {
@@ -187,15 +198,74 @@ export const GeneralSettings = ({ initialSettings }: GeneralSettingsProps) => {
     form.resetField("website");
     form.resetField("address");
     setIsEditingContact(false);
+    if (isEditingAll) {
+      setIsEditingContact(false);
+      setIsEditingAll(false);
+    }
+  };
+
+  const cancelAll = () => {
+    form.reset();
+    setIsEditingIdentity(false);
+    setIsEditingContact(false);
+    setIsEditingAll(false);
+    setLogoPreview(null);
+  };
+
+  // ── Edit-All trigger ──────────────────────────────────────────────────────
+
+  const handleEditAll = () => {
+    setIsEditingIdentity(true);
+    setIsEditingContact(true);
+    setIsEditingAll(true);
   };
 
   const isPending = updateSettingsMutation.isPending;
   const watchedValues = form.watch();
 
+  // Whether any section is currently being edited
+  const anyEditing = isEditingIdentity || isEditingContact;
+
+  const handleImageChange = (url: string, assetId: string) => {
+    form.setValue("logoUrl", url);
+    form.setValue("assetId", assetId);
+  };
+
   return (
     <Form {...form}>
       <div className="space-y-6">
-        {/* Company Identity Section */}
+        {/* ── Top-level Edit All / Save All / Cancel All bar ─────────────── */}
+        <div className="flex justify-end gap-2">
+          {!anyEditing ? (
+            <Button variant="outline" size="sm" onClick={handleEditAll}>
+              <Pencil className="size-4 mr-2" />
+              Edit All
+            </Button>
+          ) : isEditingAll ? (
+            <>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={cancelAll}
+                disabled={isPending}
+              >
+                <X className="size-4 mr-2" />
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                onClick={handleSaveAll}
+                disabled={isPending}
+              >
+                {isPending ? "Saving..." : "Save All"}
+              </Button>
+            </>
+          ) : null}
+        </div>
+
+        {/* ── Company Identity Section ───────────────────────────────────── */}
         <Card>
           <CardHeader className="flex flex-row items-start justify-between">
             <div className="space-y-1">
@@ -207,7 +277,7 @@ export const GeneralSettings = ({ initialSettings }: GeneralSettingsProps) => {
                 Basic information about your company
               </CardDescription>
             </div>
-            {!isEditingIdentity && (
+            {!isEditingIdentity && !isEditingAll && (
               <Button
                 variant="outline"
                 size="sm"
@@ -220,7 +290,10 @@ export const GeneralSettings = ({ initialSettings }: GeneralSettingsProps) => {
           </CardHeader>
           <CardContent>
             {isEditingIdentity ? (
-              <form onSubmit={handleIdentitySubmit} className="space-y-6">
+              <form
+                onSubmit={isEditingAll ? undefined : handleIdentitySubmit}
+                className="space-y-6"
+              >
                 {/* Logo Upload */}
                 <FormField
                   control={form.control}
@@ -230,7 +303,7 @@ export const GeneralSettings = ({ initialSettings }: GeneralSettingsProps) => {
                       <FormLabel>Company Logo</FormLabel>
                       <FormControl>
                         <div className="flex items-center gap-4">
-                          <Avatar className="size-20 border-2 border-dashed border-muted-foreground/25">
+                          <Avatar className="size-5 border-2 border-dashed border-muted-foreground/25">
                             <AvatarImage
                               src={logoPreview || field.value}
                               alt="Company logo"
@@ -240,25 +313,14 @@ export const GeneralSettings = ({ initialSettings }: GeneralSettingsProps) => {
                             </AvatarFallback>
                           </Avatar>
                           <div className="flex flex-col gap-2">
-                            <Input
-                              id="logo-upload"
-                              type="file"
-                              accept="image/*"
-                              className="hidden"
-                              onChange={handleLogoUpload}
+                            <ImageUpload
+                              value={""}
+                              onChange={handleImageChange}
+                              onRemove={() => {
+                                form.setValue("logoUrl", "");
+                                form.setValue("assetId", "");
+                              }}
                             />
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              className="cursor-pointer"
-                              onClick={() =>
-                                document.getElementById("logo-upload")?.click()
-                              }
-                            >
-                              <Upload className="size-4 mr-2" />
-                              Upload Logo
-                            </Button>
                           </div>
                         </div>
                       </FormControl>
@@ -337,25 +399,27 @@ export const GeneralSettings = ({ initialSettings }: GeneralSettingsProps) => {
                   )}
                 />
 
-                <div className="flex justify-end gap-2 pt-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={cancelIdentityEdit}
-                    disabled={isPending}
-                  >
-                    <X className="size-4 mr-2" />
-                    Cancel
-                  </Button>
-                  <Button type="submit" disabled={isPending}>
-                    {isPending ? "Saving..." : "Save Changes"}
-                  </Button>
-                </div>
+                {!isEditingAll && (
+                  <div className="flex justify-end gap-2 pt-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={cancelIdentityEdit}
+                      disabled={isPending}
+                    >
+                      <X className="size-4 mr-2" />
+                      Cancel
+                    </Button>
+                    <Button type="submit" disabled={isPending}>
+                      {isPending ? "Saving..." : "Save Changes"}
+                    </Button>
+                  </div>
+                )}
               </form>
             ) : (
               <div className="space-y-6">
                 <div className="flex items-center gap-4">
-                  <Avatar className="size-20 border">
+                  <Avatar className="size-10 border">
                     <AvatarImage
                       src={watchedValues.logoUrl}
                       alt="Company logo"
@@ -395,7 +459,7 @@ export const GeneralSettings = ({ initialSettings }: GeneralSettingsProps) => {
           </CardContent>
         </Card>
 
-        {/* Contact Information Section */}
+        {/* ── Contact Information Section ────────────────────────────────── */}
         <Card>
           <CardHeader className="flex flex-row items-start justify-between">
             <div className="space-y-1">
@@ -407,7 +471,7 @@ export const GeneralSettings = ({ initialSettings }: GeneralSettingsProps) => {
                 How customers can reach your support team
               </CardDescription>
             </div>
-            {!isEditingContact && (
+            {!isEditingContact && !isEditingAll && (
               <Button
                 variant="outline"
                 size="sm"
@@ -420,7 +484,10 @@ export const GeneralSettings = ({ initialSettings }: GeneralSettingsProps) => {
           </CardHeader>
           <CardContent>
             {isEditingContact ? (
-              <form onSubmit={handleContactSubmit} className="space-y-6">
+              <form
+                onSubmit={isEditingAll ? undefined : handleContactSubmit}
+                className="space-y-6"
+              >
                 <div className="grid gap-6 md:grid-cols-2">
                   {/* Support Email */}
                   <FormField
@@ -513,20 +580,22 @@ export const GeneralSettings = ({ initialSettings }: GeneralSettingsProps) => {
                   )}
                 />
 
-                <div className="flex justify-end gap-2 pt-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={cancelContactEdit}
-                    disabled={isPending}
-                  >
-                    <X className="size-4 mr-2" />
-                    Cancel
-                  </Button>
-                  <Button type="submit" disabled={isPending}>
-                    {isPending ? "Saving..." : "Save Changes"}
-                  </Button>
-                </div>
+                {!isEditingAll && (
+                  <div className="flex justify-end gap-2 pt-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={cancelContactEdit}
+                      disabled={isPending}
+                    >
+                      <X className="size-4 mr-2" />
+                      Cancel
+                    </Button>
+                    <Button type="submit" disabled={isPending}>
+                      {isPending ? "Saving..." : "Save Changes"}
+                    </Button>
+                  </div>
+                )}
               </form>
             ) : (
               <div className="grid gap-6 md:grid-cols-2">

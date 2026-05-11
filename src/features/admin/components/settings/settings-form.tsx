@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { X } from "lucide-react";
-import { Expense, Income } from "@/lib/types";
+import { Expense, Income, YearlyRevenue } from "@/lib/types";
 import { useForm } from "react-hook-form";
 import {
   incomeExpenseSchema,
@@ -149,7 +149,33 @@ const RevenueForm: React.FC<{ onClose: () => void; isEditing: boolean }> = ({
         monthlyProjections: values.monthlyProjections,
       });
     } else {
-      createRevenue.mutate(values);
+      const { year, yearlyTarget } = values;
+      const monthlyTarget = values.yearlyTarget / 12;
+      const months = [
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December",
+      ];
+
+      const projectionData: YearlyRevenue = {
+        year,
+        yearlyTarget,
+        monthlyProjections: months.map((month) => ({
+          month,
+          projection: monthlyTarget,
+          actual: 0,
+        })),
+      };
+      createRevenue.mutate(projectionData);
     }
   };
 

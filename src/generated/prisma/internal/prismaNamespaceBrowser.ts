@@ -168,6 +168,7 @@ export const CompanySettingsScalarFieldEnum = {
   website: 'website',
   address: 'address',
   logoUrl: 'logoUrl',
+  assetId: 'assetId',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const

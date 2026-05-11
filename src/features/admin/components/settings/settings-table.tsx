@@ -7,6 +7,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useConfirm } from "@/hooks/use-confirm";
 import { Expense, Income } from "@/lib/types";
 import { Eye, Trash } from "lucide-react";
 import React from "react";
@@ -34,6 +35,20 @@ export const SettingsTable: React.FC<SettingsTableProps> = ({
     }
   };
 
+  const [DeleteDialog, confirmDelete] = useConfirm({
+    title: "Delete Item",
+    message: "Are you sure you want to delete this item?",
+    update: false,
+  });
+
+  const handleDelete = async (id: string) => {
+    const result = await confirmDelete();
+
+    if (result.action !== "confirm") return;
+
+    onDelete(id);
+  };
+
   const renderRow = (item: Income | Expense, index: number) => {
     switch (variant) {
       case "Income":
@@ -51,7 +66,10 @@ export const SettingsTable: React.FC<SettingsTableProps> = ({
               <Button variant="ghost" onClick={() => onEdit(item)}>
                 <Eye className="h-4 w-4 text-[#fe9e1d]" />
               </Button>
-              <Button variant="ghost" onClick={() => onDelete(item.id || "")}>
+              <Button
+                variant="ghost"
+                onClick={() => handleDelete(item.id || "")}
+              >
                 <Trash className="h-4 w-4 text-[#da281c]" />
               </Button>
             </TableCell>
@@ -63,27 +81,30 @@ export const SettingsTable: React.FC<SettingsTableProps> = ({
   };
 
   return (
-    <div className="border rounded-lg overflow-hidden">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            {getHeaders().map((header, index) => (
-              <TableHead key={index}>{header}</TableHead>
-            ))}
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {data.length > 0 ? (
-            data.map((item, index) => renderRow(item, index))
-          ) : (
+    <>
+      <DeleteDialog />
+      <div className="border rounded-lg overflow-hidden">
+        <Table>
+          <TableHeader>
             <TableRow>
-              <TableCell colSpan={5} className="text-center">
-                No {variant} data found!
-              </TableCell>
+              {getHeaders().map((header, index) => (
+                <TableHead key={index}>{header}</TableHead>
+              ))}
             </TableRow>
-          )}
-        </TableBody>
-      </Table>
-    </div>
+          </TableHeader>
+          <TableBody>
+            {data.length > 0 ? (
+              data.map((item, index) => renderRow(item, index))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center">
+                  No {variant} data found!
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </div>
+    </>
   );
 };

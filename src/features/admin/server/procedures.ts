@@ -380,23 +380,58 @@ export const adminSettingsProcedures = createTRPCRouter({
       const { id, monthlyProjections } = input;
 
       try {
-        const updatedRevenue = await prisma.revenue.update({
-          where: { id },
-          data: {
-            monthlyProjections: {
-              updateMany: monthlyProjections.map((mp) => ({
+        const updatedRevenue = await prisma.$transaction(async (tx) => {
+          // 1. Update all monthly projections
+          await Promise.all(
+            monthlyProjections.map((mp) =>
+              tx.monthlyProjection.update({
                 where: { id: mp.id },
-                data: { projection: mp.projection },
-              })),
+                data: {
+                  projection: mp.projection,
+                },
+              }),
+            ),
+          );
+
+          // 2. Fetch all updated monthly projections
+          const revenue = await tx.revenue.findUnique({
+            where: { id },
+            include: {
+              monthlyProjections: true,
             },
-          },
-          include: {
-            monthlyProjections: true,
-          },
+          });
+
+          if (!revenue) {
+            throw new TRPCError({
+              code: "NOT_FOUND",
+              message: "Revenue record not found",
+            });
+          }
+
+          // 3. Calculate yearly total
+          const yearlyTarget = revenue.monthlyProjections.reduce(
+            (total, month) => total + month.projection,
+            0,
+          );
+
+          // 4. Update yearly target
+          const finalRevenue = await tx.revenue.update({
+            where: { id },
+            data: {
+              yearlyTarget,
+            },
+            include: {
+              monthlyProjections: true,
+            },
+          });
+
+          return finalRevenue;
         });
 
         return updatedRevenue;
       } catch (error) {
+        console.error(error);
+
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Failed to update revenue",
