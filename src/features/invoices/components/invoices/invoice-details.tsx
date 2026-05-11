@@ -567,6 +567,7 @@ export const InvoiceDetails = ({
             "An email with the invoice details has been sent to the customer.",
         });
         setSending(false);
+        // setSelectedIn
       },
       onError: (error) => {
         console.error("Error sending invoice email:", error);

@@ -1,6 +1,13 @@
 import { isValidEmail } from "@/lib/utils";
 import { z } from "zod";
 
+import {
+  ColumnMappings,
+  DEFAULT_COLUMN_MAPPINGS,
+  InvoiceDisplayMode,
+} from "@/lib/invoicePdfGenerate";
+import { Invoice } from "@/lib/types";
+
 export const EmailTypes = [
   "contact",
   "catering",
@@ -68,11 +75,17 @@ export const sendEmailSchema = z.discriminatedUnion("type", [
     type: z.literal("invoice"),
     customerName: z.string().min(1, "Customer name is required"),
     invoiceNumber: z.string().min(1, "Invoice number is required"),
+    // New Fields for PDF attachment
+    invoice: z.custom<Invoice>().optional(),
+    displayMode: z.custom<InvoiceDisplayMode>().optional(),
+    categoryMappings: z.record(z.string(), z.string()).optional(),
+    columnMappings: z.custom<ColumnMappings>().optional(),
   }),
   base.extend({
     type: z.literal("order_confirmation"),
     customerName: z.string().min(1, "Customer name is required"),
     orderNumber: z.string().min(1, "Order number is required"),
+    orderId: z.number(),
     orderDate: z.string().min(1, "Order date is required"),
     subtotal: z.number(),
     tax: z.number(),

@@ -59,6 +59,7 @@ type InvoiceProps = {
 type OrderConfirmationProps = {
   customerName: string;
   orderNumber: string;
+  orderId: number;
   orderDate: string;
   subtotal: number;
   tax: number;
@@ -173,6 +174,7 @@ export const emailTemplateConfig = {
     ): OrderConfirmationProps => ({
       customerName: data.customerName,
       orderNumber: data.orderNumber,
+      orderId: data.orderId,
       orderDate: data.orderDate,
       subtotal: data.subtotal,
       tax: data.tax,
