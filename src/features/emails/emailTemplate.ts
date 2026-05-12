@@ -59,7 +59,7 @@ type InvoiceProps = {
 type OrderConfirmationProps = {
   customerName: string;
   orderNumber: string;
-  orderId: number;
+  orderId: string;
   orderDate: string;
   subtotal: number;
   tax: number;
@@ -72,12 +72,14 @@ type OrderConfirmationProps = {
 type OrderFulfillmentProps = {
   customerName: string;
   orderNumber: string;
+  orderId: string;
   subtotal: number;
   tax: number;
   shippingFee: number;
   total: number;
   items: any[];
   feedbackLink?: string;
+  orderReviewLink?: string;
 };
 
 type OrderCancellationRequestProps = {
@@ -193,12 +195,14 @@ export const emailTemplateConfig = {
     ): OrderFulfillmentProps => ({
       customerName: data.customerName,
       orderNumber: data.orderNumber,
+      orderId: data.orderId,
       subtotal: data.subtotal,
       tax: data.tax,
       shippingFee: data.shippingFee,
       total: data.total,
       items: data.items,
       feedbackLink: data.feedbackLink,
+      orderReviewLink: data.orderReviewLink,
     }),
   } satisfies TemplateConfig<"order_fulfillment", OrderFulfillmentProps>,
 

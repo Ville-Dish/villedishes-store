@@ -183,6 +183,7 @@ model Order {
   status       OrderStatus
 
   scheduledAt      DateTime?
+  fulfilledAt      DateTime?
 
   // Cancellation
   cancellationRequestedAt DateTime?
@@ -259,6 +260,9 @@ model Invoice {
 
   dateCreated        String
   dueDate            String
+
+  // dateCreated        DateTime
+  // dueDate            DateTime
 
   status             InvoiceStatus
 

@@ -238,7 +238,7 @@ export function useConfirm<T extends FieldValues = never, Extra = undefined>({
                 onClick={() => void handleAction("confirm")}
                 className={cn(
                   "cursor-pointer",
-                  update && "bg-[#007A5A] text-white hover:bg-[#007A5A]/80",
+                  update && "bg-green-500 text-white hover:bg-green-500/80",
                 )}
               >
                 {secondaryText || primaryText || "Confirm"}

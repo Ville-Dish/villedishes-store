@@ -81,6 +81,7 @@ import {
 import { useInvoicesParams } from "@/features/invoices/hooks/use-invoices-params";
 import { useDebounce } from "@/hooks/use-debounce";
 import { PRODUCT_INFO } from "@/config/constants";
+import { useConfirm } from "@/hooks/use-confirm";
 
 const InvoiceDetails = lazy(() =>
   import("@/features/invoices/components/invoices/invoice-details").then(
@@ -260,7 +261,6 @@ export const InvoiceList = () => {
         await queryClient.invalidateQueries(
           trpc.invoices.getPaginatedInvoices.queryOptions({}),
         );
-        console.log("Updated Invoice", { data });
       },
       onError: (error) => {
         toast.error(error.message ?? "Failed to update invoice");
@@ -269,9 +269,14 @@ export const InvoiceList = () => {
   );
 
   const handleUpdateInvoice = async (updatedInvoice: Invoice) => {
-    console.log("Updating Invoice", { updatedInvoice });
     updateInvoiceMutation.mutate(updatedInvoice);
   };
+
+  const [DeleteInvoiceDialog, confirmDeleteInvoice] = useConfirm({
+    title: "Delete Invoice",
+    message: "Are you sure you want to delete this invoice?",
+    update: false,
+  });
 
   // use delete trpc code
   const deleteInvoiceMutation = useMutation(
@@ -289,6 +294,9 @@ export const InvoiceList = () => {
   );
 
   const handleDeleteInvoice = async (id: string) => {
+    const result = await confirmDeleteInvoice();
+
+    if (result.action !== "confirm") return;
     deleteInvoiceMutation.mutate({ id });
   };
 
@@ -367,526 +375,546 @@ export const InvoiceList = () => {
     return invoices.findIndex((inv) => inv.id === invoice.id);
   };
 
+  const [UpdateStatusDialog, confirmUpdateStatus] = useConfirm({
+    title: "Update Invoice Status",
+    message: "Are you sure you want to update this invoice's status?",
+    update: true,
+  });
+
   // ─── Pagination display helpers ───────────────────────────────────────────────
   // "Showing X to Y of Z entries"
   const firstEntry = totalCount === 0 ? 0 : (page - 1) * pageSize + 1;
   const lastEntry = Math.min(page * pageSize, totalCount);
 
   return (
-    <div className="flex-1 space-y-4 p-4 md:p-8 max-w-7xl mx-auto">
-      <div className="flex items-center justify-between">
-        <h2 className="text-3xl font-bold tracking-tight mr-4">Invoices</h2>
+    <>
+      <DeleteInvoiceDialog />
+      <UpdateStatusDialog />
+      <div className="flex-1 space-y-4 p-4 md:p-8 max-w-7xl mx-auto">
+        <div className="flex items-center justify-between">
+          <h2 className="text-3xl font-bold tracking-tight mr-4">Invoices</h2>
 
-        <div className="space-x-1">
-          {isFiltered && (
-            <Button variant="outline" onClick={clearFilters}>
-              <XCircle className="size-4" />
-              Clear Filters
-            </Button>
-          )}
-
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild>
-              <Button
-                onClick={() => setDialogOpen(true)}
-                variant="create"
-                className="cursor-pointer"
-              >
-                <Plus className="size-4" /> Create New Invoice
+          <div className="space-x-1">
+            {isFiltered && (
+              <Button variant="outline" onClick={clearFilters}>
+                <XCircle className="size-4" />
+                Clear Filters
               </Button>
-            </DialogTrigger>
-            <DialogContent className="h-[80vh]">
-              <DialogHeader>
-                <DialogTitle>Create New Invoice</DialogTitle>
-              </DialogHeader>
-              <InvoiceForm
-                setDialog={setDialogOpen}
-                setSelectedInvoice={setSelectedInvoice}
-              />
-            </DialogContent>
-          </Dialog>
+            )}
+
+            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+              <DialogTrigger asChild>
+                <Button
+                  onClick={() => setDialogOpen(true)}
+                  variant="create"
+                  className="cursor-pointer"
+                >
+                  <Plus className="size-4" /> Create New Invoice
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="h-[80vh]">
+                <DialogHeader>
+                  <DialogTitle>Create New Invoice</DialogTitle>
+                </DialogHeader>
+                <InvoiceForm
+                  setDialog={setDialogOpen}
+                  setSelectedInvoice={setSelectedInvoice}
+                />
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
-      </div>
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Button
-          onClick={() => setShowCategoryDialog(true)}
-          variant="outline"
-          className="cursor-pointer"
-        >
-          Category Names
-        </Button>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <Button
+            onClick={() => setShowCategoryDialog(true)}
+            variant="outline"
+            className="cursor-pointer"
+          >
+            Category Names
+          </Button>
 
-        <Button
-          onClick={() => setShowColumnDialog(true)}
-          variant="outline"
-          className="cursor-pointer"
-        >
-          Column Settings
-        </Button>
+          <Button
+            onClick={() => setShowColumnDialog(true)}
+            variant="outline"
+            className="cursor-pointer"
+          >
+            Column Settings
+          </Button>
 
-        <Input
-          placeholder="Search invoices..."
-          className="col-span-2"
-          value={search}
-          onChange={(e) => handleSearchChange(e.target.value)}
-        />
-      </div>
+          <Input
+            placeholder="Search invoices..."
+            className="col-span-2"
+            value={search}
+            onChange={(e) => handleSearchChange(e.target.value)}
+          />
+        </div>
 
-      {/* Filters */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {/* Status */}
-        <Select
-          value={status}
-          onValueChange={(value) =>
-            handleStatusFilterChange(value as typeof params.status)
-          }
-        >
-          <SelectTrigger className="col-span-1">
-            <SelectValue placeholder="Filter by Status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="ALL">All Statuses</SelectItem>
-            <SelectItem value="PENDING">Pending</SelectItem>
-            <SelectItem value="PAID">Paid</SelectItem>
-            <SelectItem value="UNPAID">Unpaid</SelectItem>
-            <SelectItem value="OVERDUE">Due</SelectItem>
-          </SelectContent>
-        </Select>
-
-        {/* Date range */}
-        <div className="col-span-1">
-          <DatePickerWithRange
-            date={
-              normalizedStartDate || normalizedEndDate
-                ? {
-                    from: normalizedStartDate,
-                    to: normalizedEndDate,
-                  }
-                : undefined
+        {/* Filters */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {/* Status */}
+          <Select
+            value={status}
+            onValueChange={(value) =>
+              handleStatusFilterChange(value as typeof params.status)
             }
-            setDate={(newDateRange) => {
-              handleDateChange(newDateRange?.from, newDateRange?.to);
-            }}
-          />
+          >
+            <SelectTrigger className="col-span-1">
+              <SelectValue placeholder="Filter by Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">All Statuses</SelectItem>
+              <SelectItem value="PENDING">Pending</SelectItem>
+              <SelectItem value="PAID">Paid</SelectItem>
+              <SelectItem value="UNPAID">Unpaid</SelectItem>
+              <SelectItem value="OVERDUE">Due</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {/* Date range */}
+          <div className="col-span-1">
+            <DatePickerWithRange
+              date={
+                normalizedStartDate || normalizedEndDate
+                  ? {
+                      from: normalizedStartDate,
+                      to: normalizedEndDate,
+                    }
+                  : undefined
+              }
+              setDate={(newDateRange) => {
+                handleDateChange(newDateRange?.from, newDateRange?.to);
+              }}
+            />
+          </div>
+
+          {/* price range */}
+          <div className="col-span-2 flex items-center space-x-2 md:justify-self-end">
+            <span>Price Range:</span>
+            <Slider
+              min={0}
+              max={PRODUCT_INFO.maxPrice}
+              step={10}
+              value={[minPrice, maxPrice]}
+              onValueChange={handlePriceSliderChange}
+              className="w-50"
+            />
+            <span>
+              ${minPrice} - ${maxPrice}
+            </span>
+          </div>
+
+          <div />
         </div>
 
-        {/* price range */}
-        <div className="col-span-2 flex items-center space-x-2 md:justify-self-end">
-          <span>Price Range:</span>
-          <Slider
-            min={0}
-            max={PRODUCT_INFO.maxPrice}
-            step={10}
-            value={[minPrice, maxPrice]}
-            onValueChange={handlePriceSliderChange}
-            className="w-50"
-          />
-          <span>
-            ${minPrice} - ${maxPrice}
-          </span>
-        </div>
-
-        <div />
-      </div>
-
-      <div className="border rounded-lg overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>S/N</TableHead>
-              <TableHead
-                className="cursor-pointer hover:bg-muted/50"
-                onClick={() => handleSort("invoiceNumber")}
-              >
-                <div className="flex items-center">
-                  Invoice Number
-                  {sortField === "invoiceNumber" && (
-                    <span className="ml-2">
-                      {sortDirection === "asc" ? "↑" : "↓"}
-                    </span>
-                  )}
-                </div>
-              </TableHead>
-              <TableHead
-                className="cursor-pointer hover:bg-muted/50"
-                onClick={() => handleSort("customerName")}
-              >
-                <div className="flex items-center">
-                  Customer
-                  {sortField === "customerName" && (
-                    <span className="ml-2">
-                      {sortDirection === "asc" ? "↑" : "↓"}
-                    </span>
-                  )}
-                </div>
-              </TableHead>
-              <TableHead
-                className="cursor-pointer hover:bg-muted/50"
-                onClick={() => handleSort("amount")}
-              >
-                <div className="flex items-center">
-                  Amount
-                  {sortField === "amount" && (
-                    <span className="ml-2">
-                      {sortDirection === "asc" ? "↑" : "↓"}
-                    </span>
-                  )}
-                </div>
-              </TableHead>
-              <TableHead
-                className="cursor-pointer hover:bg-muted/50"
-                onClick={() => handleSort("dueDate")}
-              >
-                <div className="flex items-center">
-                  Due Date
-                  {sortField === "dueDate" && (
-                    <span className="ml-2">
-                      {sortDirection === "asc" ? "↑" : "↓"}
-                    </span>
-                  )}
-                </div>
-              </TableHead>
-              <TableHead
-                className="cursor-pointer hover:bg-muted/50"
-                onClick={() => handleSort("status")}
-              >
-                <div className="flex items-center">
-                  Status
-                  {sortField === "status" && (
-                    <span className="ml-2">
-                      {sortDirection === "asc" ? "↑" : "↓"}
-                    </span>
-                  )}
-                </div>
-              </TableHead>
-              <TableHead>Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {loadingInvoices ? (
+        <div className="border rounded-lg overflow-hidden">
+          <Table>
+            <TableHeader>
               <TableRow>
-                <TableCell colSpan={7} className="h-24 text-center">
-                  <div className="flex justify-center items-center">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                <TableHead>S/N</TableHead>
+                <TableHead
+                  className="cursor-pointer hover:bg-muted/50"
+                  onClick={() => handleSort("invoiceNumber")}
+                >
+                  <div className="flex items-center">
+                    Invoice Number
+                    {sortField === "invoiceNumber" && (
+                      <span className="ml-2">
+                        {sortDirection === "asc" ? "↑" : "↓"}
+                      </span>
+                    )}
                   </div>
-                </TableCell>
+                </TableHead>
+                <TableHead
+                  className="cursor-pointer hover:bg-muted/50"
+                  onClick={() => handleSort("customerName")}
+                >
+                  <div className="flex items-center">
+                    Customer
+                    {sortField === "customerName" && (
+                      <span className="ml-2">
+                        {sortDirection === "asc" ? "↑" : "↓"}
+                      </span>
+                    )}
+                  </div>
+                </TableHead>
+                <TableHead
+                  className="cursor-pointer hover:bg-muted/50"
+                  onClick={() => handleSort("amount")}
+                >
+                  <div className="flex items-center">
+                    Amount
+                    {sortField === "amount" && (
+                      <span className="ml-2">
+                        {sortDirection === "asc" ? "↑" : "↓"}
+                      </span>
+                    )}
+                  </div>
+                </TableHead>
+                <TableHead
+                  className="cursor-pointer hover:bg-muted/50"
+                  onClick={() => handleSort("dueDate")}
+                >
+                  <div className="flex items-center">
+                    Due Date
+                    {sortField === "dueDate" && (
+                      <span className="ml-2">
+                        {sortDirection === "asc" ? "↑" : "↓"}
+                      </span>
+                    )}
+                  </div>
+                </TableHead>
+                <TableHead
+                  className="cursor-pointer hover:bg-muted/50"
+                  onClick={() => handleSort("status")}
+                >
+                  <div className="flex items-center">
+                    Status
+                    {sortField === "status" && (
+                      <span className="ml-2">
+                        {sortDirection === "asc" ? "↑" : "↓"}
+                      </span>
+                    )}
+                  </div>
+                </TableHead>
+                <TableHead>Actions</TableHead>
               </TableRow>
-            ) : invoices.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={7} className="h-24 text-center">
-                  <p className="text-lg text-muted-foreground">
-                    {search
-                      ? "No matching invoices found"
-                      : "There are no invoices yet"}
-                  </p>
-                </TableCell>
-              </TableRow>
-            ) : (
-              invoices.map((invoice) => (
-                <TableRow key={invoice.id}>
-                  <TableCell>{getInvoiceIndex(invoice) + 1}</TableCell>
-                  <TableCell>{invoice.invoiceNumber}</TableCell>
-                  <TableCell className="truncate overflow-hidden">
-                    {invoice.customerName}
-                  </TableCell>
-                  <TableCell>${invoice.amount.toFixed(2)}</TableCell>
-                  <TableCell>{invoice.dueDate}</TableCell>
-                  <TableCell>
-                    <span
-                      className={cn(
-                        "font-medium border rounded-md px-3 py-1 text-white text-center inline-block cursor-default transition-colors",
-                        {
-                          "bg-[#d57771] border-[#d57771] hover:bg-[#d3736d]":
-                            invoice.status === "UNPAID",
-                          "bg-green-500 border-green-500 hover:bg-green-600":
-                            invoice.status === "PAID",
-                          "bg-[#da281c] border-[#da281c] hover:bg-[#b4443c]":
-                            invoice.status === "OVERDUE",
-                          "bg-[#fe9e1d] border-[#fe9e1d] hover:bg-[#c6893a]":
-                            invoice.status === "PENDING",
-                        },
-                      )}
-                    >
-                      {invoice.status}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <DropdownMenu modal={false}>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="outline"
-                          aria-label="Invoice Action"
-                          size="icon-sm"
-                          className="cursor-pointer"
-                        >
-                          <MoreVerticalIcon />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent className="w-40" align="end">
-                        <DropdownMenuLabel>Invoice Actions</DropdownMenuLabel>
-                        <DropdownMenuGroup>
-                          <DropdownMenuItem
-                            className="cursor-pointer"
-                            onSelect={() => handleViewInvoice(invoice)}
-                          >
-                            <Pencil className="size-4" color="#fe9e1d" />
-                            Edit Invoice
-                          </DropdownMenuItem>
-
-                          {/* Preview submenu */}
-                          <DropdownMenuSub>
-                            <DropdownMenuSubTrigger>
-                              <Eye className="size-4 text-blue-500" />
-                              View Invoice
-                            </DropdownMenuSubTrigger>
-                            <DropdownMenuPortal>
-                              <DropdownMenuSubContent className="w-48">
-                                <DropdownMenuItem
-                                  className="cursor-pointer"
-                                  onSelect={() =>
-                                    handlePreviewInvoice(invoice, "detailed")
-                                  }
-                                >
-                                  Detailed View
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  className="cursor-pointer"
-                                  onSelect={() =>
-                                    handlePreviewInvoice(
-                                      invoice,
-                                      "category-summary",
-                                    )
-                                  }
-                                >
-                                  Category Summary
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  className="cursor-pointer"
-                                  onSelect={() =>
-                                    handlePreviewInvoice(
-                                      invoice,
-                                      "category-grouped",
-                                    )
-                                  }
-                                >
-                                  Grouped by Category
-                                </DropdownMenuItem>
-                              </DropdownMenuSubContent>
-                            </DropdownMenuPortal>
-                          </DropdownMenuSub>
-
-                          {/* Download submenu */}
-                          <DropdownMenuSub>
-                            <DropdownMenuSubTrigger>
-                              <Download className="size-4" color="#c7c940" />
-                              Download
-                            </DropdownMenuSubTrigger>
-                            <DropdownMenuPortal>
-                              <DropdownMenuSubContent className="w-48">
-                                <DropdownMenuItem
-                                  className="cursor-pointer"
-                                  onSelect={() =>
-                                    handleDownloadInvoice(invoice, "detailed")
-                                  }
-                                >
-                                  Detailed View
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  className="cursor-pointer"
-                                  onSelect={() =>
-                                    handleDownloadInvoice(
-                                      invoice,
-                                      "category-summary",
-                                    )
-                                  }
-                                >
-                                  Category Summary
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  className="cursor-pointer"
-                                  onSelect={() =>
-                                    handleDownloadInvoice(
-                                      invoice,
-                                      "category-grouped",
-                                    )
-                                  }
-                                >
-                                  Grouped by Category
-                                </DropdownMenuItem>
-                              </DropdownMenuSubContent>
-                            </DropdownMenuPortal>
-                          </DropdownMenuSub>
-
-                          <DropdownMenuSeparator />
-
-                          <DropdownMenuItem
-                            className="cursor-pointer"
-                            onSelect={() =>
-                              handleUpdateInvoice({
-                                ...invoice,
-                                status:
-                                  invoice.status === "PAID" ? "UNPAID" : "PAID",
-                                amountPaid:
-                                  invoice.status === "PAID"
-                                    ? invoice.amount
-                                    : invoice.amountPaid,
-                                amountDue:
-                                  invoice.status === "PAID"
-                                    ? 0
-                                    : invoice.amountDue,
-                              })
-                            }
-                          >
-                            {invoice.status === "PAID" ? (
-                              <CircleX className="size-4" color="#d57771" />
-                            ) : (
-                              <CheckCheck className="size-4" color="#107a47" />
-                            )}
-                            {invoice.status === "PAID"
-                              ? "Mark as Unpaid"
-                              : "Mark as Paid"}
-                          </DropdownMenuItem>
-
-                          <DropdownMenuItem
-                            className="cursor-pointer text-destructive focus:bg-destructive/20 focus:text-destructive"
-                            onSelect={() => handleDeleteInvoice(invoice.id)}
-                          >
-                            <TrashIcon className="size-4" color="#ff0000" />
-                            Delete Invoice
-                          </DropdownMenuItem>
-                        </DropdownMenuGroup>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+            </TableHeader>
+            <TableBody>
+              {loadingInvoices ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="h-24 text-center">
+                    <div className="flex justify-center items-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                    </div>
                   </TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+              ) : invoices.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="h-24 text-center">
+                    <p className="text-lg text-muted-foreground">
+                      {search
+                        ? "No matching invoices found"
+                        : "There are no invoices yet"}
+                    </p>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                invoices.map((invoice) => (
+                  <TableRow key={invoice.id}>
+                    <TableCell>{getInvoiceIndex(invoice) + 1}</TableCell>
+                    <TableCell>{invoice.invoiceNumber}</TableCell>
+                    <TableCell className="truncate overflow-hidden">
+                      {invoice.customerName}
+                    </TableCell>
+                    <TableCell>${invoice.amount.toFixed(2)}</TableCell>
+                    <TableCell>{invoice.dueDate}</TableCell>
+                    <TableCell>
+                      <span
+                        className={cn(
+                          "font-medium border rounded-md px-3 py-1 text-white text-center inline-block cursor-default transition-colors",
+                          {
+                            "bg-[#d57771] border-[#d57771] hover:bg-[#d3736d]":
+                              invoice.status === "UNPAID",
+                            "bg-green-500 border-green-500 hover:bg-green-600":
+                              invoice.status === "PAID",
+                            "bg-[#da281c] border-[#da281c] hover:bg-[#b4443c]":
+                              invoice.status === "OVERDUE",
+                            "bg-[#fe9e1d] border-[#fe9e1d] hover:bg-[#c6893a]":
+                              invoice.status === "PENDING",
+                          },
+                        )}
+                      >
+                        {invoice.status}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <DropdownMenu modal={false}>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="outline"
+                            aria-label="Invoice Action"
+                            size="icon-sm"
+                            className="cursor-pointer"
+                          >
+                            <MoreVerticalIcon />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent className="w-40" align="end">
+                          <DropdownMenuLabel>Invoice Actions</DropdownMenuLabel>
+                          <DropdownMenuGroup>
+                            <DropdownMenuItem
+                              className="cursor-pointer"
+                              onSelect={() => handleViewInvoice(invoice)}
+                            >
+                              <Pencil className="size-4" color="#fe9e1d" />
+                              Edit Invoice
+                            </DropdownMenuItem>
 
-        {/* Add pagination controls */}
-        {!loadingInvoices && (
-          <div className="flex flex-col md:flex-row gap-2 items-center justify-between px-4 py-4 border-t">
-            <div className="text-sm text-muted-foreground">
-              Showing {firstEntry} to {lastEntry} of {totalCount} entries
-            </div>
-            <div className="flex space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handlePageChange(1)}
-                disabled={page === 1}
-              >
-                <ChevronsLeft className="size-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handlePageChange(page - 1)}
-                disabled={!hasPreviousPage}
-              >
-                Previous
-              </Button>
-              <div className="flex items-center space-x-1">
-                <span className="text-sm font-medium">
-                  Page {page} of {totalPages}
-                </span>
+                            {/* Preview submenu */}
+                            <DropdownMenuSub>
+                              <DropdownMenuSubTrigger>
+                                <Eye className="size-4 text-blue-500" />
+                                View Invoice
+                              </DropdownMenuSubTrigger>
+                              <DropdownMenuPortal>
+                                <DropdownMenuSubContent className="w-48">
+                                  <DropdownMenuItem
+                                    className="cursor-pointer"
+                                    onSelect={() =>
+                                      handlePreviewInvoice(invoice, "detailed")
+                                    }
+                                  >
+                                    Detailed View
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    className="cursor-pointer"
+                                    onSelect={() =>
+                                      handlePreviewInvoice(
+                                        invoice,
+                                        "category-summary",
+                                      )
+                                    }
+                                  >
+                                    Category Summary
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    className="cursor-pointer"
+                                    onSelect={() =>
+                                      handlePreviewInvoice(
+                                        invoice,
+                                        "category-grouped",
+                                      )
+                                    }
+                                  >
+                                    Grouped by Category
+                                  </DropdownMenuItem>
+                                </DropdownMenuSubContent>
+                              </DropdownMenuPortal>
+                            </DropdownMenuSub>
+
+                            {/* Download submenu */}
+                            <DropdownMenuSub>
+                              <DropdownMenuSubTrigger>
+                                <Download className="size-4" color="#c7c940" />
+                                Download
+                              </DropdownMenuSubTrigger>
+                              <DropdownMenuPortal>
+                                <DropdownMenuSubContent className="w-48">
+                                  <DropdownMenuItem
+                                    className="cursor-pointer"
+                                    onSelect={() =>
+                                      handleDownloadInvoice(invoice, "detailed")
+                                    }
+                                  >
+                                    Detailed View
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    className="cursor-pointer"
+                                    onSelect={() =>
+                                      handleDownloadInvoice(
+                                        invoice,
+                                        "category-summary",
+                                      )
+                                    }
+                                  >
+                                    Category Summary
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    className="cursor-pointer"
+                                    onSelect={() =>
+                                      handleDownloadInvoice(
+                                        invoice,
+                                        "category-grouped",
+                                      )
+                                    }
+                                  >
+                                    Grouped by Category
+                                  </DropdownMenuItem>
+                                </DropdownMenuSubContent>
+                              </DropdownMenuPortal>
+                            </DropdownMenuSub>
+
+                            <DropdownMenuSeparator />
+
+                            <DropdownMenuItem
+                              className="cursor-pointer"
+                              onSelect={async () => {
+                                const result = await confirmUpdateStatus();
+
+                                if (result.action !== "confirm") return;
+                                handleUpdateInvoice({
+                                  ...invoice,
+                                  status:
+                                    invoice.status === "PAID"
+                                      ? "UNPAID"
+                                      : "PAID",
+                                  amountPaid:
+                                    invoice.status === "PAID"
+                                      ? invoice.amount
+                                      : invoice.amountPaid,
+                                  amountDue:
+                                    invoice.status === "PAID"
+                                      ? 0
+                                      : invoice.amountDue,
+                                });
+                              }}
+                            >
+                              {invoice.status === "PAID" ? (
+                                <CircleX className="size-4" color="#d57771" />
+                              ) : (
+                                <CheckCheck
+                                  className="size-4"
+                                  color="#107a47"
+                                />
+                              )}
+                              {invoice.status === "PAID"
+                                ? "Mark as Unpaid"
+                                : "Mark as Paid"}
+                            </DropdownMenuItem>
+
+                            <DropdownMenuItem
+                              className="cursor-pointer text-destructive focus:bg-destructive/20 focus:text-destructive"
+                              onSelect={() => handleDeleteInvoice(invoice.id)}
+                            >
+                              <TrashIcon className="size-4" color="#ff0000" />
+                              Delete Invoice
+                            </DropdownMenuItem>
+                          </DropdownMenuGroup>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+
+          {/* Add pagination controls */}
+          {!loadingInvoices && (
+            <div className="flex flex-col md:flex-row gap-2 items-center justify-between px-4 py-4 border-t">
+              <div className="text-sm text-muted-foreground">
+                Showing {firstEntry} to {lastEntry} of {totalCount} entries
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handlePageChange(page + 1)}
-                disabled={!hasNextPage}
-              >
-                Next
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handlePageChange(totalPages)}
-                disabled={page >= totalPages}
-              >
-                <ChevronsRight className="size-4" />
-              </Button>
+              <div className="flex space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(1)}
+                  disabled={page === 1}
+                >
+                  <ChevronsLeft className="size-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(page - 1)}
+                  disabled={!hasPreviousPage}
+                >
+                  Previous
+                </Button>
+                <div className="flex items-center space-x-1">
+                  <span className="text-sm font-medium">
+                    Page {page} of {totalPages}
+                  </span>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(page + 1)}
+                  disabled={!hasNextPage}
+                >
+                  Next
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(totalPages)}
+                  disabled={page >= totalPages}
+                >
+                  <ChevronsRight className="size-4" />
+                </Button>
+              </div>
             </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
 
-      {selectedInvoice && (
-        <Dialog
-          open={!!selectedInvoice}
-          onOpenChange={() => setSelectedInvoice(null)}
-        >
-          <DialogContent className="max-w-4xl w-full max-h-[90vh]">
-            <DialogHeader>
-              <DialogTitle>Invoice Details</DialogTitle>
-              <DialogDescription className="sr-only">
-                Invoice details {selectedInvoice.invoiceNumber}
+        {selectedInvoice && (
+          <Dialog
+            open={!!selectedInvoice}
+            onOpenChange={() => setSelectedInvoice(null)}
+          >
+            <DialogContent className="max-w-4xl w-full max-h-[90vh]">
+              <DialogHeader>
+                <DialogTitle>Invoice Details</DialogTitle>
+                <DialogDescription className="sr-only">
+                  Invoice details {selectedInvoice.invoiceNumber}
+                </DialogDescription>
+              </DialogHeader>
+              <ScrollArea className="max-h-[calc(90vh-100px)] pr-4">
+                <InvoiceDetails
+                  invoice={selectedInvoice}
+                  availableProducts={availableProducts}
+                  onUpdate={handleUpdateInvoice}
+                  categoryMappings={categoryMappings}
+                  columnMappings={columnMappings}
+                  onClose={() => setSelectedInvoice(null)}
+                />
+              </ScrollArea>
+            </DialogContent>
+          </Dialog>
+        )}
+
+        {showCategoryDialog && (
+          <CategoryMappingDialog
+            open={showCategoryDialog}
+            onOpenChange={setShowCategoryDialog}
+            categoryMappings={categoryMappings}
+            onSave={setCategoryMappings}
+          />
+        )}
+
+        {showColumnDialog && (
+          <ColumnMappingDialog
+            open={showColumnDialog}
+            onOpenChange={setShowColumnDialog}
+            columnMappings={columnMappings}
+            onSave={setColumnMappings}
+            availableProducts={availableProducts}
+          />
+        )}
+
+        <Dialog open={pdfPreviewOpen} onOpenChange={setPdfPreviewOpen}>
+          <DialogContent className="max-w-5xl w-full h-[90vh] p-0 flex flex-col">
+            <DialogHeader className="p-4 border-b">
+              <DialogTitle>PDF Preview</DialogTitle>
+              <DialogDescription>
+                Preview your Invoice before downloading or sending it to
+                customer
               </DialogDescription>
             </DialogHeader>
-            <ScrollArea className="max-h-[calc(90vh-100px)] pr-4">
-              <InvoiceDetails
-                invoice={selectedInvoice}
-                availableProducts={availableProducts}
-                onUpdate={handleUpdateInvoice}
-                categoryMappings={categoryMappings}
-                columnMappings={columnMappings}
-              />
-            </ScrollArea>
+
+            <div className="flex-1 overflow-hidden">
+              {pdfPreviewUrl ? (
+                <iframe
+                  title="PDF Preview"
+                  src={pdfPreviewUrl}
+                  className="w-full h-full"
+                />
+              ) : (
+                <p>Loading PDF...</p>
+              )}
+            </div>
+            <DialogFooter>
+              <Button
+                className="mt-4 cursor-pointer"
+                onClick={() => saveAs(pdfPreviewUrl!, "invoice.pdf")}
+              >
+                Download Invoice
+              </Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
-      )}
-
-      {showCategoryDialog && (
-        <CategoryMappingDialog
-          open={showCategoryDialog}
-          onOpenChange={setShowCategoryDialog}
-          categoryMappings={categoryMappings}
-          onSave={setCategoryMappings}
-        />
-      )}
-
-      {showColumnDialog && (
-        <ColumnMappingDialog
-          open={showColumnDialog}
-          onOpenChange={setShowColumnDialog}
-          columnMappings={columnMappings}
-          onSave={setColumnMappings}
-          availableProducts={availableProducts}
-        />
-      )}
-
-      <Dialog open={pdfPreviewOpen} onOpenChange={setPdfPreviewOpen}>
-        <DialogContent className="max-w-5xl w-full h-[90vh] p-0 flex flex-col">
-          <DialogHeader className="p-4 border-b">
-            <DialogTitle>PDF Preview</DialogTitle>
-            <DialogDescription>
-              Preview your Invoice before downloading or sending it to customer
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="flex-1 overflow-hidden">
-            {pdfPreviewUrl ? (
-              <iframe
-                title="PDF Preview"
-                src={pdfPreviewUrl}
-                className="w-full h-full"
-              />
-            ) : (
-              <p>Loading PDF...</p>
-            )}
-          </div>
-          <DialogFooter>
-            <Button
-              className="mt-4 cursor-pointer"
-              onClick={() => saveAs(pdfPreviewUrl!, "invoice.pdf")}
-            >
-              Download Invoice
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
+      </div>
+    </>
   );
 };

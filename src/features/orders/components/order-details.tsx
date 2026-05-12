@@ -12,6 +12,7 @@ import {
 import { Form, FormField } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
+import { ADMIN_EMAIL } from "@/config/constants";
 import {
   cancelOrderProcessSchema,
   CancelOrderProcessValue,
@@ -46,7 +47,7 @@ export const OrderDetailsView = ({ data }: OrderDetailsProps) => {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
 
-  const [isCancelled, setIsCancelled] = useState(false);
+  const [isCancelled, setIsCancelled] = useState<boolean | null>(false);
 
   const form = useForm<CancelOrderProcessValue>({
     resolver: zodResolver(cancelOrderProcessSchema),
@@ -103,6 +104,68 @@ export const OrderDetailsView = ({ data }: OrderDetailsProps) => {
     }),
   );
 
+  const sendConfirmationEmail = useMutation(
+    trpc.mail.sendEmail.mutationOptions({
+      onSuccess: () => {
+        toast.success("Order Confirmed", {
+          description:
+            "An order confirmation email has been sent to the customer.",
+        });
+      },
+      onError: (error) => {
+        console.error("Error sending verification email:", error);
+        toast.error("Failed to send verification email", {
+          description:
+            error instanceof Error
+              ? error.message
+              : "An unknown error occurred",
+        });
+      },
+    }),
+  );
+
+  const sendVerificationEmail = async (orderDetails: OrderInfo) => {
+    const emailData = {
+      customerName: `${orderDetails.shippingInfo.firstName} ${orderDetails.shippingInfo.lastName}`,
+      orderNumber: orderDetails.orderNumber!,
+      orderId: orderDetails.orderId!,
+      orderDate: orderDetails.orderDate?.toISOString().split("T")[0]!,
+      subtotal: orderDetails.subtotal,
+      tax: orderDetails.tax,
+      shippingFee: orderDetails.shippingFee,
+      total: orderDetails.total,
+      items: orderDetails.products,
+      estimatedDelivery: new Date(orderDetails.scheduledAt ?? new Date())
+        .toISOString()
+        .split("T")[0]!,
+    };
+
+    sendConfirmationEmail.mutate({
+      type: "order_confirmation",
+      to: orderDetails.shippingInfo.email,
+      ...emailData,
+    });
+  };
+
+  const sendCancellationEmail = async (orderData: OrderInfo) => {
+    const emailData = {
+      customerName: `${orderData.shippingInfo.firstName} ${orderData.shippingInfo.lastName}`,
+      customerInteracEmail: orderData.shippingInfo.email,
+      orderNumber: orderData.orderNumber || "",
+      orderDate: orderData.orderDate
+        ? new Date(orderData.orderDate.toISOString()).toDateString()
+        : new Date().toDateString(),
+      reason: "No reason provided",
+      total: orderData.total,
+    };
+
+    sendConfirmationEmail.mutate({
+      type: "order_cancellation_request",
+      to: ADMIN_EMAIL,
+      ...emailData,
+    });
+  };
+
   const cancelOrderMutation = useMutation(
     trpc.orders.processOrderCancel.mutationOptions({
       onSuccess: () => {
@@ -129,11 +192,8 @@ export const OrderDetailsView = ({ data }: OrderDetailsProps) => {
   );
 
   const onSubmit = async (values: CancelOrderProcessValue) => {
-    console.log("Submitting:", values);
-
-    // TODO: call mutation here
     await cancelOrderMutation.mutateAsync({
-      orderId: values.orderId,
+      orderId: data.orderId,
       refundReferenceNumber: values.refundReferenceNumber,
     });
   };
@@ -420,7 +480,7 @@ export const OrderDetailsView = ({ data }: OrderDetailsProps) => {
                   ) : (
                     <Button
                       variant="destructive"
-                      onClick={() => setIsCancelled(!isCancelled)}
+                      onClick={() => setIsCancelled(null)}
                       className="w-full sm:w-auto"
                     >
                       Process Cancellation
@@ -438,7 +498,7 @@ export const OrderDetailsView = ({ data }: OrderDetailsProps) => {
                 ) : (
                   <Button
                     variant="destructive"
-                    onClick={() => setIsCancelled(!isCancelled)}
+                    onClick={() => setIsCancelled(null)}
                     className="w-full sm:w-auto"
                   >
                     Process Cancellation
@@ -448,6 +508,18 @@ export const OrderDetailsView = ({ data }: OrderDetailsProps) => {
             </CardContent>
           )}
         </Card>
+      )}
+
+      {/* Resend Email Button */}
+      {data.status === "PENDING" && (
+        <div className="mt-6 flex justify-end">
+          <Button
+            className="cursor-pointer"
+            onClick={() => sendVerificationEmail(data)}
+          >
+            Resend Verification Email
+          </Button>
+        </div>
       )}
     </div>
   );

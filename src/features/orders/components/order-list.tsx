@@ -41,6 +41,7 @@ import {
   useSuspenseQuery,
 } from "@tanstack/react-query";
 import { useOrdersParams } from "../hooks/use-orders-params";
+import { useConfirm } from "@/hooks/use-confirm";
 
 type SortField =
   | "orderNumber"
@@ -112,6 +113,12 @@ export const OrderList = () => {
     }),
   );
 
+  const [UpdateStatusDialog, confirmUpdateStatus] = useConfirm({
+    title: "Update Order Status",
+    message: "Are you sure you want to update this order's status?",
+    update: true,
+  });
+
   // trpc
   const updateStatusMutation = useMutation(
     trpc.orders.changeOrderStatus.mutationOptions({
@@ -125,6 +132,7 @@ export const OrderList = () => {
             to: data.shippingInfo.email,
             customerName: `${data.shippingInfo.firstName} ${data.shippingInfo.lastName}`,
             orderNumber: data.orderNumber ?? "",
+            orderId: data.orderId ?? "",
             subtotal: data.subtotal,
             tax: data.tax,
             shippingFee: data.shippingFee,
@@ -138,7 +146,6 @@ export const OrderList = () => {
       },
       onError: (error) => {
         toast.error(error.message ?? "Failed to update status.");
-        console.log(error);
       },
     }),
   );
@@ -147,6 +154,8 @@ export const OrderList = () => {
     orderId: string,
     newStatus: OrderStatus,
   ) => {
+    const result = await confirmUpdateStatus();
+    if (result.action !== "confirm") return;
     updateStatusMutation.mutate({
       orderId,
       newStatus,
@@ -234,283 +243,285 @@ export const OrderList = () => {
   const DISALLOWED_LIST_STATUSES: OrderStatus[] = ["CANCELLATION_REQUESTED"];
 
   return (
-    <div className="flex-1 space-y-4 p-8 pt-6">
-      <div className="flex items-center justify-between space-y-2">
-        <h2 className="text-3xl font-bold tracking-tight">Orders</h2>
-        {/* search input */}
-        <div className="flex items-center space-x-2">
-          {isFiltered && (
-            <Button variant="outline" onClick={clearFilters}>
-              <XCircle className="size-4" />
-              Clear Filters
-            </Button>
-          )}
+    <>
+      <UpdateStatusDialog />
+      <div className="flex-1 space-y-4 p-8 pt-6">
+        <div className="flex items-center justify-between space-y-2">
+          <h2 className="text-3xl font-bold tracking-tight">Orders</h2>
+          {/* search input */}
+          <div className="flex items-center space-x-2">
+            {isFiltered && (
+              <Button variant="outline" onClick={clearFilters}>
+                <XCircle className="size-4" />
+                Clear Filters
+              </Button>
+            )}
 
-          <Input
-            placeholder="Search orders..."
-            className="max-w-sm"
-            value={search}
-            onChange={(e) => handleSearchChange(e.target.value)}
+            <Input
+              placeholder="Search orders..."
+              className="max-w-sm"
+              value={search}
+              onChange={(e) => handleSearchChange(e.target.value)}
+            />
+          </div>
+        </div>
+
+        {/* Status & Date */}
+        <div className="flex items-center justify-between space-x-4 mb-4">
+          {/* Status */}
+          <Select
+            value={status}
+            onValueChange={(value) =>
+              handleStatusFilterChange(value as typeof params.status)
+            }
+          >
+            <SelectTrigger className="flex-1">
+              <SelectValue placeholder="Filter by Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">All Statuses</SelectItem>
+              {ORDER_STATUSES.map((status) => (
+                <SelectItem key={status} value={status}>
+                  {status}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {/* Date Filter */}
+          <DatePickerWithRange
+            className="flex-1"
+            date={
+              normalizedStartDate || normalizedEndDate
+                ? {
+                    from: normalizedStartDate,
+                    to: normalizedEndDate,
+                  }
+                : undefined
+            }
+            setDate={(newDateRange) => {
+              handleDateChange(newDateRange?.from, newDateRange?.to);
+            }}
           />
         </div>
-      </div>
 
-      {/* Status & Date */}
-      <div className="flex items-center justify-between space-x-4 mb-4">
-        {/* Status */}
-        <Select
-          value={status}
-          onValueChange={(value) =>
-            handleStatusFilterChange(value as typeof params.status)
-          }
-        >
-          <SelectTrigger className="flex-1">
-            <SelectValue placeholder="Filter by Status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="ALL">All Statuses</SelectItem>
-            {ORDER_STATUSES.map((status) => (
-              <SelectItem key={status} value={status}>
-                {status}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        {/* Date Filter */}
-        <DatePickerWithRange
-          className="flex-1"
-          date={
-            normalizedStartDate || normalizedEndDate
-              ? {
-                  from: normalizedStartDate,
-                  to: normalizedEndDate,
-                }
-              : undefined
-          }
-          setDate={(newDateRange) => {
-            handleDateChange(newDateRange?.from, newDateRange?.to);
-          }}
-        />
-      </div>
-
-      <Suspense fallback={<OrderListSkeleton count={10} />}>
-        <div className="border rounded-lg overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>S/N</TableHead>
-                <TableHead
-                  onClick={() => handleSort("orderNumber")}
-                  className="cursor-pointer"
-                >
-                  Order No.{" "}
-                  {sortField === "orderNumber" &&
-                    (sortDirection === "asc" ? "↑" : "↓")}
-                </TableHead>
-                <TableHead
-                  onClick={() => handleSort("orderDate")}
-                  className="cursor-pointer"
-                >
-                  Order Date{" "}
-                  {sortField === "orderDate" &&
-                    (sortDirection === "asc" ? "↑" : "↓")}
-                </TableHead>
-                <TableHead
-                  onClick={() => handleSort("customer")}
-                  className="cursor-pointer"
-                >
-                  Customer{" "}
-                  {sortField === "customer" &&
-                    (sortDirection === "asc" ? "↑" : "↓")}
-                </TableHead>
-                <TableHead
-                  onClick={() => handleSort("total")}
-                  className="cursor-pointer"
-                >
-                  Total{" "}
-                  {sortField === "total" &&
-                    (sortDirection === "asc" ? "↑" : "↓")}
-                </TableHead>
-                <TableHead
-                  onClick={() => handleSort("status")}
-                  className="cursor-pointer"
-                >
-                  Status{" "}
-                  {sortField === "status" &&
-                    (sortDirection === "asc" ? "↑" : "↓")}
-                </TableHead>
-                <TableHead>Action</TableHead>
-                <TableHead>Details</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {loadingOrders ? (
+        <Suspense fallback={<OrderListSkeleton count={10} />}>
+          <div className="border rounded-lg overflow-hidden">
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={8} className="h-24 text-center">
-                    <div className="flex justify-center items-center">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                    </div>
-                  </TableCell>
+                  <TableHead>S/N</TableHead>
+                  <TableHead
+                    onClick={() => handleSort("orderNumber")}
+                    className="cursor-pointer"
+                  >
+                    Order No.{" "}
+                    {sortField === "orderNumber" &&
+                      (sortDirection === "asc" ? "↑" : "↓")}
+                  </TableHead>
+                  <TableHead
+                    onClick={() => handleSort("orderDate")}
+                    className="cursor-pointer"
+                  >
+                    Order Date{" "}
+                    {sortField === "orderDate" &&
+                      (sortDirection === "asc" ? "↑" : "↓")}
+                  </TableHead>
+                  <TableHead
+                    onClick={() => handleSort("customer")}
+                    className="cursor-pointer"
+                  >
+                    Customer{" "}
+                    {sortField === "customer" &&
+                      (sortDirection === "asc" ? "↑" : "↓")}
+                  </TableHead>
+                  <TableHead
+                    onClick={() => handleSort("total")}
+                    className="cursor-pointer"
+                  >
+                    Total{" "}
+                    {sortField === "total" &&
+                      (sortDirection === "asc" ? "↑" : "↓")}
+                  </TableHead>
+                  <TableHead
+                    onClick={() => handleSort("status")}
+                    className="cursor-pointer"
+                  >
+                    Status{" "}
+                    {sortField === "status" &&
+                      (sortDirection === "asc" ? "↑" : "↓")}
+                  </TableHead>
+                  <TableHead>Action</TableHead>
+                  <TableHead>Details</TableHead>
                 </TableRow>
-              ) : orders.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={8} className="h-24 text-center">
-                    <p className="text-lg text-muted-foreground">
-                      {search
-                        ? "No matching orders found"
-                        : "There is no order yet"}
-                    </p>
-                  </TableCell>
-                </TableRow>
-              ) : (
-                orders.map((order, index) => (
-                  <TableRow key={order.orderId}>
-                    <TableCell>{(page - 1) * pageSize + index + 1}</TableCell>
-                    <TableCell>{order.orderNumber}</TableCell>
-                    <TableCell>{formatDate(order.orderDate!)}</TableCell>
-                    <TableCell>
-                      {order.shippingInfo.firstName}{" "}
-                      {order.shippingInfo.lastName}
-                    </TableCell>
-                    <TableCell>${order.total.toFixed(2)}</TableCell>
-                    <TableCell>
-                      <span
-                        className={cn(
-                          "font-medium border rounded-md px-3 py-1 text-white text-center inline-block cursor-default transition-colors",
-                          {
-                            "bg-[#da281c] border-[#da281c] hover:bg-[#b4443c]":
-                              order.status === "CANCELLED",
-                            "bg-rose-500 border-rose-500 hover:bg-rose-600":
-                              order.status === "CANCELLATION_REQUESTED",
-                            "bg-cyan-500 border-cyan-500 hover:bg-cyan-600":
-                              order.status === "SHIPPED",
-                            "bg-teal-500 border-teal-500 hover:bg-teal-600":
-                              order.status === "DELIVERED",
-                            "bg-green-500 border-green-500 hover:bg-green-600":
-                              order.status === "FULFILLED",
-                            "bg-[#fe9e1d] border-[#fe9e1d] hover:bg-[#c6893a]":
-                              order.status === "UNVERIFIED",
-                            "bg-orange-500 border-orange-500 hover:bg-orange-600":
-                              order.status === "PENDING",
-                          },
-                        )}
-                      >
-                        {order.status}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <Select
-                        onValueChange={(value) => {
-                          console.log(order.status);
-                          handleStatusChange(
-                            order.orderId as string,
-                            value as OrderStatus,
-                          );
-                        }}
-                        defaultValue={order.status}
-                      >
-                        <SelectTrigger className="w-45">
-                          <SelectValue placeholder="Change status" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {ORDER_STATUSES.filter(
-                            (status) =>
-                              !DISALLOWED_LIST_STATUSES.includes(status),
-                          ).map((status) => (
-                            <SelectItem
-                              key={status}
-                              value={status}
-                              disabled={status === "CANCELLED"}
-                            >
-                              {status === "CANCELLED"
-                                ? "CANCELLED (Use cancellation request)"
-                                : status}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </TableCell>
-
-                    <TableCell>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleViewDetails(order as OrderInfo)}
-                      >
-                        <Eye color="#fe9e1d" />
-                        <span className="sr-only">View Details</span>
-                      </Button>
+              </TableHeader>
+              <TableBody>
+                {loadingOrders ? (
+                  <TableRow>
+                    <TableCell colSpan={8} className="h-24 text-center">
+                      <div className="flex justify-center items-center">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                      </div>
                     </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </div>
+                ) : orders.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={8} className="h-24 text-center">
+                      <p className="text-lg text-muted-foreground">
+                        {search
+                          ? "No matching orders found"
+                          : "There is no order yet"}
+                      </p>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  orders.map((order, index) => (
+                    <TableRow key={order.orderId}>
+                      <TableCell>{(page - 1) * pageSize + index + 1}</TableCell>
+                      <TableCell>{order.orderNumber}</TableCell>
+                      <TableCell>{formatDate(order.orderDate!)}</TableCell>
+                      <TableCell>
+                        {order.shippingInfo.firstName}{" "}
+                        {order.shippingInfo.lastName}
+                      </TableCell>
+                      <TableCell>${order.total.toFixed(2)}</TableCell>
+                      <TableCell>
+                        <span
+                          className={cn(
+                            "font-medium border rounded-md px-3 py-1 text-white text-center inline-block cursor-default transition-colors",
+                            {
+                              "bg-[#da281c] border-[#da281c] hover:bg-[#b4443c]":
+                                order.status === "CANCELLED",
+                              "bg-rose-500 border-rose-500 hover:bg-rose-600":
+                                order.status === "CANCELLATION_REQUESTED",
+                              "bg-cyan-500 border-cyan-500 hover:bg-cyan-600":
+                                order.status === "SHIPPED",
+                              "bg-teal-500 border-teal-500 hover:bg-teal-600":
+                                order.status === "DELIVERED",
+                              "bg-green-500 border-green-500 hover:bg-green-600":
+                                order.status === "FULFILLED",
+                              "bg-[#fe9e1d] border-[#fe9e1d] hover:bg-[#c6893a]":
+                                order.status === "UNVERIFIED",
+                              "bg-orange-500 border-orange-500 hover:bg-orange-600":
+                                order.status === "PENDING",
+                            },
+                          )}
+                        >
+                          {order.status}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <Select
+                          onValueChange={(value) => {
+                            handleStatusChange(
+                              order.orderId as string,
+                              value as OrderStatus,
+                            );
+                          }}
+                          defaultValue={order.status}
+                        >
+                          <SelectTrigger className="w-45">
+                            <SelectValue placeholder="Change status" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {ORDER_STATUSES.filter(
+                              (status) =>
+                                !DISALLOWED_LIST_STATUSES.includes(status),
+                            ).map((status) => (
+                              <SelectItem
+                                key={status}
+                                value={status}
+                                disabled={status === "CANCELLED"}
+                              >
+                                {status === "CANCELLED"
+                                  ? "CANCELLED (Use cancellation request)"
+                                  : status}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
 
-        {/* Pagination */}
-        {!loadingOrders && (
-          <div className="flex flex-col md:flex-row gap-2 items-center justify-between px-4 py-4 border-t">
-            <div className="text-sm text-muted-foreground">
-              Showing {firstEntry} to {lastEntry} of {totalCount} entries
-            </div>
-            <div className="flex space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handlePageChange(1)}
-                disabled={page === 1}
-              >
-                <ChevronsLeft className="size-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handlePageChange(page - 1)}
-                disabled={!hasPreviousPage}
-              >
-                Previous
-              </Button>
-              <div className="flex items-center space-x-1">
-                <span className="text-sm font-medium">
-                  Page {page} of {totalPages}
-                </span>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handlePageChange(page + 1)}
-                disabled={!hasNextPage}
-              >
-                Next
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handlePageChange(totalPages)}
-                disabled={page >= totalPages}
-              >
-                <ChevronsRight className="size-4" />
-              </Button>
-            </div>
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleViewDetails(order as OrderInfo)}
+                        >
+                          <Eye color="#fe9e1d" />
+                          <span className="sr-only">View Details</span>
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
           </div>
-        )}
-      </Suspense>
 
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-3xl">
-          <DialogHeader>
-            <DialogTitle className="text-center">Order Details</DialogTitle>
-            <DialogDescription className="sr-only">
-              Order Details
-            </DialogDescription>
-          </DialogHeader>
-          <ScrollArea className="max-h-[calc(90vh-100px)] pr-4">
-            {selectedOrder && <OrderDetailsView data={selectedOrder} />}
-          </ScrollArea>
-        </DialogContent>
-      </Dialog>
-    </div>
+          {/* Pagination */}
+          {!loadingOrders && (
+            <div className="flex flex-col md:flex-row gap-2 items-center justify-between px-4 py-4 border-t">
+              <div className="text-sm text-muted-foreground">
+                Showing {firstEntry} to {lastEntry} of {totalCount} entries
+              </div>
+              <div className="flex space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(1)}
+                  disabled={page === 1}
+                >
+                  <ChevronsLeft className="size-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(page - 1)}
+                  disabled={!hasPreviousPage}
+                >
+                  Previous
+                </Button>
+                <div className="flex items-center space-x-1">
+                  <span className="text-sm font-medium">
+                    Page {page} of {totalPages}
+                  </span>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(page + 1)}
+                  disabled={!hasNextPage}
+                >
+                  Next
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(totalPages)}
+                  disabled={page >= totalPages}
+                >
+                  <ChevronsRight className="size-4" />
+                </Button>
+              </div>
+            </div>
+          )}
+        </Suspense>
+
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogContent className="max-w-3xl">
+            <DialogHeader>
+              <DialogTitle className="text-center">Order Details</DialogTitle>
+              <DialogDescription className="sr-only">
+                Order Details
+              </DialogDescription>
+            </DialogHeader>
+            <ScrollArea className="max-h-[calc(90vh-100px)] pr-4">
+              {selectedOrder && <OrderDetailsView data={selectedOrder} />}
+            </ScrollArea>
+          </DialogContent>
+        </Dialog>
+      </div>
+    </>
   );
 };

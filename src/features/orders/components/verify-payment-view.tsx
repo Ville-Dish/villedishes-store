@@ -52,12 +52,6 @@ export const VerifyPaymentView = () => {
     form.setValue("orderId", id);
   }, [searchParams, form]);
 
-  // Update so admin can either enter the delivery date manually or it will be automatically calculated
-  const calculateEstimatedDelivery = (date: string | Date) => {
-    const base = new Date(date);
-    return new Date(base.getTime() + 48 * 3600000).toISOString().split("T")[0];
-  };
-
   const sendConfirmationEmail = useMutation(
     trpc.mail.sendEmail.mutationOptions({
       onSuccess: () => {
@@ -87,20 +81,19 @@ export const VerifyPaymentView = () => {
 
         const orderDetails = data.order;
 
-        const estimatedDelivery = calculateEstimatedDelivery(
-          orderDetails.orderDate ?? new Date().toISOString().split("T")[0],
-        );
-
         const emailData = {
           customerName: `${orderDetails.shippingInfo.firstName} ${orderDetails.shippingInfo.lastName}`,
           orderNumber: orderDetails.orderNumber!,
+          orderId: orderDetails.orderId!,
           orderDate: orderDetails.orderDate?.toISOString().split("T")[0]!,
           subtotal: orderDetails.subtotal,
           tax: orderDetails.tax,
           shippingFee: orderDetails.shippingFee,
           total: orderDetails.total,
           items: orderDetails.products,
-          estimatedDelivery,
+          estimatedDelivery: new Date(orderDetails.scheduledAt ?? new Date())
+            .toISOString()
+            .split("T")[0]!,
         };
 
         sendConfirmationEmail.mutate({

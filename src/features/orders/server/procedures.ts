@@ -54,6 +54,11 @@ const addHours = (date: Date | string, hours: number) => {
   return new Date(new Date(date).getTime() + hours * 60 * 60 * 1000);
 };
 
+const calculateEstimatedDelivery = (date: string | Date) => {
+  const base = new Date(date);
+  return new Date(base.getTime() + 48 * 3600000).toISOString().split("T")[0];
+};
+
 export const orderRouter = createTRPCRouter({
   getAllOrders: protectedProcedure.query(async () => {
     return await prisma.order.findMany({
@@ -186,7 +191,7 @@ export const orderRouter = createTRPCRouter({
         orderBy = { orderDate: dir };
       }
 
-      const [orders, totalCount] = await Promise.all([
+      const [rawOrders, totalCount] = await Promise.all([
         prisma.order.findMany({
           skip: (page - 1) * pageSize,
           take: pageSize,
@@ -210,6 +215,120 @@ export const orderRouter = createTRPCRouter({
           },
         }),
       ]);
+
+      const currentDate = new Date();
+
+      const orders = await Promise.all(
+        rawOrders.map(async (order) => {
+          let status = order.status;
+          // 👇 Auto Fulfilled -> Delivered after 48h
+          if (order.status === OrderStatus.FULFILLED && order.fulfilledAt) {
+            const fulfilledAt = new Date(order.fulfilledAt);
+
+            const diffInMs = currentDate.getTime() - fulfilledAt.getTime();
+
+            const diffInHours = diffInMs / (1000 * 60 * 60);
+
+            if (diffInHours >= 48) {
+              status = OrderStatus.DELIVERED;
+
+              await prisma.order.update({
+                where: {
+                  id: order.id,
+                },
+
+                data: {
+                  status,
+                },
+              });
+            }
+          }
+
+          return {
+            id: order.id,
+
+            orderId: order.orderId,
+
+            orderNumber: order.orderNumber,
+
+            subtotal: order.subtotal,
+
+            tax: order.tax,
+
+            shippingFee: order.shippingFee,
+
+            total: order.total,
+
+            paymentDate: order.paymentDate,
+
+            paymentMethod: order.paymentMethod,
+
+            orderDate: order.orderDate,
+
+            referenceNumber: order.referenceNumber,
+
+            verificationCode: order.verificationCode,
+
+            orderType: order.orderType,
+
+            status,
+
+            scheduledAt: order.scheduledAt,
+
+            fulfilledAt: order.fulfilledAt,
+
+            cancellationRequestedAt: order.cancellationRequestedAt,
+
+            cancellationDate: order.cancellationDate,
+
+            cancellationReason: order.cancellationReason,
+
+            refundReferenceNumber: order.refundReferenceNumber,
+
+            shippingInfo: {
+              id: order.shippingInfo.id,
+
+              firstName: order.shippingInfo.firstName,
+
+              lastName: order.shippingInfo.lastName,
+
+              email: order.shippingInfo.email,
+
+              phoneNumber: order.shippingInfo.phoneNumber,
+
+              address: order.shippingInfo.address,
+
+              city: order.shippingInfo.city,
+
+              postalCode: order.shippingInfo.postalCode,
+
+              orderNotes: order.shippingInfo.orderNotes,
+            },
+
+            products: order.products.map((op) => ({
+              id: op.id,
+
+              quantity: op.quantity,
+
+              product: {
+                id: op.product.id,
+
+                name: op.product.name,
+
+                description: op.product.description,
+
+                price: op.product.price,
+
+                assetId: op.product.assetId,
+
+                category: op.product.category,
+
+                rating: op.product.rating,
+              },
+            })),
+          };
+        }),
+      );
 
       const totalPages = Math.ceil(totalCount / pageSize);
       const hasNextPage = page < totalPages;
@@ -467,6 +586,11 @@ export const orderRouter = createTRPCRouter({
       // Generate new order number
       const newOrderNumber = await generateOrderNumber();
 
+      // Calculate estimated delivery date (48 hours after paymentDate)
+      const estimatedDelivery = calculateEstimatedDelivery(
+        order.paymentDate ?? new Date().toISOString().split("T")[0],
+      );
+
       // Update the order
       const updatedOrder = await prisma.order.update({
         where: { orderId },
@@ -474,6 +598,7 @@ export const orderRouter = createTRPCRouter({
           status: "PENDING",
           orderNumber: newOrderNumber,
           orderDate: order.paymentDate, // Set orderDate to paymentDate
+          scheduledAt: new Date(estimatedDelivery), // Set scheduledAt to estimated delivery date
         },
         include: {
           shippingInfo: true,
@@ -534,36 +659,68 @@ export const orderRouter = createTRPCRouter({
         });
       }
 
-      // TODO: Check if status is CANCEL_REQUEST, if so, only allow changing to CANCELLED, and require refund reference number (need to add this field in the database). If refund reference number is not provided, throw error. If refund reference number is provided, save it in the database.
+      let updatedOrder;
 
-      const updatedOrder = await prisma.order.update({
-        where: {
-          orderId,
-        },
-        data: {
-          status: newStatus,
-        },
-        include: {
-          shippingInfo: {
-            select: {
-              firstName: true,
-              lastName: true,
-              email: true,
-            },
+      if (newStatus === "FULFILLED") {
+        updatedOrder = await prisma.order.update({
+          where: {
+            orderId,
           },
-          products: {
-            select: {
-              quantity: true,
-              product: {
-                select: {
-                  name: true,
-                  price: true,
+          data: {
+            status: newStatus,
+            fulfilledAt: new Date(),
+          },
+          include: {
+            shippingInfo: {
+              select: {
+                firstName: true,
+                lastName: true,
+                email: true,
+              },
+            },
+            products: {
+              select: {
+                quantity: true,
+                product: {
+                  select: {
+                    name: true,
+                    price: true,
+                  },
                 },
               },
             },
           },
-        },
-      });
+        });
+      } else {
+        updatedOrder = await prisma.order.update({
+          where: {
+            orderId,
+          },
+          data: {
+            status: newStatus,
+          },
+          include: {
+            shippingInfo: {
+              select: {
+                firstName: true,
+                lastName: true,
+                email: true,
+              },
+            },
+            products: {
+              select: {
+                quantity: true,
+                product: {
+                  select: {
+                    name: true,
+                    price: true,
+                  },
+                },
+              },
+            },
+          },
+        });
+      }
 
       return updatedOrder;
     }),
@@ -586,11 +743,18 @@ export const orderRouter = createTRPCRouter({
       const { orderId, reason, interacEmail } = input;
 
       // TODO: Find order by orderId, if not found throw error
-      const order = await prisma.order.findUniqueOrThrow({
+      const order = await prisma.order.findFirst({
         where: {
-          orderId,
+          orderId: orderId,
         },
       });
+
+      if (!order) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Order not found",
+        });
+      }
 
       // 2️⃣ Validate scheduledAt exists
       if (!order.scheduledAt) {
@@ -614,9 +778,9 @@ export const orderRouter = createTRPCRouter({
       const diffInMs = order.scheduledAt.getTime() - now.getTime();
       const diffInHours = diffInMs / (1000 * 60 * 60);
 
-      const within24Hours = diffInHours > 0 && diffInHours <= 24;
+      const within24Hours = diffInHours <= 24;
 
-      if (!validStatus || !within24Hours) {
+      if (!validStatus || within24Hours) {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message:
@@ -701,6 +865,7 @@ export const orderRouter = createTRPCRouter({
         data: {
           refundReferenceNumber,
           cancellationDate,
+          status: OrderStatus.CANCELLED,
         },
         select: {
           orderNumber: true,

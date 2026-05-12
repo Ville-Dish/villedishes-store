@@ -26,6 +26,7 @@ type OrderItem = {
 type OrderFulfillmentEmailProps = {
   customerName: string;
   orderNumber: string;
+  orderId: string;
   orderDate?: string;
   subtotal: number;
   tax: number;
@@ -33,17 +34,20 @@ type OrderFulfillmentEmailProps = {
   total: number;
   items: OrderItem[];
   feedbackLink?: string; // include review link
+  orderReviewLink?: string; // link to order review page on website
 };
 
 const OrderFulfillmentTemplate = ({
   customerName,
   orderNumber,
+  orderId,
   subtotal,
   tax,
   shippingFee,
   total,
   items,
   feedbackLink,
+  orderReviewLink,
 }: OrderFulfillmentEmailProps) => {
   customerName = customerName || "John Doe";
   orderNumber = orderNumber || "ORD-00000";
@@ -55,6 +59,12 @@ const OrderFulfillmentTemplate = ({
   const previewText = `Your Order with number ${orderNumber} has been fulfilled`;
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
   feedbackLink = `${baseUrl}/feedback`;
+  const baseLink =
+    orderReviewLink && orderReviewLink.trim() !== ""
+      ? orderReviewLink.replace(/\?orderId=\d+$/, "").replace(/\?$/, "")
+      : `${baseUrl}/order/detail`;
+  const separator = baseLink.includes("?") ? "&" : "?";
+  orderReviewLink = `${baseLink}${separator}orderId=${orderId}`;
 
   return (
     <Html>
@@ -72,7 +82,8 @@ const OrderFulfillmentTemplate = ({
                 <Text className="text-lg mb-4">
                   Thank you for your order, {customerName}! Your order has been
                   shipped and fulfilled.We will love to hear from you about your
-                  purchase.
+                  purchase. Kindly provide review for your order and share your
+                  feedback with us.
                 </Text>
               </Section>
 
@@ -144,14 +155,23 @@ const OrderFulfillmentTemplate = ({
               </Section>
 
               <Hr className="border-gray-300 my-6" />
-              <Section className="text-center">
+              <Section className="flex justify-center items-center">
                 <Link
                   href={
                     feedbackLink || "https://www.surveymonkey.com/r/feedback"
                   }
-                  className="bg-green-500 text-white py-3 px-6 rounded-md font-bold text-base no-underline inline-block transition-colors duration-300"
+                  className="bg-green-500 text-white py-3 px-6 rounded-md font-bold text-base no-underline inline-block transition-colors duration-300 mr-4"
                 >
-                  Leave a Review
+                  Leave a Feedback
+                </Link>
+
+                <Link
+                  href={
+                    orderReviewLink || "https://www.surveymonkey.com/r/feedback"
+                  }
+                  className="bg-green-500 text-white py-3 px-6 rounded-md font-bold text-base no-underline inline-block transition-colors duration-300 ml-4"
+                >
+                  Leave a Order Review
                 </Link>
                 <Hr className="border-gray-300 my-6" />
               </Section>

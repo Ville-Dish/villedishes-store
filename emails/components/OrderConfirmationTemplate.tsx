@@ -109,7 +109,7 @@ interface Product {
 type OrderConfirmationEmailProps = {
   customerName: string;
   orderNumber: string;
-  orderId: number;
+  orderId: string;
   orderDate: string;
   subtotal: number;
   tax: number;
@@ -149,7 +149,7 @@ const OrderConfirmationTemplate = ({
   const baseLink =
     cancellationRequestLink && cancellationRequestLink.trim() !== ""
       ? cancellationRequestLink.replace(/\?orderId=\d+$/, "").replace(/\?$/, "")
-      : `${baseUrl}/admin/verify-payment`;
+      : `${baseUrl}/order/detail`;
   const separator = baseLink.includes("?") ? "&" : "?";
   cancellationRequestLink = `${baseLink}${separator}orderId=${orderId}`;
 
@@ -279,7 +279,7 @@ const OrderConfirmationTemplate = ({
                   }
                   className="bg-green-500 text-white py-3 px-6 rounded-md font-bold text-base no-underline inline-block transition-colors duration-300"
                 >
-                  Leave a Review
+                  Cancel Order
                 </Link>
                 <Hr className="border-gray-300 my-6" />
               </Section>

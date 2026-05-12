@@ -62,9 +62,9 @@ const OrderCancellationRequestTemplate = ({
                 </Text>
               </Section>
 
-              <Hr className="border-gray-300 my-6" />
+              {/* <Hr className="border-gray-300 my-6" /> */}
 
-              <Section className="mt-6 text-center">
+              {/* <Section className="mt-6 text-center">
                 <Text className="text-base mb-4">
                   If you have any questions, please contact our customer support
                   team.
@@ -73,7 +73,7 @@ const OrderCancellationRequestTemplate = ({
                   Thank you for choosing Villedishes. We hope you enjoy your
                   meal!
                 </Text>
-              </Section>
+              </Section> */}
 
               <EmailFooter variant="order" />
             </Section>

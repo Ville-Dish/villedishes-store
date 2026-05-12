@@ -51,6 +51,7 @@ interface OrderInfo {
     orderNotes: string | null;
   };
   paymentDate: Date | null;
+  scheduledAt: Date | null;
   products: {
     id: string;
     quantity: number;
@@ -142,6 +143,7 @@ type InvoiceDetailsProps = {
   invoice: Invoice;
   availableProducts: Array<{ id: string; name: string; basePrice: number }>;
   onUpdate: (updatedInvoice: Invoice) => void;
+  onClose?: () => void;
 };
 
 type revenueGrowthData = {

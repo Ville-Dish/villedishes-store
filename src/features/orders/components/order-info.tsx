@@ -45,7 +45,6 @@ import {
   cancelOrderRequestSchema,
   CancelOrderRequestValue,
   reviewSchema,
-  ReviewValue,
 } from "@/lib/schemas/orderSchema";
 import { SubmitHandler, useFieldArray, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -66,14 +65,8 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Select } from "@radix-ui/react-select";
-import {
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import z from "zod";
+
+import { z } from "zod";
 import { ADMIN_EMAIL } from "@/config/constants";
 
 const NON_CANCELLABLE_STATUSES: OrderStatus[] = [
@@ -97,9 +90,6 @@ export const OrderInformationView = ({ orderId: propOrderId }: Props) => {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const searchParams = useSearchParams();
-
-  // console.log("Search params ID", searchParams.get("orderId"));
-  // console.log("Props ID", propOrderId);
 
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
@@ -175,6 +165,8 @@ export const OrderInformationView = ({ orderId: propOrderId }: Props) => {
     }),
   );
 
+  console.log("Order Id", orderId);
+
   const cancelOrderMutation = useMutation(
     trpc.orders.requestCancelOrder.mutationOptions({
       onSuccess: (data) => {
@@ -199,8 +191,8 @@ export const OrderInformationView = ({ orderId: propOrderId }: Props) => {
             orderData.shippingInfo.email,
           orderNumber: orderData.orderNumber || "",
           orderDate: orderData.orderDate
-            ? new Date(orderData.orderDate).toISOString()
-            : new Date().toISOString(),
+            ? new Date(orderData.orderDate.toISOString()).toDateString()
+            : new Date().toDateString(),
           reason:
             cancelForm.getValues("cancellationReason") || "No reason provided",
           total: orderData.total,
@@ -208,6 +200,7 @@ export const OrderInformationView = ({ orderId: propOrderId }: Props) => {
       },
       onError: (error) => {
         toast.error(error.message ?? "Failed to cancel order");
+        console.log("Error cancelling order:", error);
       },
     }),
   );
@@ -304,7 +297,7 @@ export const OrderInformationView = ({ orderId: propOrderId }: Props) => {
 
   const handleCancelSubmit = (values: CancelOrderRequestValue) => {
     cancelOrderMutation.mutate({
-      orderId: values.orderId,
+      orderId: orderId,
       reason: values.cancellationReason || "",
       interacEmail: values.interacEmail,
     });
@@ -652,12 +645,13 @@ export const OrderInformationView = ({ orderId: propOrderId }: Props) => {
                       />
                       <DialogFooter className="flex-col sm:flex-row gap-2">
                         <Button
+                          type="button"
                           variant="outline"
                           onClick={() => setCancelDialogOpen(false)}
                         >
                           Keep Order
                         </Button>
-                        <Button variant="destructive">
+                        <Button type="submit" variant="destructive">
                           Confirm Cancellation
                         </Button>
                       </DialogFooter>

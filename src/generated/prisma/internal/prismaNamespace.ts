@@ -1926,6 +1926,7 @@ export const OrderScalarFieldEnum = {
   orderType: 'orderType',
   status: 'status',
   scheduledAt: 'scheduledAt',
+  fulfilledAt: 'fulfilledAt',
   cancellationRequestedAt: 'cancellationRequestedAt',
   cancellationDate: 'cancellationDate',
   cancellationReason: 'cancellationReason',
