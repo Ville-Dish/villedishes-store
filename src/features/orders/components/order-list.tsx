@@ -28,7 +28,13 @@ import {
 } from "@/components/ui/dialog";
 import { Eye, ChevronsLeft, ChevronsRight, XCircle } from "lucide-react";
 import { DatePickerWithRange } from "@/components/custom/date-range-picker";
-import { cn, formatDate, OrderStatus, ORDER_STATUSES } from "@/lib/utils";
+import {
+  cn,
+  formatDate,
+  OrderStatus,
+  ORDER_STATUSES,
+  getStatusColor,
+} from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useDebounce } from "@/hooks/use-debounce";
 import { OrderDetailsView } from "./order-details";
@@ -228,6 +234,7 @@ export const OrderList = () => {
 
   // view function
   const handleViewDetails = (order: OrderInfo) => {
+    console.log("Viewing details for order:", { order });
     setSelectedOrder(order);
     setIsDialogOpen(true);
   };
@@ -240,7 +247,12 @@ export const OrderList = () => {
   const firstEntry = totalCount === 0 ? 0 : (page - 1) * pageSize + 1;
   const lastEntry = Math.min(page * pageSize, totalCount);
 
-  const DISALLOWED_LIST_STATUSES: OrderStatus[] = ["CANCELLATION_REQUESTED"];
+  const DISALLOWED_LIST_STATUSES: OrderStatus[] = [
+    "CANCELLATION_REQUESTED",
+    "CANCELLED",
+    "DELIVERED",
+    "FULFILLED",
+  ];
 
   return (
     <>
@@ -389,22 +401,7 @@ export const OrderList = () => {
                         <span
                           className={cn(
                             "font-medium border rounded-md px-3 py-1 text-white text-center inline-block cursor-default transition-colors",
-                            {
-                              "bg-[#da281c] border-[#da281c] hover:bg-[#b4443c]":
-                                order.status === "CANCELLED",
-                              "bg-rose-500 border-rose-500 hover:bg-rose-600":
-                                order.status === "CANCELLATION_REQUESTED",
-                              "bg-cyan-500 border-cyan-500 hover:bg-cyan-600":
-                                order.status === "SHIPPED",
-                              "bg-teal-500 border-teal-500 hover:bg-teal-600":
-                                order.status === "DELIVERED",
-                              "bg-green-500 border-green-500 hover:bg-green-600":
-                                order.status === "FULFILLED",
-                              "bg-[#fe9e1d] border-[#fe9e1d] hover:bg-[#c6893a]":
-                                order.status === "UNVERIFIED",
-                              "bg-orange-500 border-orange-500 hover:bg-orange-600":
-                                order.status === "PENDING",
-                            },
+                            getStatusColor(order.status),
                           )}
                         >
                           {order.status}
@@ -412,30 +409,31 @@ export const OrderList = () => {
                       </TableCell>
                       <TableCell>
                         <Select
+                          key={order.status} // Ensure the Select component resets when order changes
+                          value={order.status}
                           onValueChange={(value) => {
                             handleStatusChange(
                               order.orderId as string,
                               value as OrderStatus,
                             );
                           }}
-                          defaultValue={order.status}
+                          disabled={DISALLOWED_LIST_STATUSES.includes(
+                            order.status,
+                          )} // Disable if current status is in disallowed list
                         >
                           <SelectTrigger className="w-45">
                             <SelectValue placeholder="Change status" />
                           </SelectTrigger>
                           <SelectContent>
-                            {ORDER_STATUSES.filter(
-                              (status) =>
-                                !DISALLOWED_LIST_STATUSES.includes(status),
-                            ).map((status) => (
+                            {ORDER_STATUSES.map((status) => (
                               <SelectItem
                                 key={status}
                                 value={status}
-                                disabled={status === "CANCELLED"}
+                                disabled={DISALLOWED_LIST_STATUSES.includes(
+                                  status,
+                                )} // Disable disallowed statuses in dropdown
                               >
-                                {status === "CANCELLED"
-                                  ? "CANCELLED (Use cancellation request)"
-                                  : status}
+                                {status}
                               </SelectItem>
                             ))}
                           </SelectContent>

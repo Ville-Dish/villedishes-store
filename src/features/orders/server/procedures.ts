@@ -794,11 +794,14 @@ export const orderRouter = createTRPCRouter({
           status: OrderStatus.CANCELLATION_REQUESTED,
           cancellationReason: reason,
           cancellationRequestedAt: new Date(),
+          interacEmail,
         },
         select: {
           orderNumber: true,
           orderDate: true,
           total: true,
+          cancellationReason: true,
+          interacEmail: true,
           shippingInfo: {
             select: {
               firstName: true,

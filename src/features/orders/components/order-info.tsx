@@ -165,8 +165,6 @@ export const OrderInformationView = ({ orderId: propOrderId }: Props) => {
     }),
   );
 
-  console.log("Order Id", orderId);
-
   const cancelOrderMutation = useMutation(
     trpc.orders.requestCancelOrder.mutationOptions({
       onSuccess: (data) => {
@@ -188,19 +186,22 @@ export const OrderInformationView = ({ orderId: propOrderId }: Props) => {
           customerName: `${orderData.shippingInfo.firstName} ${orderData.shippingInfo.lastName}`,
           customerInteracEmail:
             cancelForm.getValues("interacEmail") ||
-            orderData.shippingInfo.email,
+            orderData.interacEmail ||
+            orderData.shippingInfo.email ||
+            "",
           orderNumber: orderData.orderNumber || "",
           orderDate: orderData.orderDate
             ? new Date(orderData.orderDate.toISOString()).toDateString()
             : new Date().toDateString(),
           reason:
-            cancelForm.getValues("cancellationReason") || "No reason provided",
+            cancelForm.getValues("cancellationReason") ||
+            orderData.cancellationReason ||
+            "No reason provided",
           total: orderData.total,
         });
       },
       onError: (error) => {
         toast.error(error.message ?? "Failed to cancel order");
-        console.log("Error cancelling order:", error);
       },
     }),
   );

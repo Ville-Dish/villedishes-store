@@ -53,7 +53,7 @@ import {
 
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { adminEmail } from "@/lib/constantData";
-import { formattedCurrency } from "@/lib/utils";
+import { formatDate, formattedCurrency } from "@/lib/utils";
 import { isValidInvoiceStatus } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import { useCallback, useEffect, useState } from "react";
@@ -717,7 +717,7 @@ export const InvoiceDetails = ({
               </div>
               <div>
                 <p className="font-medium">Date Created:</p>
-                <p>{updatedInvoice.dateCreated}</p>
+                <p>{formatDate(updatedInvoice.dateCreated)}</p>
               </div>
               <div>
                 <Label htmlFor="dueDate">Due Date</Label>
@@ -725,7 +725,7 @@ export const InvoiceDetails = ({
                   id="dueDate"
                   name="dueDate"
                   type="date"
-                  value={updatedInvoice.dueDate}
+                  value={formatDate(updatedInvoice.dueDate)}
                   onChange={handleInputChange}
                 />
               </div>

@@ -165,3 +165,25 @@ export const passwordStrength = (password: string): PasswordFeedback => {
 
   return { strength: "weak", errors };
 };
+
+export // Add this above the component (or in utils.ts)
+const getStatusColor = (status: OrderStatus) => {
+  switch (status) {
+    case "CANCELLED":
+      return "bg-[#da281c] border-[#da281c] hover:bg-[#b4443c]";
+    case "CANCELLATION_REQUESTED":
+      return "bg-rose-800 border-rose-500 hover:bg-rose-700";
+    case "SHIPPED":
+      return "bg-cyan-500 border-cyan-500 hover:bg-cyan-600";
+    case "DELIVERED":
+      return "bg-teal-500 border-teal-500 hover:bg-teal-600";
+    case "FULFILLED":
+      return "bg-green-500 border-green-500 hover:bg-green-600";
+    case "UNVERIFIED":
+      return "bg-[#fe9e1d] border-[#fe9e1d] hover:bg-[#c6893a]";
+    case "PENDING":
+      return "bg-orange-500 border-orange-500 hover:bg-orange-600";
+    default:
+      return "bg-gray-400 border-gray-400";
+  }
+};

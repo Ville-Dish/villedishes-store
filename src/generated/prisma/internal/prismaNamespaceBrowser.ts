@@ -225,6 +225,7 @@ export const OrderScalarFieldEnum = {
   cancellationRequestedAt: 'cancellationRequestedAt',
   cancellationDate: 'cancellationDate',
   cancellationReason: 'cancellationReason',
+  interacEmail: 'interacEmail',
   refundReferenceNumber: 'refundReferenceNumber',
   shippingInfoId: 'shippingInfoId'
 } as const

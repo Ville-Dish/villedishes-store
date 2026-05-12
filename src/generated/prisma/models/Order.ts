@@ -60,6 +60,7 @@ export type OrderMinAggregateOutputType = {
   cancellationRequestedAt: Date | null
   cancellationDate: Date | null
   cancellationReason: string | null
+  interacEmail: string | null
   refundReferenceNumber: string | null
   shippingInfoId: string | null
 }
@@ -84,6 +85,7 @@ export type OrderMaxAggregateOutputType = {
   cancellationRequestedAt: Date | null
   cancellationDate: Date | null
   cancellationReason: string | null
+  interacEmail: string | null
   refundReferenceNumber: string | null
   shippingInfoId: string | null
 }
@@ -108,6 +110,7 @@ export type OrderCountAggregateOutputType = {
   cancellationRequestedAt: number
   cancellationDate: number
   cancellationReason: number
+  interacEmail: number
   refundReferenceNumber: number
   shippingInfoId: number
   _all: number
@@ -148,6 +151,7 @@ export type OrderMinAggregateInputType = {
   cancellationRequestedAt?: true
   cancellationDate?: true
   cancellationReason?: true
+  interacEmail?: true
   refundReferenceNumber?: true
   shippingInfoId?: true
 }
@@ -172,6 +176,7 @@ export type OrderMaxAggregateInputType = {
   cancellationRequestedAt?: true
   cancellationDate?: true
   cancellationReason?: true
+  interacEmail?: true
   refundReferenceNumber?: true
   shippingInfoId?: true
 }
@@ -196,6 +201,7 @@ export type OrderCountAggregateInputType = {
   cancellationRequestedAt?: true
   cancellationDate?: true
   cancellationReason?: true
+  interacEmail?: true
   refundReferenceNumber?: true
   shippingInfoId?: true
   _all?: true
@@ -307,6 +313,7 @@ export type OrderGroupByOutputType = {
   cancellationRequestedAt: Date | null
   cancellationDate: Date | null
   cancellationReason: string | null
+  interacEmail: string | null
   refundReferenceNumber: string | null
   shippingInfoId: string
   _count: OrderCountAggregateOutputType | null
@@ -354,6 +361,7 @@ export type OrderWhereInput = {
   cancellationRequestedAt?: Prisma.DateTimeNullableFilter<"Order"> | Date | string | null
   cancellationDate?: Prisma.DateTimeNullableFilter<"Order"> | Date | string | null
   cancellationReason?: Prisma.StringNullableFilter<"Order"> | string | null
+  interacEmail?: Prisma.StringNullableFilter<"Order"> | string | null
   refundReferenceNumber?: Prisma.StringNullableFilter<"Order"> | string | null
   shippingInfoId?: Prisma.StringFilter<"Order"> | string
   shippingInfo?: Prisma.XOR<Prisma.ShippingInfoScalarRelationFilter, Prisma.ShippingInfoWhereInput>
@@ -380,6 +388,7 @@ export type OrderOrderByWithRelationInput = {
   cancellationRequestedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   cancellationDate?: Prisma.SortOrderInput | Prisma.SortOrder
   cancellationReason?: Prisma.SortOrderInput | Prisma.SortOrder
+  interacEmail?: Prisma.SortOrderInput | Prisma.SortOrder
   refundReferenceNumber?: Prisma.SortOrderInput | Prisma.SortOrder
   shippingInfoId?: Prisma.SortOrder
   shippingInfo?: Prisma.ShippingInfoOrderByWithRelationInput
@@ -409,6 +418,7 @@ export type OrderWhereUniqueInput = Prisma.AtLeast<{
   cancellationRequestedAt?: Prisma.DateTimeNullableFilter<"Order"> | Date | string | null
   cancellationDate?: Prisma.DateTimeNullableFilter<"Order"> | Date | string | null
   cancellationReason?: Prisma.StringNullableFilter<"Order"> | string | null
+  interacEmail?: Prisma.StringNullableFilter<"Order"> | string | null
   refundReferenceNumber?: Prisma.StringNullableFilter<"Order"> | string | null
   shippingInfoId?: Prisma.StringFilter<"Order"> | string
   shippingInfo?: Prisma.XOR<Prisma.ShippingInfoScalarRelationFilter, Prisma.ShippingInfoWhereInput>
@@ -435,6 +445,7 @@ export type OrderOrderByWithAggregationInput = {
   cancellationRequestedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   cancellationDate?: Prisma.SortOrderInput | Prisma.SortOrder
   cancellationReason?: Prisma.SortOrderInput | Prisma.SortOrder
+  interacEmail?: Prisma.SortOrderInput | Prisma.SortOrder
   refundReferenceNumber?: Prisma.SortOrderInput | Prisma.SortOrder
   shippingInfoId?: Prisma.SortOrder
   _count?: Prisma.OrderCountOrderByAggregateInput
@@ -467,6 +478,7 @@ export type OrderScalarWhereWithAggregatesInput = {
   cancellationRequestedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Order"> | Date | string | null
   cancellationDate?: Prisma.DateTimeNullableWithAggregatesFilter<"Order"> | Date | string | null
   cancellationReason?: Prisma.StringNullableWithAggregatesFilter<"Order"> | string | null
+  interacEmail?: Prisma.StringNullableWithAggregatesFilter<"Order"> | string | null
   refundReferenceNumber?: Prisma.StringNullableWithAggregatesFilter<"Order"> | string | null
   shippingInfoId?: Prisma.StringWithAggregatesFilter<"Order"> | string
 }
@@ -491,6 +503,7 @@ export type OrderCreateInput = {
   cancellationRequestedAt?: Date | string | null
   cancellationDate?: Date | string | null
   cancellationReason?: string | null
+  interacEmail?: string | null
   refundReferenceNumber?: string | null
   shippingInfo: Prisma.ShippingInfoCreateNestedOneWithoutOrderInput
   products?: Prisma.OrderProductCreateNestedManyWithoutOrderInput
@@ -516,6 +529,7 @@ export type OrderUncheckedCreateInput = {
   cancellationRequestedAt?: Date | string | null
   cancellationDate?: Date | string | null
   cancellationReason?: string | null
+  interacEmail?: string | null
   refundReferenceNumber?: string | null
   shippingInfoId: string
   products?: Prisma.OrderProductUncheckedCreateNestedManyWithoutOrderInput
@@ -541,6 +555,7 @@ export type OrderUpdateInput = {
   cancellationRequestedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   cancellationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   cancellationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  interacEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   refundReferenceNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   shippingInfo?: Prisma.ShippingInfoUpdateOneRequiredWithoutOrderNestedInput
   products?: Prisma.OrderProductUpdateManyWithoutOrderNestedInput
@@ -566,6 +581,7 @@ export type OrderUncheckedUpdateInput = {
   cancellationRequestedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   cancellationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   cancellationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  interacEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   refundReferenceNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   shippingInfoId?: Prisma.StringFieldUpdateOperationsInput | string
   products?: Prisma.OrderProductUncheckedUpdateManyWithoutOrderNestedInput
@@ -591,6 +607,7 @@ export type OrderCreateManyInput = {
   cancellationRequestedAt?: Date | string | null
   cancellationDate?: Date | string | null
   cancellationReason?: string | null
+  interacEmail?: string | null
   refundReferenceNumber?: string | null
   shippingInfoId: string
 }
@@ -615,6 +632,7 @@ export type OrderUpdateManyMutationInput = {
   cancellationRequestedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   cancellationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   cancellationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  interacEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   refundReferenceNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
@@ -638,6 +656,7 @@ export type OrderUncheckedUpdateManyInput = {
   cancellationRequestedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   cancellationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   cancellationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  interacEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   refundReferenceNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   shippingInfoId?: Prisma.StringFieldUpdateOperationsInput | string
 }
@@ -662,6 +681,7 @@ export type OrderCountOrderByAggregateInput = {
   cancellationRequestedAt?: Prisma.SortOrder
   cancellationDate?: Prisma.SortOrder
   cancellationReason?: Prisma.SortOrder
+  interacEmail?: Prisma.SortOrder
   refundReferenceNumber?: Prisma.SortOrder
   shippingInfoId?: Prisma.SortOrder
 }
@@ -693,6 +713,7 @@ export type OrderMaxOrderByAggregateInput = {
   cancellationRequestedAt?: Prisma.SortOrder
   cancellationDate?: Prisma.SortOrder
   cancellationReason?: Prisma.SortOrder
+  interacEmail?: Prisma.SortOrder
   refundReferenceNumber?: Prisma.SortOrder
   shippingInfoId?: Prisma.SortOrder
 }
@@ -717,6 +738,7 @@ export type OrderMinOrderByAggregateInput = {
   cancellationRequestedAt?: Prisma.SortOrder
   cancellationDate?: Prisma.SortOrder
   cancellationReason?: Prisma.SortOrder
+  interacEmail?: Prisma.SortOrder
   refundReferenceNumber?: Prisma.SortOrder
   shippingInfoId?: Prisma.SortOrder
 }
@@ -831,6 +853,7 @@ export type OrderCreateWithoutShippingInfoInput = {
   cancellationRequestedAt?: Date | string | null
   cancellationDate?: Date | string | null
   cancellationReason?: string | null
+  interacEmail?: string | null
   refundReferenceNumber?: string | null
   products?: Prisma.OrderProductCreateNestedManyWithoutOrderInput
 }
@@ -855,6 +878,7 @@ export type OrderUncheckedCreateWithoutShippingInfoInput = {
   cancellationRequestedAt?: Date | string | null
   cancellationDate?: Date | string | null
   cancellationReason?: string | null
+  interacEmail?: string | null
   refundReferenceNumber?: string | null
   products?: Prisma.OrderProductUncheckedCreateNestedManyWithoutOrderInput
 }
@@ -908,6 +932,7 @@ export type OrderScalarWhereInput = {
   cancellationRequestedAt?: Prisma.DateTimeNullableFilter<"Order"> | Date | string | null
   cancellationDate?: Prisma.DateTimeNullableFilter<"Order"> | Date | string | null
   cancellationReason?: Prisma.StringNullableFilter<"Order"> | string | null
+  interacEmail?: Prisma.StringNullableFilter<"Order"> | string | null
   refundReferenceNumber?: Prisma.StringNullableFilter<"Order"> | string | null
   shippingInfoId?: Prisma.StringFilter<"Order"> | string
 }
@@ -932,6 +957,7 @@ export type OrderCreateWithoutProductsInput = {
   cancellationRequestedAt?: Date | string | null
   cancellationDate?: Date | string | null
   cancellationReason?: string | null
+  interacEmail?: string | null
   refundReferenceNumber?: string | null
   shippingInfo: Prisma.ShippingInfoCreateNestedOneWithoutOrderInput
 }
@@ -956,6 +982,7 @@ export type OrderUncheckedCreateWithoutProductsInput = {
   cancellationRequestedAt?: Date | string | null
   cancellationDate?: Date | string | null
   cancellationReason?: string | null
+  interacEmail?: string | null
   refundReferenceNumber?: string | null
   shippingInfoId: string
 }
@@ -996,6 +1023,7 @@ export type OrderUpdateWithoutProductsInput = {
   cancellationRequestedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   cancellationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   cancellationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  interacEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   refundReferenceNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   shippingInfo?: Prisma.ShippingInfoUpdateOneRequiredWithoutOrderNestedInput
 }
@@ -1020,6 +1048,7 @@ export type OrderUncheckedUpdateWithoutProductsInput = {
   cancellationRequestedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   cancellationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   cancellationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  interacEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   refundReferenceNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   shippingInfoId?: Prisma.StringFieldUpdateOperationsInput | string
 }
@@ -1044,6 +1073,7 @@ export type OrderCreateManyShippingInfoInput = {
   cancellationRequestedAt?: Date | string | null
   cancellationDate?: Date | string | null
   cancellationReason?: string | null
+  interacEmail?: string | null
   refundReferenceNumber?: string | null
 }
 
@@ -1067,6 +1097,7 @@ export type OrderUpdateWithoutShippingInfoInput = {
   cancellationRequestedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   cancellationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   cancellationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  interacEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   refundReferenceNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   products?: Prisma.OrderProductUpdateManyWithoutOrderNestedInput
 }
@@ -1091,6 +1122,7 @@ export type OrderUncheckedUpdateWithoutShippingInfoInput = {
   cancellationRequestedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   cancellationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   cancellationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  interacEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   refundReferenceNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   products?: Prisma.OrderProductUncheckedUpdateManyWithoutOrderNestedInput
 }
@@ -1115,6 +1147,7 @@ export type OrderUncheckedUpdateManyWithoutShippingInfoInput = {
   cancellationRequestedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   cancellationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   cancellationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  interacEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   refundReferenceNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
@@ -1169,6 +1202,7 @@ export type OrderSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   cancellationRequestedAt?: boolean
   cancellationDate?: boolean
   cancellationReason?: boolean
+  interacEmail?: boolean
   refundReferenceNumber?: boolean
   shippingInfoId?: boolean
   shippingInfo?: boolean | Prisma.ShippingInfoDefaultArgs<ExtArgs>
@@ -1196,6 +1230,7 @@ export type OrderSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   cancellationRequestedAt?: boolean
   cancellationDate?: boolean
   cancellationReason?: boolean
+  interacEmail?: boolean
   refundReferenceNumber?: boolean
   shippingInfoId?: boolean
   shippingInfo?: boolean | Prisma.ShippingInfoDefaultArgs<ExtArgs>
@@ -1221,6 +1256,7 @@ export type OrderSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   cancellationRequestedAt?: boolean
   cancellationDate?: boolean
   cancellationReason?: boolean
+  interacEmail?: boolean
   refundReferenceNumber?: boolean
   shippingInfoId?: boolean
   shippingInfo?: boolean | Prisma.ShippingInfoDefaultArgs<ExtArgs>
@@ -1246,11 +1282,12 @@ export type OrderSelectScalar = {
   cancellationRequestedAt?: boolean
   cancellationDate?: boolean
   cancellationReason?: boolean
+  interacEmail?: boolean
   refundReferenceNumber?: boolean
   shippingInfoId?: boolean
 }
 
-export type OrderOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "orderId" | "subtotal" | "tax" | "shippingFee" | "total" | "paymentDate" | "paymentMethod" | "orderDate" | "referenceNumber" | "verificationCode" | "orderNumber" | "orderType" | "status" | "scheduledAt" | "fulfilledAt" | "cancellationRequestedAt" | "cancellationDate" | "cancellationReason" | "refundReferenceNumber" | "shippingInfoId", ExtArgs["result"]["order"]>
+export type OrderOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "orderId" | "subtotal" | "tax" | "shippingFee" | "total" | "paymentDate" | "paymentMethod" | "orderDate" | "referenceNumber" | "verificationCode" | "orderNumber" | "orderType" | "status" | "scheduledAt" | "fulfilledAt" | "cancellationRequestedAt" | "cancellationDate" | "cancellationReason" | "interacEmail" | "refundReferenceNumber" | "shippingInfoId", ExtArgs["result"]["order"]>
 export type OrderInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   shippingInfo?: boolean | Prisma.ShippingInfoDefaultArgs<ExtArgs>
   products?: boolean | Prisma.Order$productsArgs<ExtArgs>
@@ -1289,6 +1326,7 @@ export type $OrderPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs 
     cancellationRequestedAt: Date | null
     cancellationDate: Date | null
     cancellationReason: string | null
+    interacEmail: string | null
     refundReferenceNumber: string | null
     shippingInfoId: string
   }, ExtArgs["result"]["order"]>
@@ -1735,6 +1773,7 @@ export interface OrderFieldRefs {
   readonly cancellationRequestedAt: Prisma.FieldRef<"Order", 'DateTime'>
   readonly cancellationDate: Prisma.FieldRef<"Order", 'DateTime'>
   readonly cancellationReason: Prisma.FieldRef<"Order", 'String'>
+  readonly interacEmail: Prisma.FieldRef<"Order", 'String'>
   readonly refundReferenceNumber: Prisma.FieldRef<"Order", 'String'>
   readonly shippingInfoId: Prisma.FieldRef<"Order", 'String'>
 }

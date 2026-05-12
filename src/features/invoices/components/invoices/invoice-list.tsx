@@ -58,6 +58,8 @@ import {
 import { saveAs } from "file-saver";
 import "jspdf-autotable";
 
+import { formatDate } from "@/lib/utils";
+
 import { DatePickerWithRange } from "@/components/custom/date-range-picker";
 import {
   Select,
@@ -607,7 +609,7 @@ export const InvoiceList = () => {
                       {invoice.customerName}
                     </TableCell>
                     <TableCell>${invoice.amount.toFixed(2)}</TableCell>
-                    <TableCell>{invoice.dueDate}</TableCell>
+                    <TableCell>{formatDate(invoice.dueDate)}</TableCell>
                     <TableCell>
                       <span
                         className={cn(

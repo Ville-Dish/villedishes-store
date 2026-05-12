@@ -70,7 +70,7 @@ interface OrderInfo {
   tax: number;
   total: number;
   orderDate: Date | null;
-  // orderDate: string | undefined;
+  verificationCode: string | undefined;
   orderNumber: string | null;
   referenceNumber: string | null;
 }
@@ -125,8 +125,8 @@ interface Invoice {
   amount: number;
   amountPaid: number;
   amountDue: number;
-  dateCreated: string;
-  dueDate: string;
+  dateCreated: Date;
+  dueDate: Date;
   status: InvoiceStatus;
   products?: Array<{
     id: string;

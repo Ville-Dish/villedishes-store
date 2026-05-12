@@ -21,7 +21,6 @@ import {
 import { OrderInfo } from "@/lib/types";
 import { formatDate } from "@/lib/utils";
 import { useTRPC } from "@/trpc/client";
-import { da } from "@faker-js/faker";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
@@ -33,8 +32,13 @@ import {
   Package,
   Phone,
   Receipt,
+  RectangleEllipsisIcon,
   User,
 } from "lucide-react";
+
+import { FcCancel, FcShipped } from "react-icons/fc";
+import { CiDeliveryTruck } from "react-icons/ci";
+
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -72,16 +76,47 @@ export const OrderDetailsView = ({ data }: OrderDetailsProps) => {
             Cancellation Requested
           </Badge>
         );
-      case "COMPLETED":
+      case "CANCELLED":
         return (
-          <Badge className="gap-1.5 bg-emerald-600 hover:bg-emerald-600">
+          <Badge className=" cursor-pointer gap-1.5 bg-red-200 hover:bg-red-100">
+            <FcCancel className="size-3" />
+            Cancelled
+          </Badge>
+        );
+      case "FULFILLED":
+        return (
+          <Badge className=" cursor-pointer gap-1.5 bg-emerald-600 hover:bg-emerald-500">
             <CheckCircle2 className="size-3" />
             Completed
           </Badge>
         );
+      case "DELIVERED":
+        return (
+          <Badge className=" cursor-pointer gap-1.5 bg-lime-600 hover:bg-lime-500">
+            <FcShipped className="size-3" />
+            Delivered
+          </Badge>
+        );
+      case "SHIPPED":
+        return (
+          <Badge className=" cursor-pointer gap-1.5 bg-cyan-600 hover:bg-cyan-500">
+            <CiDeliveryTruck className="size-3" />
+            Shipped
+          </Badge>
+        );
+      case "PENDING":
+        return (
+          <Badge className=" cursor-pointer gap-1.5 bg-orange-600 hover:bg-orange-500">
+            <RectangleEllipsisIcon className="size-3" />
+            PENDING
+          </Badge>
+        );
       default:
         return (
-          <Badge variant="secondary" className="gap-1.5">
+          <Badge
+            variant="secondary"
+            className="gap-1.5 bg-slate-600 hover:bg-slate-500"
+          >
             <Package className="size-3" />
             {status}
           </Badge>
@@ -161,6 +196,26 @@ export const OrderDetailsView = ({ data }: OrderDetailsProps) => {
 
     sendConfirmationEmail.mutate({
       type: "order_cancellation_request",
+      to: ADMIN_EMAIL,
+      ...emailData,
+    });
+  };
+
+  const sendVerifyPaymentEmail = async (orderDetails: OrderInfo) => {
+    const emailData = {
+      orderId: Number(orderDetails.orderId),
+      customerName: `${orderDetails.shippingInfo.firstName} ${orderDetails.shippingInfo.lastName}`,
+      paymentAmount: orderDetails.total,
+      paymentDate: orderDetails.paymentDate
+        ? orderDetails.paymentDate.toISOString().split("T")[0]
+        : new Date().toISOString().split("T")[0],
+      paymentMethod: "Interac",
+      referenceNumber: orderDetails.referenceNumber || "",
+      verificationCode: orderDetails.verificationCode || "",
+    };
+
+    sendConfirmationEmail.mutate({
+      type: "verify_payment",
       to: ADMIN_EMAIL,
       ...emailData,
     });
@@ -518,6 +573,17 @@ export const OrderDetailsView = ({ data }: OrderDetailsProps) => {
             onClick={() => sendVerificationEmail(data)}
           >
             Resend Verification Email
+          </Button>
+        </div>
+      )}
+
+      {data.status === "UNVERIFIED" && (
+        <div className="mt-6 flex justify-end">
+          <Button
+            className="cursor-pointer"
+            onClick={() => sendVerifyPaymentEmail(data)}
+          >
+            Resend Verify Payment Email
           </Button>
         </div>
       )}

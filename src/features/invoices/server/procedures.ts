@@ -448,7 +448,7 @@ export const invoiceRouter = createTRPCRouter({
         customerName: z.string().optional(),
         customerEmail: z.string().optional(),
         customerPhone: z.string().optional(),
-        dueDate: z.string().optional(),
+        dueDate: z.date().optional(),
 
         status: z.enum(InvoiceStatus).optional(),
 

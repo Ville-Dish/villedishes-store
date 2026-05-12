@@ -64,8 +64,8 @@ export type InvoiceMinAggregateOutputType = {
   shippingFee: number | null
   serviceCharge: number | null
   miscellaneous: number | null
-  dateCreated: string | null
-  dueDate: string | null
+  dateCreated: Date | null
+  dueDate: Date | null
   status: $Enums.InvoiceStatus | null
 }
 
@@ -85,8 +85,8 @@ export type InvoiceMaxAggregateOutputType = {
   shippingFee: number | null
   serviceCharge: number | null
   miscellaneous: number | null
-  dateCreated: string | null
-  dueDate: string | null
+  dateCreated: Date | null
+  dueDate: Date | null
   status: $Enums.InvoiceStatus | null
 }
 
@@ -301,8 +301,8 @@ export type InvoiceGroupByOutputType = {
   shippingFee: number
   serviceCharge: number
   miscellaneous: number
-  dateCreated: string
-  dueDate: string
+  dateCreated: Date
+  dueDate: Date
   status: $Enums.InvoiceStatus
   _count: InvoiceCountAggregateOutputType | null
   _avg: InvoiceAvgAggregateOutputType | null
@@ -345,8 +345,8 @@ export type InvoiceWhereInput = {
   shippingFee?: Prisma.FloatFilter<"Invoice"> | number
   serviceCharge?: Prisma.FloatFilter<"Invoice"> | number
   miscellaneous?: Prisma.FloatFilter<"Invoice"> | number
-  dateCreated?: Prisma.StringFilter<"Invoice"> | string
-  dueDate?: Prisma.StringFilter<"Invoice"> | string
+  dateCreated?: Prisma.DateTimeFilter<"Invoice"> | Date | string
+  dueDate?: Prisma.DateTimeFilter<"Invoice"> | Date | string
   status?: Prisma.EnumInvoiceStatusFilter<"Invoice"> | $Enums.InvoiceStatus
   InvoiceProducts?: Prisma.InvoiceProductsListRelationFilter
 }
@@ -392,8 +392,8 @@ export type InvoiceWhereUniqueInput = Prisma.AtLeast<{
   shippingFee?: Prisma.FloatFilter<"Invoice"> | number
   serviceCharge?: Prisma.FloatFilter<"Invoice"> | number
   miscellaneous?: Prisma.FloatFilter<"Invoice"> | number
-  dateCreated?: Prisma.StringFilter<"Invoice"> | string
-  dueDate?: Prisma.StringFilter<"Invoice"> | string
+  dateCreated?: Prisma.DateTimeFilter<"Invoice"> | Date | string
+  dueDate?: Prisma.DateTimeFilter<"Invoice"> | Date | string
   status?: Prisma.EnumInvoiceStatusFilter<"Invoice"> | $Enums.InvoiceStatus
   InvoiceProducts?: Prisma.InvoiceProductsListRelationFilter
 }, "id" | "id" | "invoiceNumber">
@@ -443,8 +443,8 @@ export type InvoiceScalarWhereWithAggregatesInput = {
   shippingFee?: Prisma.FloatWithAggregatesFilter<"Invoice"> | number
   serviceCharge?: Prisma.FloatWithAggregatesFilter<"Invoice"> | number
   miscellaneous?: Prisma.FloatWithAggregatesFilter<"Invoice"> | number
-  dateCreated?: Prisma.StringWithAggregatesFilter<"Invoice"> | string
-  dueDate?: Prisma.StringWithAggregatesFilter<"Invoice"> | string
+  dateCreated?: Prisma.DateTimeWithAggregatesFilter<"Invoice"> | Date | string
+  dueDate?: Prisma.DateTimeWithAggregatesFilter<"Invoice"> | Date | string
   status?: Prisma.EnumInvoiceStatusWithAggregatesFilter<"Invoice"> | $Enums.InvoiceStatus
 }
 
@@ -464,8 +464,8 @@ export type InvoiceCreateInput = {
   shippingFee?: number
   serviceCharge?: number
   miscellaneous?: number
-  dateCreated: string
-  dueDate: string
+  dateCreated: Date | string
+  dueDate: Date | string
   status: $Enums.InvoiceStatus
   InvoiceProducts?: Prisma.InvoiceProductsCreateNestedManyWithoutInvoiceInput
 }
@@ -486,8 +486,8 @@ export type InvoiceUncheckedCreateInput = {
   shippingFee?: number
   serviceCharge?: number
   miscellaneous?: number
-  dateCreated: string
-  dueDate: string
+  dateCreated: Date | string
+  dueDate: Date | string
   status: $Enums.InvoiceStatus
   InvoiceProducts?: Prisma.InvoiceProductsUncheckedCreateNestedManyWithoutInvoiceInput
 }
@@ -508,8 +508,8 @@ export type InvoiceUpdateInput = {
   shippingFee?: Prisma.FloatFieldUpdateOperationsInput | number
   serviceCharge?: Prisma.FloatFieldUpdateOperationsInput | number
   miscellaneous?: Prisma.FloatFieldUpdateOperationsInput | number
-  dateCreated?: Prisma.StringFieldUpdateOperationsInput | string
-  dueDate?: Prisma.StringFieldUpdateOperationsInput | string
+  dateCreated?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  dueDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   status?: Prisma.EnumInvoiceStatusFieldUpdateOperationsInput | $Enums.InvoiceStatus
   InvoiceProducts?: Prisma.InvoiceProductsUpdateManyWithoutInvoiceNestedInput
 }
@@ -530,8 +530,8 @@ export type InvoiceUncheckedUpdateInput = {
   shippingFee?: Prisma.FloatFieldUpdateOperationsInput | number
   serviceCharge?: Prisma.FloatFieldUpdateOperationsInput | number
   miscellaneous?: Prisma.FloatFieldUpdateOperationsInput | number
-  dateCreated?: Prisma.StringFieldUpdateOperationsInput | string
-  dueDate?: Prisma.StringFieldUpdateOperationsInput | string
+  dateCreated?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  dueDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   status?: Prisma.EnumInvoiceStatusFieldUpdateOperationsInput | $Enums.InvoiceStatus
   InvoiceProducts?: Prisma.InvoiceProductsUncheckedUpdateManyWithoutInvoiceNestedInput
 }
@@ -552,8 +552,8 @@ export type InvoiceCreateManyInput = {
   shippingFee?: number
   serviceCharge?: number
   miscellaneous?: number
-  dateCreated: string
-  dueDate: string
+  dateCreated: Date | string
+  dueDate: Date | string
   status: $Enums.InvoiceStatus
 }
 
@@ -573,8 +573,8 @@ export type InvoiceUpdateManyMutationInput = {
   shippingFee?: Prisma.FloatFieldUpdateOperationsInput | number
   serviceCharge?: Prisma.FloatFieldUpdateOperationsInput | number
   miscellaneous?: Prisma.FloatFieldUpdateOperationsInput | number
-  dateCreated?: Prisma.StringFieldUpdateOperationsInput | string
-  dueDate?: Prisma.StringFieldUpdateOperationsInput | string
+  dateCreated?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  dueDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   status?: Prisma.EnumInvoiceStatusFieldUpdateOperationsInput | $Enums.InvoiceStatus
 }
 
@@ -594,8 +594,8 @@ export type InvoiceUncheckedUpdateManyInput = {
   shippingFee?: Prisma.FloatFieldUpdateOperationsInput | number
   serviceCharge?: Prisma.FloatFieldUpdateOperationsInput | number
   miscellaneous?: Prisma.FloatFieldUpdateOperationsInput | number
-  dateCreated?: Prisma.StringFieldUpdateOperationsInput | string
-  dueDate?: Prisma.StringFieldUpdateOperationsInput | string
+  dateCreated?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  dueDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   status?: Prisma.EnumInvoiceStatusFieldUpdateOperationsInput | $Enums.InvoiceStatus
 }
 
@@ -729,8 +729,8 @@ export type InvoiceCreateWithoutInvoiceProductsInput = {
   shippingFee?: number
   serviceCharge?: number
   miscellaneous?: number
-  dateCreated: string
-  dueDate: string
+  dateCreated: Date | string
+  dueDate: Date | string
   status: $Enums.InvoiceStatus
 }
 
@@ -750,8 +750,8 @@ export type InvoiceUncheckedCreateWithoutInvoiceProductsInput = {
   shippingFee?: number
   serviceCharge?: number
   miscellaneous?: number
-  dateCreated: string
-  dueDate: string
+  dateCreated: Date | string
+  dueDate: Date | string
   status: $Enums.InvoiceStatus
 }
 
@@ -787,8 +787,8 @@ export type InvoiceUpdateWithoutInvoiceProductsInput = {
   shippingFee?: Prisma.FloatFieldUpdateOperationsInput | number
   serviceCharge?: Prisma.FloatFieldUpdateOperationsInput | number
   miscellaneous?: Prisma.FloatFieldUpdateOperationsInput | number
-  dateCreated?: Prisma.StringFieldUpdateOperationsInput | string
-  dueDate?: Prisma.StringFieldUpdateOperationsInput | string
+  dateCreated?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  dueDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   status?: Prisma.EnumInvoiceStatusFieldUpdateOperationsInput | $Enums.InvoiceStatus
 }
 
@@ -808,8 +808,8 @@ export type InvoiceUncheckedUpdateWithoutInvoiceProductsInput = {
   shippingFee?: Prisma.FloatFieldUpdateOperationsInput | number
   serviceCharge?: Prisma.FloatFieldUpdateOperationsInput | number
   miscellaneous?: Prisma.FloatFieldUpdateOperationsInput | number
-  dateCreated?: Prisma.StringFieldUpdateOperationsInput | string
-  dueDate?: Prisma.StringFieldUpdateOperationsInput | string
+  dateCreated?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  dueDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   status?: Prisma.EnumInvoiceStatusFieldUpdateOperationsInput | $Enums.InvoiceStatus
 }
 
@@ -959,8 +959,8 @@ export type $InvoicePayload<ExtArgs extends runtime.Types.Extensions.InternalArg
     shippingFee: number
     serviceCharge: number
     miscellaneous: number
-    dateCreated: string
-    dueDate: string
+    dateCreated: Date
+    dueDate: Date
     status: $Enums.InvoiceStatus
   }, ExtArgs["result"]["invoice"]>
   composites: {}
@@ -1401,8 +1401,8 @@ export interface InvoiceFieldRefs {
   readonly shippingFee: Prisma.FieldRef<"Invoice", 'Float'>
   readonly serviceCharge: Prisma.FieldRef<"Invoice", 'Float'>
   readonly miscellaneous: Prisma.FieldRef<"Invoice", 'Float'>
-  readonly dateCreated: Prisma.FieldRef<"Invoice", 'String'>
-  readonly dueDate: Prisma.FieldRef<"Invoice", 'String'>
+  readonly dateCreated: Prisma.FieldRef<"Invoice", 'DateTime'>
+  readonly dueDate: Prisma.FieldRef<"Invoice", 'DateTime'>
   readonly status: Prisma.FieldRef<"Invoice", 'InvoiceStatus'>
 }
     
