@@ -26,8 +26,8 @@ const calculateMonthlyRevenue = async (year: number, month: number) => {
     prisma.invoice.findMany({
       where: {
         dateCreated: {
-          gte: startDate.toISOString().split("T")[0],
-          lte: endDate.toISOString().split("T")[0],
+          gte: startDate.toISOString(),
+          lte: endDate.toISOString(),
         },
         status: "PAID",
       },
@@ -272,44 +272,43 @@ export const adminSettingsProcedures = createTRPCRouter({
         },
       });
 
-      const updatedRevenues = await Promise.all(
-        revenues.map(async (revenue) => {
-          const updatedMonthlyProjections = await Promise.all(
-            revenue.monthlyProjections.map(async (mp) => {
-              const monthIndex =
-                [
-                  "January",
-                  "February",
-                  "March",
-                  "April",
-                  "May",
-                  "June",
-                  "July",
-                  "August",
-                  "September",
-                  "October",
-                  "November",
-                  "December",
-                ].indexOf(mp.month) + 1;
+      const MONTHS = [
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December",
+      ];
 
+      // Update all actual values first, then fetch fresh data
+      await prisma.$transaction(async (tx) => {
+        await Promise.all(
+          revenues.flatMap((revenue) =>
+            revenue.monthlyProjections.map(async (mp) => {
+              const monthIndex = MONTHS.indexOf(mp.month) + 1;
               const calculatedActual = await calculateMonthlyRevenue(
                 revenue.year,
                 monthIndex,
               );
-
-              return {
-                ...mp,
-                actual: calculatedActual,
-              };
+              return tx.monthlyProjection.update({
+                where: { id: mp.id },
+                data: { actual: calculatedActual },
+              });
             }),
-          );
+          ),
+        );
+      });
 
-          return {
-            ...revenue,
-            monthlyProjections: updatedMonthlyProjections,
-          };
-        }),
-      );
+      const updatedRevenues = await prisma.revenue.findMany({
+        include: { monthlyProjections: true },
+      });
 
       return updatedRevenues;
     } catch (error) {

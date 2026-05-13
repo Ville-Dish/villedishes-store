@@ -65,7 +65,6 @@ const generateInvoiceData = async (length: number, products: Product[]) => {
   for (let i = 0; i < length; i++) {
     try {
       const invoiceNumber = await generateInvoiceNumber();
-      // console.log("New Invoice Number: ", invoiceNumber);
 
       const invoice = await prisma.invoice.update({
         where: { invoiceNumber: invoiceNumber },
@@ -172,7 +171,6 @@ const generateOrderData = async (length: number, products: Product[]) => {
         status === "UNVERIFIED"
           ? generateTempOrderNumber()
           : await generateOrderNumber();
-      // console.log("New Order Number: ", orderNumber);
 
       //insert shipping data
       const shippingInfo = await generateShippingInfo();
@@ -244,12 +242,9 @@ const generateOrderData = async (length: number, products: Product[]) => {
   }
 };
 const main = async () => {
-  console.log("Generating mock data...");
 
-  console.log("Fetching existing products...");
 
   const products = await fetchExistingProducts();
-  // console.log("Existing products fetched successfully", { products });
 
   // Transform `products` to match the `Product` interface
   const allProducts: Product[] = products.map((product) => ({
@@ -265,15 +260,10 @@ const main = async () => {
     },
   }));
 
-  console.log("Generating invoice data...");
   await generateInvoiceData(10, allProducts);
-  console.log("Generated invoice data successfully");
 
-  console.log("Generating order data...");
   await generateOrderData(10, allProducts);
-  console.log("Generated order data successfully");
 
-  console.log("Mock data generation complete.");
 };
 
 main()

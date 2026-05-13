@@ -44,7 +44,7 @@ export const testimonialsRouter = createTRPCRouter({
 
         return testimonial;
       } catch (error) {
-        console.log(error);
+        console.error(error);
         throw new Error("Failed to create testimonial");
       }
     }),

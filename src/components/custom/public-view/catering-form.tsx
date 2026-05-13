@@ -101,7 +101,6 @@ export const CateringForm = () => {
   );
 
   const onSubmit = (values: CateringFormData) => {
-    console.log({ values });
     const cateringData = {
       name: values.name,
       email: values.email,
@@ -111,7 +110,6 @@ export const CateringForm = () => {
       message: values.message,
     };
 
-    console.log({ cateringData });
     sendCateringEmail.mutate({
       type: "catering",
       to: ADMIN_EMAIL,

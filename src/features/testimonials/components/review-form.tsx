@@ -63,7 +63,6 @@ export const ReviewForm = () => {
     }),
   );
 
-  //   console.log("Form errors:", form.formState.errors);
 
   const isAnonymous = form.watch("isAnonymous");
 
@@ -168,7 +167,6 @@ export const ReviewForm = () => {
                           if (checked) {
                             form.setValue("authorName", "");
                             form.clearErrors("authorName");
-                            console.log(checked);
                           }
                         }}
                       />

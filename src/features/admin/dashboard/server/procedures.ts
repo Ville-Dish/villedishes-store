@@ -207,8 +207,23 @@ export const dashboardProcedures = createTRPCRouter({
       const startDate = new Date(year, 0, 1).toISOString();
       const endDate = new Date(year, 11, 31, 23, 59, 59, 999).toISOString();
 
+      const monthOrder = [
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December",
+      ];
+
       // Fetch monthly revenue projections for the specified year
-      const [monthlyRevenue, orderProducts, invoiceProducts] =
+      const [rawMonthlyRevenue, orderProducts, invoiceProducts] =
         await Promise.all([
           // Monthly revenue projections
           prisma.monthlyProjection.findMany({
@@ -218,9 +233,6 @@ export const dashboardProcedures = createTRPCRouter({
             select: {
               month: true,
               actual: true,
-            },
-            orderBy: {
-              month: "asc",
             },
           }),
 
@@ -233,7 +245,9 @@ export const dashboardProcedures = createTRPCRouter({
                   gte: startDate,
                   lte: endDate,
                 },
-                status: { in: ["PENDING", "FULFILLED"] },
+                status: {
+                  in: ["PENDING", "FULFILLED", "DELIVERED", "SHIPPED"],
+                },
               },
             },
             _sum: { quantity: true },
@@ -261,6 +275,10 @@ export const dashboardProcedures = createTRPCRouter({
             },
           }),
         ]);
+
+      const monthlyRevenue = rawMonthlyRevenue.sort(
+        (a, b) => monthOrder.indexOf(a.month) - monthOrder.indexOf(b.month),
+      );
 
       // combine quantities
       const productQuantities = new Map<string, number>();
@@ -452,15 +470,14 @@ export const dashboardProcedures = createTRPCRouter({
     .input(
       z.object({
         year: z.number().optional(),
-        month: z.number().min(1).max(12).optional(),
       }),
     )
     .query(async ({ input }) => {
+      const now = new Date();
       const currentYear = new Date().getFullYear();
       const currentMonth = new Date().getMonth() + 1;
 
       const year = input.year ?? currentYear;
-      const month = input.month ?? currentMonth;
 
       // ─── Helpers ────────────────────────────────────────────────────────────
 
@@ -479,22 +496,61 @@ export const dashboardProcedures = createTRPCRouter({
         "Dec",
       ];
 
-      const getReportStatus = (dateStr: string): string => {
-        const currentDate = new Date();
-        const reportDate = new Date(dateStr);
-        if (reportDate < currentDate) return "Completed";
+      const fullMonthNames = [
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December",
+      ];
+
+      // Monthly status: past month = Completed, current = In Progress, future = Unavailable
+      const getMonthStatus = (
+        m: number,
+      ): "Completed" | "In Progress" | "Unavailable" => {
+        if (year < currentYear || (year === currentYear && m < currentMonth))
+          return "Completed";
+        if (year === currentYear && m === currentMonth) return "In Progress";
+        return "Unavailable";
+      };
+
+      // Quarterly status
+      const getQuarterStatus = (
+        q: number,
+      ): "Completed" | "In Progress" | "Unavailable" => {
+        const lastMonthOfQuarter = q * 3;
         if (
-          reportDate.getMonth() === currentDate.getMonth() &&
-          reportDate.getFullYear() === currentDate.getFullYear()
+          year < currentYear ||
+          (year === currentYear && lastMonthOfQuarter < currentMonth)
+        )
+          return "Completed";
+        if (
+          year === currentYear &&
+          lastMonthOfQuarter >= currentMonth &&
+          (q - 1) * 3 < currentMonth
         )
           return "In Progress";
         return "Unavailable";
       };
 
-      // ─── Date ranges ────────────────────────────────────────────────────────
+      // Annual status: past/current year = available (current shown as YTD), future = Unavailable
+      const getAnnualStatus = ():
+        | "Completed"
+        | "In Progress (YTD)"
+        | "Unavailable" => {
+        if (year < currentYear) return "Completed";
+        if (year === currentYear) return "In Progress (YTD)";
+        return "Unavailable";
+      };
 
-      const monthStart = new Date(year, month - 1, 1);
-      const monthEnd = new Date(year, month, 0); // last day of the month
+      // ─── Date ranges ────────────────────────────────────────────────────────
 
       const yearStart = new Date(year, 0, 1).toISOString();
       const yearEnd = new Date(year, 11, 31, 23, 59, 59).toISOString();
@@ -503,197 +559,166 @@ export const dashboardProcedures = createTRPCRouter({
       // MONTHLY SALES
       // ════════════════════════════════════════════════════════════════════════
 
-      const [
-        monthlyOrders,
-        monthlyInvoices,
-        monthlyIncomes,
-        monthlyOrderProducts,
-        monthlyInvoiceProducts,
-      ] = await Promise.all([
-        // Weekly sales — orders
-        prisma.order.groupBy({
-          by: ["orderDate"],
-          where: {
-            orderDate: {
-              gte: monthStart.toISOString(),
-              lte: monthEnd.toISOString(),
-            },
-            status: { in: ["PENDING", "FULFILLED"] },
-          },
-          _count: { id: true },
-          _sum: { total: true },
-        }),
+      const allMonthlySalesData = await Promise.all(
+        Array.from({ length: 12 }, async (_, i) => {
+          const m = i + 1;
+          const status = getMonthStatus(m);
 
-        // Weekly sales — invoices
-        prisma.invoice.groupBy({
-          by: ["dateCreated"],
-          where: {
-            dateCreated: {
-              gte: monthStart.toISOString(),
-              lte: monthEnd.toISOString(),
-            },
-            status: "PAID",
-          },
-          _count: { id: true },
-          _sum: { amount: true },
-        }),
+          //Skip future months for current year to optimize — return empty data
+          if (status === "Unavailable") {
+            return {
+              month: m,
+              monthName: fullMonthNames[i],
+              status,
+              data: { monthlySales: [], topProducts: [] },
+            };
+          }
 
-        // Weekly sales — income
-        prisma.income.groupBy({
-          by: ["date"],
-          where: {
-            date: {
-              gte: monthStart.toISOString(),
-              lte: monthEnd.toISOString(),
-            },
-          },
-          _sum: { amount: true },
-        }),
+          const monthStart = new Date(year, i, 1);
+          const monthEnd = new Date(year, i + 1, 0, 23, 59, 59, 999);
 
-        // Top products — order products
-        prisma.orderProduct.groupBy({
-          by: ["productId"],
-          where: {
-            order: {
-              orderDate: {
-                gte: monthStart.toISOString(),
-                lte: monthEnd.toISOString(),
+          const [
+            monthlyOrders,
+            monthlyInvoices,
+            monthlyIncomes,
+            monthlyOrderProducts,
+            monthlyInvoiceProducts,
+          ] = await Promise.all([
+            prisma.order.groupBy({
+              by: ["orderDate"],
+              where: {
+                orderDate: { gte: monthStart, lte: monthEnd },
+                status: { in: ["PENDING", "FULFILLED"] },
               },
-              status: { in: ["PENDING", "FULFILLED"] },
-            },
-          },
-          _sum: { quantity: true },
-          _count: { productId: true },
-        }),
-
-        // Top products — invoice products
-        prisma.invoiceProducts.findMany({
-          where: {
-            invoice: {
-              dateCreated: {
-                gte: monthStart.toISOString(),
-                lte: monthEnd.toISOString(),
+              _count: { id: true },
+              _sum: { total: true },
+            }),
+            prisma.invoice.groupBy({
+              by: ["dateCreated"],
+              where: {
+                dateCreated: { gte: monthStart, lte: monthEnd },
+                status: "PAID",
               },
-              status: "PAID",
-            },
-          },
-          include: { Product: true },
-        }),
-      ]);
+              _count: { id: true },
+              _sum: { amount: true },
+            }),
+            prisma.income.groupBy({
+              by: ["date"],
+              where: { date: { gte: monthStart, lte: monthEnd } },
+              _sum: { amount: true },
+            }),
+            prisma.orderProduct.groupBy({
+              by: ["productId"],
+              where: {
+                order: {
+                  orderDate: { gte: monthStart, lte: monthEnd },
+                  status: { in: ["PENDING", "FULFILLED"] },
+                },
+              },
+              _sum: { quantity: true },
+              _count: { productId: true },
+            }),
+            prisma.invoiceProducts.findMany({
+              where: {
+                invoice: {
+                  dateCreated: { gte: monthStart, lte: monthEnd },
+                  status: "PAID",
+                },
+              },
+              include: { Product: true },
+            }),
+          ]);
 
-      // Build weekly sales map
-      type WeeklySalesData = {
-        week: number;
-        sales: number;
-        orders: number;
-        averageOrderValue: number;
-      };
-      type MonthlySalesData = {
-        week: string;
-        sales: number;
-        orders: number;
-        averageOrderValue: number;
-      };
-      const weeklyMap = new Map<number, WeeklySalesData>();
+          const toWeek = (d: Date) =>
+            Math.ceil((d.getDate() + 6 - d.getDay()) / 7);
+          const weeklyMap = new Map<
+            number,
+            { week: number; sales: number; orders: number }
+          >();
 
-      const toWeek = (d: Date) => Math.ceil((d.getDate() + 6 - d.getDay()) / 7);
+          monthlyOrders.forEach((item) => {
+            const week = toWeek(
+              item.orderDate ? new Date(item.orderDate) : new Date(),
+            );
+            const e = weeklyMap.get(week) ?? { week, sales: 0, orders: 0 };
+            e.sales += item._sum?.total ?? 0;
+            e.orders += item._count?.id ?? 0;
+            weeklyMap.set(week, e);
+          });
+          monthlyInvoices.forEach((item) => {
+            const week = toWeek(new Date(item.dateCreated));
+            const e = weeklyMap.get(week) ?? { week, sales: 0, orders: 0 };
+            e.sales += item._sum?.amount ?? 0;
+            e.orders += item._count?.id ?? 0;
+            weeklyMap.set(week, e);
+          });
+          monthlyIncomes.forEach((item) => {
+            const week = toWeek(new Date(item.date));
+            const e = weeklyMap.get(week) ?? { week, sales: 0, orders: 0 };
+            e.sales += item._sum?.amount ?? 0;
+            weeklyMap.set(week, e);
+          });
 
-      monthlyOrders.forEach((item) => {
-        const week = toWeek(
-          item.orderDate ? new Date(item.orderDate) : new Date(),
-        );
-        const e = weeklyMap.get(week) ?? {
-          week,
-          sales: 0,
-          orders: 0,
-          averageOrderValue: 0,
-        };
-        e.sales += item._sum?.total ?? 0;
-        e.orders += item._count?.id ?? 0;
-        weeklyMap.set(week, e);
-      });
+          const monthlySales = Array.from(weeklyMap.values())
+            .sort((a, b) => a.week - b.week)
+            .map((item) => ({
+              week: `Week ${item.week}`,
+              sales: Number(item.sales.toFixed(2)),
+              orders: item.orders,
+              averageOrderValue:
+                item.orders > 0
+                  ? Number((item.sales / item.orders).toFixed(2))
+                  : 0,
+            }));
 
-      monthlyInvoices.forEach((item) => {
-        const week = toWeek(new Date(item.dateCreated));
-        const e = weeklyMap.get(week) ?? {
-          week,
-          sales: 0,
-          orders: 0,
-          averageOrderValue: 0,
-        };
-        e.sales += item._sum?.amount ?? 0;
-        e.orders += item._count?.id ?? 0;
-        weeklyMap.set(week, e);
-      });
+          const productMap = new Map<
+            string,
+            { unitsSold: number; sales: number }
+          >();
+          monthlyOrderProducts.forEach((item) => {
+            productMap.set(item.productId, {
+              unitsSold: (item._sum?.quantity ?? 0) as number,
+              sales: item._count?.productId ?? 0,
+            });
+          });
+          monthlyInvoiceProducts.forEach((item) => {
+            item.Product.forEach((product) => {
+              const e = productMap.get(product.id) ?? {
+                unitsSold: 0,
+                sales: 0,
+              };
+              e.unitsSold += item.quantity;
+              e.sales += 1;
+              productMap.set(product.id, e);
+            });
+          });
 
-      monthlyIncomes.forEach((item) => {
-        const week = toWeek(new Date(item.date));
-        const e = weeklyMap.get(week) ?? {
-          week,
-          sales: 0,
-          orders: 0,
-          averageOrderValue: 0,
-        };
-        e.sales += item._sum?.amount ?? 0;
-        weeklyMap.set(week, e);
-      });
+          const productDetails = await prisma.product.findMany({
+            where: { id: { in: Array.from(productMap.keys()) } },
+            select: { id: true, name: true, price: true },
+          });
 
-      const weeklySales: MonthlySalesData[] = Array.from(
-        weeklyMap.values(),
-      ).map((item) => ({
-        ...item,
-        week: `Week ${item.week}`,
-        averageOrderValue: item.orders > 0 ? item.sales / item.orders : 0,
-      }));
+          const topProducts = productDetails
+            .map((p) => {
+              const d = productMap.get(p.id) ?? { unitsSold: 0, sales: 0 };
+              return {
+                name: p.name,
+                sales: d.sales,
+                revenue: Number((d.unitsSold * p.price).toFixed(2)),
+                unitsSold: d.unitsSold,
+              };
+            })
+            .sort((a, b) => b.unitsSold - a.unitsSold)
+            .slice(0, 5);
 
-      // Build top products map
-      const productMap = new Map<
-        string,
-        { unitsSold: number; sales: number }
-      >();
-
-      monthlyOrderProducts.forEach((item) => {
-        productMap.set(item.productId, {
-          unitsSold: (item._sum?.quantity ?? 0) as number,
-          sales: (item._count?.productId ?? 0) as number,
-        });
-      });
-
-      monthlyInvoiceProducts.forEach((item) => {
-        item.Product.forEach((product) => {
-          const existing = productMap.get(product.id) ?? {
-            unitsSold: 0,
-            sales: 0,
-          };
-          existing.unitsSold += item.quantity;
-          existing.sales += 1;
-          productMap.set(product.id, existing);
-        });
-      });
-
-      const productDetails = await prisma.product.findMany({
-        where: { id: { in: Array.from(productMap.keys()) } },
-        select: { id: true, name: true, price: true },
-      });
-
-      const topProducts = productDetails
-        .map((product) => {
-          const data = productMap.get(product.id) ?? { unitsSold: 0, sales: 0 };
           return {
-            name: product.name,
-            sales: data.sales,
-            revenue: Number((data.unitsSold * product.price).toFixed(2)),
-            unitsSold: data.unitsSold,
+            month: m,
+            monthName: fullMonthNames[i],
+            status,
+            data: { monthlySales, topProducts },
           };
-        })
-        .sort((a, b) => b.unitsSold - a.unitsSold)
-        .slice(0, 5);
-
-      const monthlySalesData = {
-        monthlySales: weeklySales,
-        topProducts,
-      };
-
+        }),
+      );
       // ════════════════════════════════════════════════════════════════════════
       // QUARTERLY FINANCIALS
       // ════════════════════════════════════════════════════════════════════════
@@ -985,31 +1010,31 @@ export const dashboardProcedures = createTRPCRouter({
 
       return [
         {
-          type: "Monthly Sales Report",
-          items: [
-            {
-              date: `${shortMonthNames[month - 1]} ${year}`,
-              status: getReportStatus(`${year}-${month}-01`),
-              monthlySalesReport: monthlySalesData,
-            },
-          ],
+          type: "Monthly Sales Report" as const,
+          items: allMonthlySalesData
+            .filter((m) => m.status !== "Unavailable")
+            .map((m) => ({
+              date: `${shortMonthNames[m.month - 1]} ${year}`,
+              status: m.status,
+              monthlySalesReport: m.data,
+            })),
         },
         {
-          type: "Quarterly Financials Report",
+          type: "Quarterly Financials Report" as const,
           items: [
             {
               date: `${year}`,
-              status: getReportStatus(`${year}-12-31`),
+              status: getAnnualStatus(),
               quarterlyReport: quarterlyFinancialsData,
             },
           ],
         },
         {
-          type: "Annual Performance Report",
+          type: "Annual Performance Report" as const,
           items: [
             {
               date: year.toString(),
-              status: getReportStatus(`${year}-12-31`),
+              status: getAnnualStatus(),
               annualPerformance: annualPerformanceData,
             },
           ],

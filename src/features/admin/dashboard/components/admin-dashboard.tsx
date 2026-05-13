@@ -77,16 +77,10 @@ export const AdminDashboard = () => {
         );
       case "reports":
         return (
-          <MonthYearPicker
-            selectedMonth={selectedMonth}
+          <YearPicker
             selectedYear={selectedReportYear}
-            onMonthChange={(newMonth) => {
-              setParams({ selectedReportMonth: newMonth });
-              // fetchReportData();
-            }}
             onYearChange={(newYear) => {
               setParams({ selectedReportYear: newYear });
-              // fetchReportData();
             }}
           />
         );
@@ -132,10 +126,7 @@ export const AdminDashboard = () => {
         </TabsContent>
         <TabsContent value="reports" className="space-y-4">
           <Suspense fallback={<ReportsTabSkeleton />}>
-            <ReportsTab
-              selectedMonth={selectedMonth}
-              selectedYear={selectedReportYear}
-            />
+            <ReportsTab selectedYear={selectedReportYear} />
           </Suspense>
         </TabsContent>
       </Tabs>

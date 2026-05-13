@@ -234,7 +234,6 @@ export const OrderList = () => {
 
   // view function
   const handleViewDetails = (order: OrderInfo) => {
-    console.log("Viewing details for order:", { order });
     setSelectedOrder(order);
     setIsDialogOpen(true);
   };

@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/table";
 import { lazy, Suspense, useState } from "react";
 import { MonthlySalesReport } from "./monthly-sales-report";
+import { AdminReportProps } from "@/lib/types";
 
 const QuarterlyFinancialStatement = lazy(() =>
   import("@/features/admin/dashboard/components/quarterly-financial").then(
@@ -45,86 +46,7 @@ const AnnualPerformanceReview = lazy(() =>
   ),
 );
 
-type MonthlySales = {
-  week: string;
-  sales: number;
-  orders: number;
-  averageOrderValue: number;
-};
-
-type TopProducts = {
-  name: string;
-  sales: number;
-  revenue: number;
-  unitsSold: number;
-};
-
-type MonthlySalesReport = {
-  monthlySales: MonthlySales[];
-  topProducts: TopProducts[];
-};
-
-interface MonthlyData {
-  month: number;
-  revenue: number;
-  expenses: number;
-  profit: number;
-}
-
-interface ExpenseBreakdown {
-  category: string;
-  amount: number;
-}
-
-interface QuarterlyData {
-  quarter: number;
-  monthlyData: MonthlyData[];
-}
-
-interface QuarterlyExpenseBreakdown {
-  quarter: number;
-  data: ExpenseBreakdown[];
-}
-
-type QuarterlyReport = {
-  monthlyData: QuarterlyData[];
-  expenseBreakdown: QuarterlyExpenseBreakdown[];
-};
-
-type QuarterlyPerformanceProps = {
-  quarter: string;
-  sales: number;
-  target: number;
-  customerSatisfaction: number;
-};
-
-type KeyMetricsProps = {
-  metric: string;
-  value: string;
-};
-
-type AnnualPerformance = {
-  quarterlyPerformance: QuarterlyPerformanceProps[];
-  keyMetrics: KeyMetricsProps[];
-};
-
-type ReportItem = {
-  date: string;
-  status: string;
-  action?: string;
-  monthlySalesReport?: MonthlySalesReport;
-  quarterlyReport?: QuarterlyReport;
-  annualPerformance?: AnnualPerformance;
-};
-
-type ReportData = {
-  type: string;
-  items: ReportItem[];
-};
-
-type AdminReportProps = {
-  data: ReportData[];
-};
+// ─── Helpers ───────────────────────────────────────────────────────────────────
 
 const getQuarterStatus = (quarter: number, year: number) => {
   const currentDate = new Date();
@@ -143,6 +65,36 @@ const getQuarterStatus = (quarter: number, year: number) => {
   }
 };
 
+const fmt = (n: number) =>
+  n.toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+
+const StatusBadge = ({ status }: { status: string }) => {
+  const variant =
+    status === "Completed"
+      ? "bg-green-100 text-green-700 border-green-200"
+      : status === "In Progress" || status === "In Progress (YTD)"
+        ? "bg-blue-100 text-blue-700 border-blue-200"
+        : "bg-gray-100 text-gray-500 border-gray-200";
+
+  return (
+    <span
+      className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium border ${variant}`}
+    >
+      {status}
+    </span>
+  );
+};
+
+const DialogSpinner = () => (
+  <div className="h-full flex items-center justify-center py-12">
+    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+  </div>
+);
+
+// ─── Component ────────────────────────────────────────────────────────────────
 export const ReportsSection = ({ data }: AdminReportProps) => {
   const [openDialog, setOpenDialog] = useState<string | null>(null);
 
@@ -162,116 +114,87 @@ export const ReportsSection = ({ data }: AdminReportProps) => {
         <AccordionItem value={`item-${index}`} key={index}>
           <AccordionTrigger>{report.type}</AccordionTrigger>
           <AccordionContent>
-            {report.type === "Quarterly Financials Report" &&
-            report.items[0]?.quarterlyReport ? (
+            {/* ── Monthly Sales Report ────────────────────────────────────── */}
+            {report.type === "Monthly Sales Report" && (
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Quarter</TableHead>
-                    <TableHead className="text-right">Revenue ($)</TableHead>
-                    <TableHead className="text-right">Expenses ($)</TableHead>
-                    <TableHead className="text-right">Profit ($)</TableHead>
+                    <TableHead>Month</TableHead>
                     <TableHead className="text-right">Status</TableHead>
                     <TableHead className="text-right">Action</TableHead>
                     <TableHead></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {report.items[0].quarterlyReport.monthlyData.map(
-                    (quarter) => {
-                      const totalRevenue = quarter.monthlyData.reduce(
-                        (sum, month) => sum + month.revenue,
-                        0,
-                      );
-                      const totalExpenses = quarter.monthlyData.reduce(
-                        (sum, month) => sum + month.expenses,
-                        0,
-                      );
-                      const totalProfit = quarter.monthlyData.reduce(
-                        (sum, month) => sum + month.profit,
-                        0,
-                      );
-
-                      const year = parseInt(report.items[0].date);
-                      const status = getQuarterStatus(quarter.quarter, year);
-
+                  {report.items.length === 0 ? (
+                    <TableRow>
+                      <TableCell
+                        colSpan={3}
+                        className="text-center text-muted-foreground py-6"
+                      >
+                        No monthly sales reports available
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    report.items.map((item, itemIndex) => {
+                      const dialogKey = `${index}-${itemIndex}`;
                       return (
-                        <TableRow key={quarter.quarter}>
-                          <TableCell>Q{quarter.quarter}</TableCell>
-                          <TableCell className="text-right">
-                            {totalRevenue.toLocaleString(undefined, {
-                              minimumFractionDigits: 2,
-                              maximumFractionDigits: 2,
-                            })}
+                        <TableRow key={itemIndex}>
+                          <TableCell className="font-medium">
+                            {item.date}
                           </TableCell>
                           <TableCell className="text-right">
-                            {totalExpenses.toLocaleString(undefined, {
-                              minimumFractionDigits: 2,
-                              maximumFractionDigits: 2,
-                            })}
+                            <StatusBadge status={item.status} />
                           </TableCell>
-                          <TableCell className="text-right">
-                            {totalProfit.toLocaleString(undefined, {
-                              minimumFractionDigits: 2,
-                              maximumFractionDigits: 2,
-                            })}
-                          </TableCell>
-                          <TableCell className="text-right">{status}</TableCell>
                           <TableCell className="text-right">
                             <Dialog
-                              open={
-                                openDialog === `${index}-${quarter.quarter}`
-                              }
+                              open={openDialog === dialogKey}
                               onOpenChange={(isOpen) =>
-                                setOpenDialog(
-                                  isOpen ? `${index}-${quarter.quarter}` : null,
-                                )
+                                setOpenDialog(isOpen ? dialogKey : null)
                               }
                             >
                               <DialogTrigger asChild>
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  disabled={status === "Unavailable"}
+                                  disabled={item.status === "Unavailable"}
                                 >
-                                  {status === "Completed" ? "View" : "Preview"}
+                                  {item.status === "Completed"
+                                    ? "View"
+                                    : "Preview"}
                                 </Button>
                               </DialogTrigger>
                               <DialogContent className="max-w-4xl w-full max-h-screen">
                                 <DialogHeader>
                                   <DialogTitle>
-                                    Q{quarter.quarter} {report.items[0].date}{" "}
-                                    Detailed Breakdown
+                                    Monthly Sales Report — {item.date}
                                   </DialogTitle>
                                   <DialogDescription className="sr-only">
-                                    Quarterly financial report for Q
-                                    {quarter.quarter} {report.items[0].date}
+                                    Monthly sales report for {item.date}
                                   </DialogDescription>
                                 </DialogHeader>
                                 <ScrollArea className="max-h-[calc(90vh-100px)] pr-4">
-                                  <div className="mt-4">
-                                    <ErrorBoundary>
-                                      <Suspense
-                                        fallback={
-                                          <div className="h-full flex items-center justify-center">
-                                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                                          </div>
-                                        }
-                                      >
-                                        <QuarterlyFinancialStatement
-                                          monthlyData={[quarter]}
-                                          expenseBreakdown={[
-                                            report.items[0].quarterlyReport?.expenseBreakdown.find(
-                                              (e) =>
-                                                e.quarter === quarter.quarter,
-                                            ) || {
-                                              quarter: quarter.quarter,
-                                              data: [],
-                                            },
-                                          ]}
-                                        />
-                                      </Suspense>
-                                    </ErrorBoundary>
+                                  <div className="mt-4 space-y-2">
+                                    <div className="flex items-center gap-2 mb-4">
+                                      <span className="text-sm text-muted-foreground">
+                                        Status:
+                                      </span>
+                                      <StatusBadge status={item.status} />
+                                    </div>
+                                    {item.monthlySalesReport &&
+                                    item.monthlySalesReport.monthlySales
+                                      .length > 0 ? (
+                                      <MonthlySalesReport
+                                        {...item.monthlySalesReport}
+                                      />
+                                    ) : (
+                                      <p className="text-sm text-muted-foreground py-4 text-center">
+                                        No sales data recorded for {item.date}
+                                      </p>
+                                    )}
+                                    {item.status === "Completed" && (
+                                      <Button className="mt-4">Download</Button>
+                                    )}
                                   </div>
                                 </ScrollArea>
                               </DialogContent>
@@ -279,93 +202,210 @@ export const ReportsSection = ({ data }: AdminReportProps) => {
                           </TableCell>
                         </TableRow>
                       );
-                    },
+                    })
                   )}
                 </TableBody>
               </Table>
-            ) : (
+            )}
+
+            {/* ── Quarterly Financials Report ─────────────────────────────── */}
+            {report.type === "Quarterly Financials Report" &&
+              report.items[0].quarterlyReport && (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Quarter</TableHead>
+                      <TableHead className="text-right">Revenue ($)</TableHead>
+                      <TableHead className="text-right">Expenses ($)</TableHead>
+                      <TableHead className="text-right">Profit ($)</TableHead>
+                      <TableHead className="text-right">Status</TableHead>
+                      <TableHead className="text-right">Action</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {report.items[0].quarterlyReport.monthlyData.map(
+                      (quarter) => {
+                        const year = parseInt(report.items[0].date);
+                        const status = getQuarterStatus(quarter.quarter, year);
+
+                        // Already filtered server-side, but guard client-side too
+                        if (status === "Unavailable") return null;
+
+                        const totalRevenue = quarter.monthlyData.reduce(
+                          (s, m) => s + m.revenue,
+                          0,
+                        );
+                        const totalExpenses = quarter.monthlyData.reduce(
+                          (s, m) => s + m.expenses,
+                          0,
+                        );
+                        const totalProfit = quarter.monthlyData.reduce(
+                          (s, m) => s + m.profit,
+                          0,
+                        );
+                        const dialogKey = `${index}-q${quarter.quarter}`;
+
+                        return (
+                          <TableRow key={quarter.quarter}>
+                            <TableCell className="font-medium">
+                              Q{quarter.quarter}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              {fmt(totalRevenue)}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              {fmt(totalExpenses)}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              {fmt(totalProfit)}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <StatusBadge status={status} />
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <Dialog
+                                open={openDialog === dialogKey}
+                                onOpenChange={(isOpen) =>
+                                  setOpenDialog(isOpen ? dialogKey : null)
+                                }
+                              >
+                                <DialogTrigger asChild>
+                                  <Button variant="outline" size="sm">
+                                    {status === "Completed"
+                                      ? "View"
+                                      : "Preview"}
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent className="max-w-4xl w-full max-h-screen">
+                                  <DialogHeader>
+                                    <DialogTitle>
+                                      Q{quarter.quarter} {report.items[0].date}{" "}
+                                      Detailed Breakdown
+                                    </DialogTitle>
+                                    <DialogDescription className="sr-only">
+                                      Quarterly financial report for Q
+                                      {quarter.quarter} {report.items[0].date}
+                                    </DialogDescription>
+                                  </DialogHeader>
+                                  <ScrollArea className="max-h-[calc(90vh-100px)] pr-4">
+                                    <div className="mt-4">
+                                      <ErrorBoundary>
+                                        <Suspense fallback={<DialogSpinner />}>
+                                          <QuarterlyFinancialStatement
+                                            monthlyData={[quarter]}
+                                            expenseBreakdown={[
+                                              report.items[0].quarterlyReport?.expenseBreakdown.find(
+                                                (e) =>
+                                                  e.quarter === quarter.quarter,
+                                              ) ?? {
+                                                quarter: quarter.quarter,
+                                                data: [],
+                                              },
+                                            ]}
+                                          />
+                                        </Suspense>
+                                      </ErrorBoundary>
+                                    </div>
+                                  </ScrollArea>
+                                </DialogContent>
+                              </Dialog>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      },
+                    )}
+                  </TableBody>
+                </Table>
+              )}
+
+            {/* ── Annual Performance Report ─────────────────────────────── */}
+            {report.type === "Annual Performance Report" && (
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Action</TableHead>
+                    <TableHead>Year</TableHead>
+                    <TableHead className="text-right">Status</TableHead>
+                    <TableHead className="text-right">Action</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {report.items.map((item, itemIndex) => (
-                    <TableRow key={itemIndex}>
-                      <TableCell>{item.date}</TableCell>
-                      <TableCell>{item.status}</TableCell>
-                      <TableCell>
-                        <Dialog
-                          open={openDialog === `${index}-${itemIndex}`}
-                          onOpenChange={(isOpen) =>
-                            setOpenDialog(
-                              isOpen ? `${index}-${itemIndex}` : null,
-                            )
-                          }
-                        >
-                          <DialogTrigger asChild>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              disabled={item.status === "Unavailable"}
-                            >
-                              {item.status === "Completed" ? "View" : "Preview"}
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent className="max-w-4xl w-full max-h-screen">
-                            <DialogHeader>
-                              <DialogTitle>
-                                {report.type} - {item.date}
-                              </DialogTitle>
-                              <DialogDescription className="sr-only">
-                                {report.type} report for {item.date}
-                              </DialogDescription>
-                            </DialogHeader>
-                            <ScrollArea className="max-h-[calc(90vh-100px)] pr-4">
-                              <div className="mt-4">
-                                <p>
-                                  <strong>Status:</strong> {item.status}
-                                </p>
-                                <p>
-                                  <strong>Date:</strong> {item.date}
-                                </p>
-                                {report.type === "Monthly Sales Report" &&
-                                item.monthlySalesReport ? (
-                                  <MonthlySalesReport
-                                    {...item.monthlySalesReport}
-                                  />
-                                ) : report.type ===
-                                    "Annual Performance Report" &&
-                                  item.annualPerformance ? (
-                                  <ErrorBoundary>
-                                    <Suspense
-                                      fallback={
-                                        <div className="h-full flex items-center justify-center">
-                                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                                        </div>
-                                      }
-                                    >
-                                      <AnnualPerformanceReview
-                                        {...item.annualPerformance}
-                                      />
-                                    </Suspense>
-                                  </ErrorBoundary>
-                                ) : (
-                                  <p>No data available for this report.</p>
-                                )}
-                                {item.status === "Completed" && (
-                                  <Button className="mt-4">Download</Button>
-                                )}
-                              </div>
-                            </ScrollArea>
-                          </DialogContent>
-                        </Dialog>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {report.items.map((item, itemIndex) => {
+                    const dialogKey = `${index}-${itemIndex}`;
+                    const isUnavailable = item.status === "Unavailable";
+                    return (
+                      <TableRow key={itemIndex}>
+                        <TableCell className="font-medium">
+                          {item.date}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <StatusBadge status={item.status} />
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Dialog
+                            open={openDialog === dialogKey}
+                            onOpenChange={(isOpen) =>
+                              setOpenDialog(isOpen ? dialogKey : null)
+                            }
+                          >
+                            <DialogTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                disabled={isUnavailable}
+                              >
+                                {item.status === "Completed"
+                                  ? "View"
+                                  : item.status === "In Progress (YTD)"
+                                    ? "View YTD"
+                                    : "Preview"}
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-4xl w-full max-h-screen">
+                              <DialogHeader>
+                                <DialogTitle>
+                                  Annual Performance Report — {item.date}
+                                  {item.status === "In Progress (YTD)" && (
+                                    <span className="ml-2 text-sm font-normal text-muted-foreground">
+                                      (Year to Date)
+                                    </span>
+                                  )}
+                                </DialogTitle>
+                                <DialogDescription className="sr-only">
+                                  Annual performance report for {item.date}
+                                </DialogDescription>
+                              </DialogHeader>
+                              <ScrollArea className="max-h-[calc(90vh-100px)] pr-4">
+                                <div className="mt-4 space-y-2">
+                                  <div className="flex items-center gap-2 mb-4">
+                                    <span className="text-sm text-muted-foreground">
+                                      Status:
+                                    </span>
+                                    <StatusBadge status={item.status} />
+                                  </div>
+                                  {item.annualPerformance ? (
+                                    <ErrorBoundary>
+                                      <Suspense fallback={<DialogSpinner />}>
+                                        <AnnualPerformanceReview
+                                          {...item.annualPerformance}
+                                        />
+                                      </Suspense>
+                                    </ErrorBoundary>
+                                  ) : (
+                                    <p className="text-sm text-muted-foreground py-4 text-center">
+                                      No data available for this report.
+                                    </p>
+                                  )}
+                                  {item.status === "Completed" && (
+                                    <Button className="mt-4">Download</Button>
+                                  )}
+                                </div>
+                              </ScrollArea>
+                            </DialogContent>
+                          </Dialog>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             )}

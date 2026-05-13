@@ -77,7 +77,6 @@ export const SignUpForm = () => {
     }
     setLoading(true);
     try {
-      console.log("Sign up successful");
       const result = await signUpAction(validatedFields.data);
       if (result.success) {
         toast.success("Registration successful! Please login.");

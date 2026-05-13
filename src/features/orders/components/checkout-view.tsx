@@ -54,7 +54,6 @@ export const CheckoutView = () => {
 
   useEffect(() => {
     const tempOrderId = Date.now().toString();
-    console.log("Temporary Order ID", tempOrderId);
     setOrderId(tempOrderId);
   }, []);
 
@@ -187,7 +186,6 @@ export const CheckoutView = () => {
         throw error;
       }
     } else {
-      console.log("No order data found in local storage");
       throw new Error("No order data found in local storage");
     }
   };
@@ -205,7 +203,6 @@ export const CheckoutView = () => {
       shippingInfo: { ...values },
       status: undefined,
     };
-    // console.log("ORDER DEETS", orderDetails);
 
     // if there is no payment, add order details to local storage & set payment to true
     if (!payment) {

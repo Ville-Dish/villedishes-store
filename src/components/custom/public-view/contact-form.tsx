@@ -61,7 +61,6 @@ export const ContactForm = () => {
   );
 
   const onSubmit = (values: ContactFormData) => {
-    console.log(values);
     const contactData = {
       name: values.name,
       email: values.email,
@@ -70,7 +69,6 @@ export const ContactForm = () => {
       message: values.message,
     };
 
-    // sendContactEmail(contactData);
     sendContactMail.mutate({
       type: "contact",
       to: ADMIN_EMAIL,

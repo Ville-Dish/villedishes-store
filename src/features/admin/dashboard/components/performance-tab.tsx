@@ -23,6 +23,7 @@ export const PerformanceTab = ({ selectedYear }: PerformanceTabProps) => {
     }),
   );
 
+
   return (
     <div className="grid gap-4">
       <Card className="col-span-full">

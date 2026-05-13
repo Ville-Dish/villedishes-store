@@ -183,7 +183,7 @@ type OrderDashboardProps = {
   data: OrderDashboardData[];
 };
 
-type MonthlySales = {
+type WeeklySales = {
   week: string;
   sales: number;
   orders: number;
@@ -197,9 +197,16 @@ type TopProducts = {
   unitsSold: number;
 };
 
-type MonthlySalesReportProps = {
-  monthlySales: MonthlySales[];
+type MonthlySalesReport = {
+  monthlySales: WeeklySales[];
   topProducts: TopProducts[];
+};
+
+/** A single row in the Monthly Sales report table - one per month*/
+type MonthlyReportItem = {
+  date: string;
+  status: "Completed" | "In Progress" | "Unavailable";
+  monthlySalesReport?: MonthlySalesReport;
 };
 
 interface MonthlyData {
@@ -229,6 +236,14 @@ type QuarterlyReport = {
   expenseBreakdown: QuarterlyExpenseBreakdown[];
 };
 
+/** A single item in the Quarterly or Annual report table */
+type FinancialReportItem = {
+  date: string;
+  status: string;
+  quarterlyReport?: QuarterlyReport;
+  annualPerformance?: AnnualPerformance;
+};
+
 type QuarterlyPerformanceProps = {
   quarter: string;
   sales: number;
@@ -246,22 +261,14 @@ type AnnualPerformance = {
   keyMetrics: KeyMetricsProps[];
 };
 
-type ReportItem = {
-  date: string;
-  status: string;
-  action?: string;
-  monthlySalesReport?: MonthlySalesReport;
-  quarterlyReport?: QuarterlyReport;
-  annualPerformance?: AnnualPerformance;
-};
-
-type ReportData = {
-  type: string;
-  items: ReportItem[];
-};
+/** Discriminated report section — Monthly uses MonthlyReportItem[], others use FinancialReportItem[] */
+type ReportSection =
+  | { type: "Monthly Sales Report"; items: MonthlyReportItem[] }
+  | { type: "Quarterly Financials Report"; items: FinancialReportItem[] }
+  | { type: "Annual Performance Report"; items: FinancialReportItem[] };
 
 type AdminReportProps = {
-  data: ReportData[];
+  data: ReportSection[];
 };
 
 type ImageUploadProps = {
