@@ -23,7 +23,6 @@ const AdminDashboardPage = async ({ searchParams }: Props) => {
     endDate,
     selectedAnalyticsMonth,
     selectedAnalyticsYear,
-    selectedReportMonth,
     selectedReportYear,
     selectedYear,
   } = await dashboardParamsLoader(searchParams);
@@ -52,7 +51,6 @@ const AdminDashboardPage = async ({ searchParams }: Props) => {
   prefetch(
     trpc.dashboard.reportData.queryOptions({
       year: selectedReportYear,
-      month: selectedReportMonth,
     }),
   );
 

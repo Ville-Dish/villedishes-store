@@ -41,9 +41,6 @@ export const dashboardParams = {
     .withOptions({ clearOnDefault: true }),
 
   // Reports
-  selectedReportMonth: parseAsInteger
-    .withDefault(today.getMonth())
-    .withOptions({ clearOnDefault: true }),
   selectedReportYear: parseAsInteger
     .withDefault(today.getFullYear())
     .withOptions({ clearOnDefault: true }),
