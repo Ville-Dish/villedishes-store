@@ -1,4 +1,6 @@
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import Link from "next/link";
 
 const SuccessPage = () => {
   return (
@@ -20,9 +22,9 @@ const SuccessPage = () => {
               delivery time of 48 hours has been sent to the customer. If the
               estimated delivery time changes, kindly contact the customer.
             </p>
-            {/* <Button onClick={() => (window.location.href = "/")}>
-                  Return to Home
-                </Button> */}
+            <Button asChild className="border-amber-200 bg-amber-400">
+              <Link href="/admin/dashboard">Return to Home</Link>
+            </Button>
           </CardContent>
         </Card>
       </main>

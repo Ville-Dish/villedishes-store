@@ -2,11 +2,11 @@
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
+  engineType = "client"
 }
 
 datasource db {
   provider = "postgresql"
-  // url      = env("DATABASE_URL")
 }
 
 enum DiscountType {
@@ -93,6 +93,21 @@ model TwoFactor {
   @@map("twoFactor")
 }
 
+model CompanySettings {
+  id             String   @id @default(cuid())
+  companyName    String   @unique
+  about          String?  @db.Text
+  founderNotes    String? @db.Text
+  supportEmail   String?
+  supportPhone   String?
+  website        String?
+  address        String?
+  logoUrl        String? @db.Text
+  assetId        String? @db.Text
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
 model Product {
   id              String            @id @unique @default(uuid())
   name            String            @unique
@@ -102,9 +117,13 @@ model Product {
   assetId         String?
   category        String?
   rating          Float?
+  invoiceId       String?
+
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @default(now()) @updatedAt
+
   OrderProduct    OrderProduct[]
   InvoiceProducts InvoiceProducts[]
-  invoiceId       String?
 
   @@index([category])
   @@index([price])
@@ -116,30 +135,70 @@ model Review {
   rating    Int
   comment   String
   author    String
-  productId String?
+  orderProductId String
+  orderProduct  OrderProduct @relation(fields: [orderProductId], references: [id])
+
+  createdAt   DateTime @default(now())
+}
+
+enum OrderStatus {
+  UNVERIFIED
+  PENDING
+  SHIPPED
+  DELIVERED
+  FULFILLED
+  CANCELLATION_REQUESTED
+  CANCELLED
+}
+
+enum OrderType {
+  PICKUP
+  DELIVERY
+  DINE_IN
+}
+
+enum PaymentMethod {
+  CARD
+  ETRANSFER
 }
 
 model Order {
-  id               String         @id @unique @default(uuid())
-  orderId          String         @unique
+  id               String   @id @default(uuid())
+  orderId          String   @unique
+
   subtotal         Float
   tax              Float
   shippingFee      Float
   total            Float
+
+  paymentDate      DateTime?
+  paymentMethod    PaymentMethod @default(ETRANSFER)
+  orderDate        DateTime?
+
   referenceNumber  String?
-  paymentDate      String?
   verificationCode String?
   orderNumber      String?
-  orderDate        String?
+
+  orderType        OrderType   @default(DELIVERY)
+  status       OrderStatus
+
+  scheduledAt      DateTime?
+  fulfilledAt      DateTime?
+
+  // Cancellation
+  cancellationRequestedAt DateTime?
+  cancellationDate        DateTime?
+  cancellationReason      String?
+  interacEmail            String?
+  refundReferenceNumber   String?
+
   shippingInfoId   String
-  status           String
-  shippingInfo     ShippingInfo   @relation(fields: [shippingInfoId], references: [id])
+  shippingInfo     ShippingInfo @relation(fields: [shippingInfoId], references: [id])
+
   products         OrderProduct[]
 
   @@index([status])
   @@index([orderDate])
-  @@index([status, orderDate])
-  @@index([orderNumber])
 }
 
 model ShippingInfo {
@@ -153,36 +212,59 @@ model ShippingInfo {
   postalCode  String
   orderNotes  String?
   Order       Order[]
+
+  @@unique([email, phoneNumber])
 }
 
 model OrderProduct {
   id        String  @id @unique @default(uuid())
   quantity  Float
+
   productId String
+
   orderId   String
   order     Order   @relation(fields: [orderId], references: [id])
+
   product   Product @relation(fields: [productId], references: [id])
+
+  reviews   Review[]
+}
+
+enum InvoiceStatus {
+PAID
+UNPAID
+PENDING
+OVERDUE
+CANCELLED
 }
 
 model Invoice {
-  id                 String            @id @unique @default(uuid())
-  invoiceNumber      String            @unique
+  id                 String              @id @unique @default(uuid())
+  invoiceNumber      String              @unique
   customerName       String
   customerEmail      String
   customerPhone      String
+  
   amount             Float
-  amountPaid         Float             @default(0)
-  amountDue          Float             @default(0)
+  amountPaid         Float               @default(0)
+  amountDue          Float               @default(0)
+
   discountPercentage Float               @default(0)
-  discountType       DiscountType       @default(PERCENT)
+  discountType       DiscountType        @default(PERCENT)
+
   taxRate            Float               @default(0)
+  taxType            DiscountType        @default(PERCENT)
+
   shippingFee        Float               @default(0)
   serviceCharge      Float               @default(0)
   miscellaneous      Float               @default(0)
-  dateCreated        String
-  dueDate            String
-  status             String
-  InvoiceProducts    InvoiceProducts[] @relation("InvoiceProducts")
+
+  dateCreated        DateTime
+  dueDate            DateTime
+
+  status             InvoiceStatus
+
+  InvoiceProducts    InvoiceProducts[]   @relation("InvoiceProducts")
 
   @@index([status])
   @@index([dateCreated])
@@ -209,7 +291,7 @@ model Expense {
   name     String
   category String
   amount   Float
-  date     String
+  date     DateTime
 }
 
 model Income {
@@ -217,7 +299,7 @@ model Income {
   name     String
   category String
   amount   Float
-  date     String
+  date     DateTime
 }
 
 model Revenue {
@@ -236,4 +318,19 @@ model MonthlyProjection {
   revenueId  String
 
   @@unique([revenueId, month])
+}
+
+model Testimonial {
+  id          String   @id @default(uuid())
+  // rating      Int?
+  comment     String
+  isAnonymous Boolean  @default(false)
+  authorName  String?
+  isApproved  Boolean  @default(false)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([isApproved])
+  @@index([createdAt])
 }

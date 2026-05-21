@@ -56,6 +56,7 @@ export const ModelName = {
   Account: 'Account',
   Verification: 'Verification',
   TwoFactor: 'TwoFactor',
+  CompanySettings: 'CompanySettings',
   Product: 'Product',
   Review: 'Review',
   Order: 'Order',
@@ -66,7 +67,8 @@ export const ModelName = {
   Expense: 'Expense',
   Income: 'Income',
   Revenue: 'Revenue',
-  MonthlyProjection: 'MonthlyProjection'
+  MonthlyProjection: 'MonthlyProjection',
+  Testimonial: 'Testimonial'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -156,6 +158,24 @@ export const TwoFactorScalarFieldEnum = {
 export type TwoFactorScalarFieldEnum = (typeof TwoFactorScalarFieldEnum)[keyof typeof TwoFactorScalarFieldEnum]
 
 
+export const CompanySettingsScalarFieldEnum = {
+  id: 'id',
+  companyName: 'companyName',
+  about: 'about',
+  founderNotes: 'founderNotes',
+  supportEmail: 'supportEmail',
+  supportPhone: 'supportPhone',
+  website: 'website',
+  address: 'address',
+  logoUrl: 'logoUrl',
+  assetId: 'assetId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type CompanySettingsScalarFieldEnum = (typeof CompanySettingsScalarFieldEnum)[keyof typeof CompanySettingsScalarFieldEnum]
+
+
 export const ProductScalarFieldEnum = {
   id: 'id',
   name: 'name',
@@ -165,7 +185,9 @@ export const ProductScalarFieldEnum = {
   assetId: 'assetId',
   category: 'category',
   rating: 'rating',
-  invoiceId: 'invoiceId'
+  invoiceId: 'invoiceId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
 } as const
 
 export type ProductScalarFieldEnum = (typeof ProductScalarFieldEnum)[keyof typeof ProductScalarFieldEnum]
@@ -176,7 +198,8 @@ export const ReviewScalarFieldEnum = {
   rating: 'rating',
   comment: 'comment',
   author: 'author',
-  productId: 'productId'
+  orderProductId: 'orderProductId',
+  createdAt: 'createdAt'
 } as const
 
 export type ReviewScalarFieldEnum = (typeof ReviewScalarFieldEnum)[keyof typeof ReviewScalarFieldEnum]
@@ -189,13 +212,22 @@ export const OrderScalarFieldEnum = {
   tax: 'tax',
   shippingFee: 'shippingFee',
   total: 'total',
-  referenceNumber: 'referenceNumber',
   paymentDate: 'paymentDate',
+  paymentMethod: 'paymentMethod',
+  orderDate: 'orderDate',
+  referenceNumber: 'referenceNumber',
   verificationCode: 'verificationCode',
   orderNumber: 'orderNumber',
-  orderDate: 'orderDate',
-  shippingInfoId: 'shippingInfoId',
-  status: 'status'
+  orderType: 'orderType',
+  status: 'status',
+  scheduledAt: 'scheduledAt',
+  fulfilledAt: 'fulfilledAt',
+  cancellationRequestedAt: 'cancellationRequestedAt',
+  cancellationDate: 'cancellationDate',
+  cancellationReason: 'cancellationReason',
+  interacEmail: 'interacEmail',
+  refundReferenceNumber: 'refundReferenceNumber',
+  shippingInfoId: 'shippingInfoId'
 } as const
 
 export type OrderScalarFieldEnum = (typeof OrderScalarFieldEnum)[keyof typeof OrderScalarFieldEnum]
@@ -238,6 +270,7 @@ export const InvoiceScalarFieldEnum = {
   discountPercentage: 'discountPercentage',
   discountType: 'discountType',
   taxRate: 'taxRate',
+  taxType: 'taxType',
   shippingFee: 'shippingFee',
   serviceCharge: 'serviceCharge',
   miscellaneous: 'miscellaneous',
@@ -301,6 +334,19 @@ export const MonthlyProjectionScalarFieldEnum = {
 } as const
 
 export type MonthlyProjectionScalarFieldEnum = (typeof MonthlyProjectionScalarFieldEnum)[keyof typeof MonthlyProjectionScalarFieldEnum]
+
+
+export const TestimonialScalarFieldEnum = {
+  id: 'id',
+  comment: 'comment',
+  isAnonymous: 'isAnonymous',
+  authorName: 'authorName',
+  isApproved: 'isApproved',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type TestimonialScalarFieldEnum = (typeof TestimonialScalarFieldEnum)[keyof typeof TestimonialScalarFieldEnum]
 
 
 export const SortOrder = {

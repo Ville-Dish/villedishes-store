@@ -1,80 +1,55 @@
 "use client";
 
-import { Banner } from "@/components/custom/banner";
-import { ProductCard } from "@/components/custom/products/product-card";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { testimonials } from "@/lib/constantData";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { ChefHat, Clock, Rabbit, Truck } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+
+import { Banner } from "@/components/custom/banner";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+
+import { useProductsParams } from "@/features/products/hooks/use-products-params";
+import { useTRPC } from "@/trpc/client";
+import { Suspense } from "react";
+import { ProductCardSkeletonGrid } from "@/features/products/components/product-card-skeleton";
+import { ProductCard } from "@/features/products/components/product-card";
 
 //function to render No products
-const RenderNoProductsFound = ({ products }: { products: MenuItem[] }) => (
+const RenderNoProductsFound = () => (
   <div className="flex flex-col items-center justify-center py-12">
     <Rabbit className="w-16 h-16 mb-4 text-gray-400" />
     <p className="text-xl font-semibold text-gray-600">No products found</p>
-    {products.length > 0 ? (
-      <>
-        {/* <p className="text-gray-500 mt-2 text-center">
-            Try adjusting your search or filter to find what you&apos;re looking for.
-          </p>
-          <Button
-            className="mt-4"
-            onClick={() => {
-              setActiveCategory("All")
-            }}
-          >
-            Clear filters
-          </Button> */}
-        <p className="text-gray-500 mt-2">Check back later.</p>
-      </>
-    ) : (
-      <p className="text-gray-500 mt-2">Check back later.</p>
-    )}
+    <p className="text-gray-500 mt-2">Check back later.</p>
   </div>
 );
 
 export const HomeView = () => {
-  const [activeCategory, setActiveCategory] = useState("All");
-  const [loading, setLoading] = useState<boolean>(true);
-  const [loadingProducts, setLoadingProducts] = useState<boolean>(true);
+  const trpc = useTRPC();
+  const [params, setParams] = useProductsParams();
+  const activeCategory = params.category || "ALL";
 
-  const [filteredItems, setFilteredItems] = useState<MenuItem[]>([]);
-  const [categories, setCategories] = useState<string[]>(["All"]);
+  // Fetch products using tRPC
+  const { data: productsData, isLoading: loadingProducts } = useSuspenseQuery(
+    trpc.products.getPaginatedProducts.queryOptions({
+      category: activeCategory,
+      page: 1,
+      pageSize: 6,
+    }),
+  );
 
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const categoryParam =
-          activeCategory === "All" ? "" : `&category=${activeCategory}`;
-        const response = await fetch(`/api/menu?limit=8${categoryParam}`, {
-          method: "GET",
-        });
+  // Fetch testimonials using tRPC
+  const { data: testimonials, isLoading: loadingTestimonials } =
+    useSuspenseQuery(trpc.testimonials.getTestimonials.queryOptions());
 
-        const data = await response.json();
+  const categories = ["ALL", ...(productsData?.categories || [])];
+  const filteredItems = productsData?.products || [];
 
-        if (response.ok) {
-          setFilteredItems(data.data); // Set filtered items initially to all products
-
-          // Only update categories on first load or when we don't have them
-          if (!categories.length || activeCategory === "All") {
-            // Use the categories from API response
-            setCategories(["All", ...data.categories]);
-          }
-        } else {
-          console.error("Error fetching products:", data.message);
-        }
-      } catch (error) {
-        console.error("Error fetching products:", error);
-      } finally {
-        setLoading(false);
-        setLoadingProducts(false);
-      }
-    };
-
-    fetchProducts();
-  }, [activeCategory]);
+  const handleCategoryChange = (category: string) => {
+    setParams({
+      ...params,
+      category,
+    });
+  };
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -133,32 +108,27 @@ export const HomeView = () => {
             <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl text-center mb-12">
               Our Popular Menu
             </h2>
-            {loading ? (
-              <div className="flex justify-center items-center h-64">
-                <p className="text-xl font-semibold text-gray-600">
-                  Loading Products...
-                </p>
-              </div>
-            ) : loadingProducts ? (
-              <div className="flex justify-center items-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-              </div>
+            {loadingProducts ? (
+              <ProductCardSkeletonGrid count={6} />
             ) : filteredItems.length > 0 ? (
               <>
                 <div className="text-center mt-12">
-                  <ProductCard
-                    categories={categories}
-                    items={filteredItems}
-                    activeCategory={activeCategory}
-                    onCategoryChange={setActiveCategory}
-                  />
+                  <Suspense fallback={<ProductCardSkeletonGrid count={6} />}>
+                    <ProductCard
+                      categories={categories}
+                      items={filteredItems}
+                      activeCategory={activeCategory}
+                      onCategoryChange={handleCategoryChange}
+                      showPagination={false}
+                    />
+                  </Suspense>
                   <Button asChild className="mt-4">
                     <Link href="/products">View Full Menu</Link>
                   </Button>
                 </div>
               </>
             ) : (
-              <RenderNoProductsFound products={filteredItems} />
+              <RenderNoProductsFound />
             )}
           </div>
         </section>
@@ -167,21 +137,23 @@ export const HomeView = () => {
             <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl text-center mb-12">
               What Our Customers Say
             </h2>
-            <div className="grid gap-6 lg:grid-cols-2 lg:gap-12">
-              {testimonials.map((testimonial) => (
-                <Card key={testimonial.name}>
-                  <CardContent className="pt-6">
-                    <p className="mb-4 italic">
-                      &quot;{testimonial.quote}&quot;
-                    </p>
-                    <p className="font-bold">- {testimonial.name}</p>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+            <Suspense>
+              <div className="grid gap-6 lg:grid-cols-2 lg:gap-12">
+                {testimonials.map((testimonial) => (
+                  <Card key={testimonial.id}>
+                    <CardContent className="pt-6">
+                      <p className="mb-4 italic">
+                        &quot;{testimonial.comment}&quot;
+                      </p>
+                      <p className="font-bold">- {testimonial.authorName}</p>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </Suspense>
           </div>
         </section>
       </main>
     </div>
   );
-}
+};

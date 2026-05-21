@@ -49,6 +49,7 @@ next-env.d.ts
 # prisma
 /prisma/seed.ts
 /prisma/sqlite-seed.ts
+/prisma/reset.ts
 
 
 # certain admin page
@@ -57,3 +58,16 @@ components/custom/PDFPreview.tsx
 
 # folders
 .vscode/
+
+# certain folders
+/src/lib/scripts/
+/src/app/api/admin/
+/src/app/api/cloudinary/
+/src/app/api/dashboard/
+/src/app/api/emails/
+/src/app/api/invoices/
+/src/app/api/menu/
+/src/app/api/orders/
+/src/app/api/products/
+/src/app/api/set-token/
+/src/app/api/verify-token/

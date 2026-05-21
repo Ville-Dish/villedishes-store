@@ -1,4 +1,4 @@
-import { CartView } from "@/components/custom/public-view/cart-view";
+import { CartView } from "@/features/orders/components/cart-view";
 
 const CartPage = () => {
   return <CartView />;

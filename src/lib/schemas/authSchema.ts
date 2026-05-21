@@ -46,7 +46,6 @@ export const signupSchema = z
       .refine(
         (val) => {
           const level = passwordStrength(val).strength;
-          console.log(level);
           return level !== "weak";
         },
         {

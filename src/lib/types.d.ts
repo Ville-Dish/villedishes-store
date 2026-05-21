@@ -1,3 +1,5 @@
+import { Prisma } from "@/generated/prisma/client";
+
 interface ContactDetails {
   subject?: string;
   name: string;
@@ -6,17 +8,16 @@ interface ContactDetails {
   phone: string;
 }
 
-type MenuItem = {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  category: string;
-  image: string;
-  assetId?: string;
-  stock?: number;
-  rating?: number;
-  reviews?: { id: string; rating: number; comment: string; author: string }[];
+type MenuItem = Prisma.ProductGetPayload<{
+  omit: {
+    invoiceId: true;
+  };
+}> & {
+  reviews?: Prisma.ReviewGetPayload<{
+    omit: {
+      productId: true;
+    };
+  }>[];
 };
 
 interface Product {
@@ -33,6 +34,45 @@ interface FaqItems {
   id: number;
   question?: string;
   answer?: string | Array<string>;
+}
+
+interface OrderInfo {
+  id: string;
+  status: string;
+  orderId: string;
+  shippingInfo: {
+    phoneNumber: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    address: string;
+    city: string;
+    postalCode: string;
+    orderNotes: string | null;
+  };
+  paymentDate: Date | null;
+  scheduledAt: Date | null;
+  products: {
+    id: string;
+    quantity: number;
+    product: {
+      id: string;
+      name: string;
+      description: string;
+      price: number;
+      assetId: string | null;
+      category: string | null;
+      rating: number | null;
+    };
+  }[];
+  shippingFee: number;
+  subtotal: number;
+  tax: number;
+  total: number;
+  orderDate: Date | null;
+  verificationCode: string | undefined;
+  orderNumber: string | null;
+  referenceNumber: string | null;
 }
 
 type PasswordFeedback = {
@@ -76,16 +116,18 @@ interface Invoice {
   customerEmail: string;
   customerPhone: string;
   discountPercentage?: number;
+  discountType: "PERCENT" | "AMOUNT";
   taxRate?: number;
+  taxType: "PERCENT" | "AMOUNT";
   shippingFee?: number;
   serviceCharge?: number;
   miscellaneous?: number;
   amount: number;
   amountPaid: number;
   amountDue: number;
-  dateCreated: string;
-  dueDate: string;
-  status: "PAID" | "UNPAID" | "DUE" | "PENDING";
+  dateCreated: Date;
+  dueDate: Date;
+  status: InvoiceStatus;
   products?: Array<{
     id: string;
     name: string;
@@ -93,6 +135,7 @@ interface Invoice {
     quantity: number;
     price: number;
     discount: number;
+    category: string;
   }>;
 }
 
@@ -100,10 +143,11 @@ type InvoiceDetailsProps = {
   invoice: Invoice;
   availableProducts: Array<{ id: string; name: string; basePrice: number }>;
   onUpdate: (updatedInvoice: Invoice) => void;
+  onClose?: () => void;
 };
 
 type revenueGrowthData = {
-  name: string;
+  month: string;
   revenue: number;
 };
 type revenueGrowthProps = {
@@ -128,18 +172,18 @@ type overviewProps = {
   data: overviewData[];
 };
 
-type orderDashboardData = {
+type OrderDashboardData = {
   customer: string;
   order: string;
   orderDate: string;
   total: number;
 };
 
-type orderDashboardProps = {
-  data: orderDashboardData[];
+type OrderDashboardProps = {
+  data: OrderDashboardData[];
 };
 
-type MonthlySales = {
+type WeeklySales = {
   week: string;
   sales: number;
   orders: number;
@@ -154,8 +198,15 @@ type TopProducts = {
 };
 
 type MonthlySalesReport = {
-  monthlySales: MonthlySales[];
+  monthlySales: WeeklySales[];
   topProducts: TopProducts[];
+};
+
+/** A single row in the Monthly Sales report table - one per month*/
+type MonthlyReportItem = {
+  date: string;
+  status: "Completed" | "In Progress" | "Unavailable";
+  monthlySalesReport?: MonthlySalesReport;
 };
 
 interface MonthlyData {
@@ -185,6 +236,14 @@ type QuarterlyReport = {
   expenseBreakdown: QuarterlyExpenseBreakdown[];
 };
 
+/** A single item in the Quarterly or Annual report table */
+type FinancialReportItem = {
+  date: string;
+  status: string;
+  quarterlyReport?: QuarterlyReport;
+  annualPerformance?: AnnualPerformance;
+};
+
 type QuarterlyPerformanceProps = {
   quarter: string;
   sales: number;
@@ -202,22 +261,14 @@ type AnnualPerformance = {
   keyMetrics: KeyMetricsProps[];
 };
 
-type ReportItem = {
-  date: string;
-  status: string;
-  action?: string;
-  monthlySalesReport?: MonthlySalesReport;
-  quarterlyReport?: QuarterlyReport;
-  annualPerformance?: AnnualPerformance;
-};
-
-type ReportData = {
-  type: string;
-  items: ReportItem[];
-};
+/** Discriminated report section — Monthly uses MonthlyReportItem[], others use FinancialReportItem[] */
+type ReportSection =
+  | { type: "Monthly Sales Report"; items: MonthlyReportItem[] }
+  | { type: "Quarterly Financials Report"; items: FinancialReportItem[] }
+  | { type: "Annual Performance Report"; items: FinancialReportItem[] };
 
 type AdminReportProps = {
-  data: ReportData[];
+  data: ReportSection[];
 };
 
 type ImageUploadProps = {
@@ -228,6 +279,7 @@ type ImageUploadProps = {
 };
 
 interface MonthlyRevenue {
+  id?: string;
   month: string;
   projection: number;
   actual: number;
@@ -245,7 +297,7 @@ interface Income {
   name: string;
   category: string;
   amount: number;
-  date: string;
+  date: Date | string;
 }
 
 interface Expense {
@@ -253,39 +305,7 @@ interface Expense {
   name: string;
   category: string;
   amount: number;
-  date: string;
-}
-
-interface YearlyRevenueAccordionProps {
-  revenueProjections: YearlyRevenue[];
-  onUpdate: (
-    year: number,
-    updatedProjections: YearlyRevenue["monthlyProjections"]
-  ) => void;
-}
-
-interface MonthlyRevenueProjectionsProps {
-  year: number;
-  yearlyTarget: number;
-  monthlyProjections: MonthlyRevenue[];
-  onUpdate: (updatedProjections: MonthlyRevenue[]) => void;
-  currentYear: number;
-  currentMonth: number;
-}
-
-interface SettingsTableProps {
-  variant: "Income" | "Expense";
-  data: Income[] | Expense[];
-  onEdit: (item: Income | Expense) => void;
-  onDelete: (id: string) => void;
-}
-
-interface SettingsFormProps {
-  variant: "Revenue" | "Income" | "Expense";
-  onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
-  onClose: () => void;
-  isYearlyProjection?: boolean;
-  setIsYearlyProjection?: (value: boolean) => void;
+  date: Date | string;
 }
 
 interface RevenueData {

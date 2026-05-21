@@ -1,7 +1,8 @@
 import { faker } from "@faker-js/faker";
 
-import { PrismaClient } from "@prisma/client";
+import prisma from "@/lib/prisma/client";
 import { generateInvoiceNumber, generateOrderNumber } from "../helper";
+import { InvoiceStatus } from "@/generated/prisma/enums";
 
 type MenuItem = {
   id: string;
@@ -24,8 +25,6 @@ interface Product {
     invoiceId: string | null;
   };
 }
-
-const prisma = new PrismaClient();
 
 // Function to get a random number between 1 and 10
 const getRandomNumber = () => {
@@ -66,7 +65,6 @@ const generateInvoiceData = async (length: number, products: Product[]) => {
   for (let i = 0; i < length; i++) {
     try {
       const invoiceNumber = await generateInvoiceNumber();
-      // console.log("New Invoice Number: ", invoiceNumber);
 
       const invoice = await prisma.invoice.update({
         where: { invoiceNumber: invoiceNumber },
@@ -84,12 +82,7 @@ const generateInvoiceData = async (length: number, products: Product[]) => {
             min: 0,
             max: 10,
           }),
-          status: faker.helpers.arrayElement([
-            "UNPAID",
-            "PAID",
-            "DUE",
-            "PENDING",
-          ]),
+          status: faker.helpers.arrayElement(Object.values(InvoiceStatus)),
           dateCreated: faker.date
             .between({
               from: "2020-01-01T00:00:00.000Z",
@@ -134,7 +127,7 @@ const generateInvoiceData = async (length: number, products: Product[]) => {
               connect: { id: product.product.id },
             },
           };
-        }
+        },
       );
 
       for (const invoiceProduct of invoiceProducts) {
@@ -178,7 +171,6 @@ const generateOrderData = async (length: number, products: Product[]) => {
         status === "UNVERIFIED"
           ? generateTempOrderNumber()
           : await generateOrderNumber();
-      // console.log("New Order Number: ", orderNumber);
 
       //insert shipping data
       const shippingInfo = await generateShippingInfo();
@@ -230,7 +222,7 @@ const generateOrderData = async (length: number, products: Product[]) => {
             orderId: order.id,
             productId: product.id,
           };
-        }
+        },
       );
 
       await prisma.orderProduct.createMany({ data: orderProducts });
@@ -250,12 +242,9 @@ const generateOrderData = async (length: number, products: Product[]) => {
   }
 };
 const main = async () => {
-  console.log("Generating mock data...");
 
-  console.log("Fetching existing products...");
 
   const products = await fetchExistingProducts();
-  // console.log("Existing products fetched successfully", { products });
 
   // Transform `products` to match the `Product` interface
   const allProducts: Product[] = products.map((product) => ({
@@ -271,15 +260,10 @@ const main = async () => {
     },
   }));
 
-  console.log("Generating invoice data...");
   await generateInvoiceData(10, allProducts);
-  console.log("Generated invoice data successfully");
 
-  console.log("Generating order data...");
   await generateOrderData(10, allProducts);
-  console.log("Generated order data successfully");
 
-  console.log("Mock data generation complete.");
 };
 
 main()

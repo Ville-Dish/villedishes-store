@@ -7,6 +7,7 @@ import {
   postcodeValidatorExistsForCountry,
 } from "postcode-validator";
 import { PASSWORD_LENGTH } from "./constantData";
+import { PasswordFeedback } from "./types";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -34,32 +35,42 @@ export const formattedCurrency = new Intl.NumberFormat("en-CA", {
   currency: "CAD",
 });
 
-export enum OrderStatus {
-  UNVERIFIED = "UNVERIFIED",
-  PENDING = "PENDING",
-  CANCELLED = "CANCELLED",
-  FULFILLED = "FULFILLED",
-}
+export const ORDER_STATUSES = [
+  "UNVERIFIED",
+  "PENDING",
+  "SHIPPED",
+  "DELIVERED",
+  "FULFILLED",
+  "CANCELLATION_REQUESTED",
+  "CANCELLED",
+] as const;
 
-export function isValidOrderStatus(status: string): status is OrderStatus {
-  return Object.values(OrderStatus).includes(status as OrderStatus);
-}
+export type OrderStatus = (typeof ORDER_STATUSES)[number];
 
-export enum InvoiceStatus {
-  PAID = "PAID",
-  UNPAID = "UNPAID",
-  PENDING = "PENDING",
-  OVERDUE = "DUE",
-}
+export const INVOICE_STATUSES = [
+  "PAID",
+  "UNPAID",
+  "PENDING",
+  "OVERDUE",
+  "CANCELLED",
+] as const;
 
-export function isValidInvoiceStatus(status: string): status is InvoiceStatus {
-  return Object.values(InvoiceStatus).includes(status as InvoiceStatus);
-}
+export type InvoiceStatus = (typeof INVOICE_STATUSES)[number];
+
+export const isValidInvoiceStatus = (
+  status: string,
+): status is InvoiceStatus => {
+  return INVOICE_STATUSES.includes(status as InvoiceStatus);
+};
+
+export const PAYMENT_METHOD = ["CARD", "ETRANSFER"];
+
+export type PaymentMethod = (typeof PAYMENT_METHOD)[number];
 
 // Validate Canadian postal code
 export function isValidPostalCode(
   postalCode: string,
-  countryCode: string
+  countryCode: string,
 ): boolean {
   if (!postalCode || !countryCode) return false;
 
@@ -79,7 +90,7 @@ export function isValidPostalCode(
 // Get appropriate error message based on country support
 export function getPostalCodeValidationMessage(
   postalCode: string,
-  countryCode: string
+  countryCode: string,
 ): string {
   if (!countryCode) {
     return "Please select a country first";
@@ -122,23 +133,18 @@ export const passwordStrength = (password: string): PasswordFeedback => {
 
   if (password.length < PASSWORD_LENGTH) {
     errors.push("be at least 8 characters");
-    console.log(errors);
   }
   if (!/[a-z]/.test(password)) {
     errors.push("have at least one lowercase letter");
-    console.log(errors);
   }
   if (!/[A-Z]/.test(password)) {
     errors.push("have at least one uppercase letter");
-    console.log(errors);
   }
   if (!/\d/.test(password)) {
     errors.push("have at least one number");
-    console.log(errors);
   }
   if (!/[\W_]/.test(password)) {
     errors.push("have at least a special character");
-    console.log(errors);
   }
 
   if (errors.length === 0) return { strength: "strong", errors };
@@ -153,4 +159,26 @@ export const passwordStrength = (password: string): PasswordFeedback => {
   }
 
   return { strength: "weak", errors };
+};
+
+export // Add this above the component (or in utils.ts)
+const getStatusColor = (status: OrderStatus) => {
+  switch (status) {
+    case "CANCELLED":
+      return "bg-[#da281c] border-[#da281c] hover:bg-[#b4443c]";
+    case "CANCELLATION_REQUESTED":
+      return "bg-rose-800 border-rose-500 hover:bg-rose-700";
+    case "SHIPPED":
+      return "bg-cyan-500 border-cyan-500 hover:bg-cyan-600";
+    case "DELIVERED":
+      return "bg-teal-500 border-teal-500 hover:bg-teal-600";
+    case "FULFILLED":
+      return "bg-green-500 border-green-500 hover:bg-green-600";
+    case "UNVERIFIED":
+      return "bg-[#fe9e1d] border-[#fe9e1d] hover:bg-[#c6893a]";
+    case "PENDING":
+      return "bg-orange-500 border-orange-500 hover:bg-orange-600";
+    default:
+      return "bg-gray-400 border-gray-400";
+  }
 };

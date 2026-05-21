@@ -1,0 +1,296 @@
+import React from "react";
+import {
+  Html,
+  Head,
+  Preview,
+  Body,
+  Container,
+  Heading,
+  Text,
+  Section,
+  Hr,
+  Tailwind,
+  Row,
+  Column,
+  Link,
+} from "@react-email/components";
+import { EmailFooter } from "./email-footer";
+import { EmailHeader } from "./email-header";
+
+const demoItems = [
+  {
+    id: "1",
+    name: "Jollof rice",
+    price: 12.99,
+    quantity: 1,
+    product: {
+      id: "1",
+      name: "Jollof rice",
+      description: "Spicy and flavorful rice dish",
+      price: 12.99,
+      category: "Main Dishes",
+      image: "/foods/Jollof.jpg",
+      invoiceId: null,
+    },
+  },
+  {
+    id: "2",
+    name: "Suya",
+    price: 10.9,
+    quantity: 1,
+    product: {
+      id: "2",
+      name: "Suya",
+      description: "Spicy grilled meat skewers",
+      price: 10.99,
+      category: "Sides",
+      image: "/placeholder.svg?height=200&width=200",
+      invoiceId: null,
+    },
+  },
+  {
+    id: "3",
+    name: "Puff-puff",
+    price: 6.99,
+    quantity: 1,
+    product: {
+      id: "3",
+      name: "Puff-puff",
+      description: "Sweet, deep-fried dough balls",
+      price: 6.99,
+      category: "Snacks",
+      image: "/placeholder.svg?height=200&width=200",
+      invoiceId: null,
+    },
+  },
+  {
+    id: "4",
+    name: "Pineapple Zobo",
+    price: 13.99,
+    quantity: 1,
+    product: {
+      id: "4",
+      name: "Pineapple Zobo",
+      description: "Rich okra soup with assorted",
+      price: 13.99,
+      category: "Drinks",
+      image: "/placeholder.svg?height=200&width=200",
+      invoiceId: null,
+    },
+  },
+];
+
+interface Product {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+  product: {
+    id: string;
+    name: string;
+    description: string;
+    price: number;
+    image: string;
+    assetId: string | null;
+    category: string | null;
+    rating: number | null;
+    invoiceId: string | null;
+
+    reviews?: {
+      id: string;
+      rating: number;
+      comment: string;
+      author: string;
+      productId: string | null;
+    }[];
+  };
+}
+
+type OrderConfirmationEmailProps = {
+  customerName: string;
+  orderNumber: string;
+  orderId: string;
+  orderDate: string;
+  subtotal: number;
+  tax: number;
+  shippingFee: number;
+  total: number;
+  items: Product[];
+  estimatedDelivery?: string;
+  cancellationRequestLink?: string;
+};
+
+const OrderConfirmationTemplate = ({
+  customerName,
+  orderNumber,
+  orderId,
+  orderDate,
+  subtotal,
+  tax,
+  shippingFee,
+  total,
+  items,
+  estimatedDelivery,
+  cancellationRequestLink,
+}: OrderConfirmationEmailProps) => {
+  customerName = customerName || "John Doe";
+  orderNumber = orderNumber || "ORD-00000";
+  orderDate = orderDate || "2023-03-01";
+  subtotal = subtotal || 0.0;
+  tax = tax || 0.0;
+  shippingFee = shippingFee || 0.0;
+  total = total || 0.0;
+  items = items || demoItems;
+  estimatedDelivery = estimatedDelivery || "2023-03-05";
+  const previewText = `Order Confirmation for ${customerName}`;
+  orderId = orderId ?? 1234567890;
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+  // Build link only if missing or without orderId; avoid double query params
+  const baseLink =
+    cancellationRequestLink && cancellationRequestLink.trim() !== ""
+      ? cancellationRequestLink.replace(/\?orderId=\d+$/, "").replace(/\?$/, "")
+      : `${baseUrl}/order/detail`;
+  const separator = baseLink.includes("?") ? "&" : "?";
+  cancellationRequestLink = `${baseLink}${separator}orderId=${orderId}`;
+
+  return (
+    <Html>
+      <Head />
+      <Preview>{previewText}</Preview>
+      <Tailwind>
+        <Body className="bg-white text-gray-800 font-sans">
+          <Container className="max-w-600px mx-auto">
+            <Section className="bg-white p-6 rounded-lg shadow-md">
+              <EmailHeader />
+              <Section className="mt-6">
+                <Heading className="text-3xl font-bold uppercase mb-4 text-center">
+                  Order Confirmation
+                </Heading>
+                <Text className="text-lg mb-4">
+                  Thank you for your order, {customerName}! Your payment has
+                  been confirmed and your order is being processed.
+                </Text>
+                <Heading
+                  as="h3"
+                  className="text-xl font-semibold uppercase mb-2 text-center"
+                >
+                  Order Details
+                </Heading>
+                <Text className="text-base mb-1 text-center">
+                  Order Number: {orderNumber}
+                </Text>
+                <Text className="text-base mb-1 text-center">
+                  Order Date: {orderDate}
+                </Text>
+                <Text className="text-base mb-4 text-center">
+                  Estimated Delivery*: {estimatedDelivery}
+                </Text>
+              </Section>
+
+              <Hr className="border-gray-300 my-6" />
+
+              <Section className="w-full max-w-500px mx-auto">
+                <Heading
+                  as="h3"
+                  className="text-xl font-semibold uppercase text-center mb-4"
+                >
+                  Items Ordered
+                </Heading>
+                <Row className="bg-gray-200 text-gray-700 font-bold">
+                  <Column className="p-3 w-1/2">Menu</Column>
+                  <Column className="p-3 w-1/4 text-center">Quantity</Column>
+                  <Column className="p-3 w-1/4 text-right">Price</Column>
+                </Row>
+                {items.map((item, index) => (
+                  <Row
+                    key={index}
+                    className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}
+                  >
+                    <Column className="p-3 w-1/2">{item.product.name}</Column>
+                    <Column className="p-3 w-1/4 text-center">
+                      {item.quantity}
+                    </Column>
+                    <Column className="p-3 w-1/4 text-right">
+                      ${item.product.price.toFixed(2)}
+                    </Column>
+                  </Row>
+                ))}
+
+                <Hr className="border-gray-300 my-4" />
+                <Section className="w-full max-w-300px ml-auto">
+                  <Row className="text-right">
+                    <Column className="w-1/2"></Column>
+                    <Column className="w-1/4 p-2 font-semibold">
+                      Subtotal
+                    </Column>
+                    <Column className="w-1/4 p-2">
+                      ${subtotal.toFixed(2)}
+                    </Column>
+                  </Row>
+                  <Row className="text-right">
+                    <Column className="w-1/2"></Column>
+                    <Column className="w-1/4 p-2 font-semibold">Tax(5%)</Column>
+                    <Column className="w-1/4 p-2">${tax.toFixed(2)}</Column>
+                  </Row>
+                  <Row className="text-right">
+                    <Column className="w-1/2"></Column>
+                    <Column className="w-1/4 p-2 font-semibold">
+                      Shipping
+                    </Column>
+                    <Column className="w-1/4 p-2">
+                      ${shippingFee.toFixed(2)}
+                    </Column>
+                  </Row>
+                  <Hr className="border-gray-300 my-2" />
+                  <Row className="text-right font-bold">
+                    <Column className="w-1/2"></Column>
+                    <Column className="w-1/4 p-2">Total</Column>
+                    <Column className="w-1/4 p-2">${total.toFixed(2)}</Column>
+                  </Row>
+                </Section>
+              </Section>
+
+              <Section className="mt-6 text-center">
+                <Text className="text-base mb-4">
+                  *The estimated delivery date is the standard for all orders.
+                  Your actual delivery date may be communicated later.
+                </Text>
+                <Text className="text-base mb-4">
+                  If you have any questions, please contact our customer support
+                  team.
+                </Text>
+                <Text className="text-base font-semibold">
+                  Thank you for choosing Villedishes. We hope you enjoy your
+                  meal!
+                </Text>
+              </Section>
+
+              <Hr className="border-gray-300 my-6" />
+              <Section className="text-center">
+                <Text>
+                  If you would like to cancel your order, use the button or link
+                  below. You can cancel your order 24 hours before your delivery
+                  date.
+                </Text>
+                <Link
+                  href={
+                    cancellationRequestLink ||
+                    "https://www.surveymonkey.com/r/feedback"
+                  }
+                  className="bg-green-500 text-white py-3 px-6 rounded-md font-bold text-base no-underline inline-block transition-colors duration-300"
+                >
+                  Cancel Order
+                </Link>
+                <Hr className="border-gray-300 my-6" />
+              </Section>
+
+              <EmailFooter variant="order" />
+            </Section>
+          </Container>
+        </Body>
+      </Tailwind>
+    </Html>
+  );
+};
+
+export default OrderConfirmationTemplate;

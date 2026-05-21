@@ -1,3 +1,5 @@
+import { Product } from "./types";
+
 export const menuItems = [
   { href: "/", label: "Home" },
   { href: "/products", label: "Menu" },
@@ -344,7 +346,7 @@ export const testimonials = [
 export const taxRate = 5;
 export const shippingFee = 10.0;
 
-export const demoItems: Product[] = [
+export const demoItems = [
   {
     id: "1",
     name: "Jollof rice",

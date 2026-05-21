@@ -1,6 +1,6 @@
 import Image from "next/image";
 
-import { SignUpForm } from "@/components/signup-form";
+import { SignUpForm } from "@/features/auth/components/signup-form";
 import { requireNoAuth } from "@/lib/session/server-session";
 
 const SignUpPage = async () => {

@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import {
@@ -16,7 +15,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { testEmail } from "@/lib/constantData";
 import {
   Popover,
   PopoverContent,
@@ -26,15 +24,23 @@ import { Badge } from "@/components/ui/badge";
 import { CalendarIcon, Check, CheckCircle, X } from "lucide-react";
 import { MdFoodBank } from "react-icons/md";
 import { Calendar } from "@/components/ui/calendar";
-import { cn, formatDate } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { addMonths, format } from "date-fns";
 import Image from "next/image";
 import { CateringFormData, cateringSchema } from "@/lib/schemas/contactSchema";
 import { PageHeader } from "@/app/(home)/page-header";
 import { CustomPhoneInput } from "../phone-input";
+import {
+  useMutation,
+  useQueries,
+  useSuspenseQuery,
+} from "@tanstack/react-query";
+import { useTRPC } from "@/trpc/client";
+import { ADMIN_EMAIL } from "@/config/constants";
 
 export const CateringForm = () => {
-  const [products, setProducts] = useState<MenuItem[]>([]);
+  const trpc = useTRPC();
+
   const [searchQuery, setSearchQuery] = useState("");
 
   const form = useForm<CateringFormData>({
@@ -50,56 +56,39 @@ export const CateringForm = () => {
   });
 
   // Fetch products from the API
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const response = await fetch("/api/menu", { method: "GET" });
-        const data = await response.json();
+  // useEffect(() => {
+  //   const fetchProducts = async () => {
+  //     try {
+  //       const response = await fetch("/api/menu", { method: "GET" });
+  //       const data = await response.json();
 
-        if (response.ok) {
-          setProducts(data.data);
-        } else {
-          console.error("Error fetching products:", data.message);
-        }
-      } catch (error) {
-        console.error("Error fetching products:", error);
-      }
-    };
+  //       if (response.ok) {
+  //         setProducts(data.data);
+  //       } else {
+  //         console.error("Error fetching products:", data.message);
+  //       }
+  //     } catch (error) {
+  //       console.error("Error fetching products:", error);
+  //     }
+  //   };
 
-    fetchProducts();
-  }, []);
+  //   fetchProducts();
+  // }, []);
 
-  const sendEmail = (cateringDetails: CateringDetails) => {
-    fetch("/api/emails/catering", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from: cateringDetails.email,
-        to: process.env.SMTP_EMAIL || "villedishes@gmail.com",
-        name: cateringDetails.name,
-        email: cateringDetails.email,
-        phone: cateringDetails.phone,
-        products: cateringDetails.products,
-        notStrictEqual: cateringDetails.message,
-        date: cateringDetails.cateringDate,
-      }),
-    })
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error("Failed to send email");
-        }
-        return response.json();
-      })
-      .then((data) => {
+  const { data: products, isLoading } = useSuspenseQuery(
+    trpc.products.getAllProducts.queryOptions(),
+  );
+
+  const sendCateringEmail = useMutation(
+    trpc.mail.sendEmail.mutationOptions({
+      onSuccess: () => {
         toast.success("Email Sent", {
           description:
-            "An email has been sent to the admin. You should get a response soon.",
+            "An email has been sent. You should get a response soon.",
         });
-        // form.reset(); // Clear the form fields after successful submission
-      })
-      .catch((error) => {
+        form.reset(); // Clear the form fields after successful submission
+      },
+      onError: (error) => {
         toast.error("Something went wrong", {
           description:
             error instanceof Error
@@ -107,22 +96,25 @@ export const CateringForm = () => {
               : "An unknown error occurred",
         });
         console.error("Error sending email:", error);
-      });
-  };
+      },
+    }),
+  );
 
   const onSubmit = (values: CateringFormData) => {
-    console.log({ values });
     const cateringData = {
       name: values.name,
       email: values.email,
       phone: values.phoneNumber,
-      cateringDate: values.cateringDate,
+      cateringDate: values.cateringDate.toISOString().split("T")[0],
       products: values.products,
-      messages: values.message,
+      message: values.message,
     };
 
-    console.log({ cateringData });
-    sendEmail(cateringData);
+    sendCateringEmail.mutate({
+      type: "catering",
+      to: ADMIN_EMAIL,
+      ...cateringData,
+    });
   };
 
   const productsValue = form.watch("products");
@@ -135,7 +127,7 @@ export const CateringForm = () => {
     if (isSelected) {
       form.setValue(
         "products",
-        currentProducts.filter((p) => p !== productName)
+        currentProducts.filter((p) => p !== productName),
       );
     } else {
       form.setValue("products", [...currentProducts, productName]);
@@ -143,7 +135,7 @@ export const CateringForm = () => {
   };
 
   const filteredProducts = products.filter((product) =>
-    product.name.toLowerCase().includes(searchQuery.toLowerCase())
+    product.name.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   return (
@@ -222,7 +214,7 @@ export const CateringForm = () => {
                       <FormItem>
                         <FormControl>
                           <CustomPhoneInput
-                            placeholder="(123) 456-7890"
+                            placeholder="(123) 456-7890*"
                             defaultCountry="CA"
                             value={field.value}
                             onChange={field.onChange}
@@ -253,7 +245,7 @@ export const CateringForm = () => {
                                   variant={"outline"}
                                   className={cn(
                                     "w-full pl-3 text-left font-normal",
-                                    !field.value && "text-muted-foreground"
+                                    !field.value && "text-muted-foreground",
                                   )}
                                 >
                                   {field.value ? (
@@ -268,7 +260,7 @@ export const CateringForm = () => {
                               </FormControl>
                             </PopoverTrigger>
                             <PopoverContent
-                              className="w-[var(--radix-popover-trigger-width)] p-0"
+                              className="w-(--radix-popover-trigger-width) p-0"
                               align="start"
                             >
                               <Calendar
@@ -306,7 +298,7 @@ export const CateringForm = () => {
                                 className={cn(
                                   "w-full justify-between",
                                   !selectedProducts.length &&
-                                    "text-muted-foreground"
+                                    "text-muted-foreground",
                                 )}
                               >
                                 {selectedProducts.length > 0
@@ -317,7 +309,7 @@ export const CateringForm = () => {
                             </FormControl>
                           </PopoverTrigger>
                           <PopoverContent
-                            className="w-[var(--radix-popover-trigger-width)] p-0"
+                            className="w-(--radix-popover-trigger-width) p-0"
                             align="start"
                           >
                             <div className="flex flex-col">
@@ -332,7 +324,7 @@ export const CateringForm = () => {
                                 />
                               </div>
                               {/* Product list */}
-                              <div className="max-h-[300px] overflow-y-auto p-1">
+                              <div className="max-h-75 overflow-y-auto p-1">
                                 {products.length === 0 ? (
                                   <div className="py-6 text-center text-sm text-muted-foreground">
                                     Loading products...
@@ -353,7 +345,7 @@ export const CateringForm = () => {
                                         }
                                         className={cn(
                                           "flex items-center gap-2 rounded-md px-3 py-2 text-sm cursor-pointer transition-colors hover:bg-accent hover:text-accent-foreground",
-                                          isSelected && "bg-accent"
+                                          isSelected && "bg-accent",
                                         )}
                                       >
                                         <div
@@ -361,7 +353,7 @@ export const CateringForm = () => {
                                             "flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
                                             isSelected
                                               ? "bg-primary text-primary-foreground"
-                                              : "opacity-50"
+                                              : "opacity-50",
                                           )}
                                         >
                                           {isSelected && (
@@ -448,4 +440,4 @@ export const CateringForm = () => {
       </main>
     </div>
   );
-}
+};

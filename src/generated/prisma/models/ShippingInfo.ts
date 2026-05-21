@@ -232,6 +232,7 @@ export type ShippingInfoOrderByWithRelationInput = {
 
 export type ShippingInfoWhereUniqueInput = Prisma.AtLeast<{
   id?: string
+  email_phoneNumber?: Prisma.ShippingInfoEmailPhoneNumberCompoundUniqueInput
   AND?: Prisma.ShippingInfoWhereInput | Prisma.ShippingInfoWhereInput[]
   OR?: Prisma.ShippingInfoWhereInput[]
   NOT?: Prisma.ShippingInfoWhereInput | Prisma.ShippingInfoWhereInput[]
@@ -244,7 +245,7 @@ export type ShippingInfoWhereUniqueInput = Prisma.AtLeast<{
   postalCode?: Prisma.StringFilter<"ShippingInfo"> | string
   orderNotes?: Prisma.StringNullableFilter<"ShippingInfo"> | string | null
   Order?: Prisma.OrderListRelationFilter
-}, "id" | "id">
+}, "id" | "id" | "email_phoneNumber">
 
 export type ShippingInfoOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
@@ -367,6 +368,11 @@ export type ShippingInfoUncheckedUpdateManyInput = {
 export type ShippingInfoScalarRelationFilter = {
   is?: Prisma.ShippingInfoWhereInput
   isNot?: Prisma.ShippingInfoWhereInput
+}
+
+export type ShippingInfoEmailPhoneNumberCompoundUniqueInput = {
+  email: string
+  phoneNumber: string
 }
 
 export type ShippingInfoCountOrderByAggregateInput = {

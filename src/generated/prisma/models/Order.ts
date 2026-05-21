@@ -47,13 +47,22 @@ export type OrderMinAggregateOutputType = {
   tax: number | null
   shippingFee: number | null
   total: number | null
+  paymentDate: Date | null
+  paymentMethod: $Enums.PaymentMethod | null
+  orderDate: Date | null
   referenceNumber: string | null
-  paymentDate: string | null
   verificationCode: string | null
   orderNumber: string | null
-  orderDate: string | null
+  orderType: $Enums.OrderType | null
+  status: $Enums.OrderStatus | null
+  scheduledAt: Date | null
+  fulfilledAt: Date | null
+  cancellationRequestedAt: Date | null
+  cancellationDate: Date | null
+  cancellationReason: string | null
+  interacEmail: string | null
+  refundReferenceNumber: string | null
   shippingInfoId: string | null
-  status: string | null
 }
 
 export type OrderMaxAggregateOutputType = {
@@ -63,13 +72,22 @@ export type OrderMaxAggregateOutputType = {
   tax: number | null
   shippingFee: number | null
   total: number | null
+  paymentDate: Date | null
+  paymentMethod: $Enums.PaymentMethod | null
+  orderDate: Date | null
   referenceNumber: string | null
-  paymentDate: string | null
   verificationCode: string | null
   orderNumber: string | null
-  orderDate: string | null
+  orderType: $Enums.OrderType | null
+  status: $Enums.OrderStatus | null
+  scheduledAt: Date | null
+  fulfilledAt: Date | null
+  cancellationRequestedAt: Date | null
+  cancellationDate: Date | null
+  cancellationReason: string | null
+  interacEmail: string | null
+  refundReferenceNumber: string | null
   shippingInfoId: string | null
-  status: string | null
 }
 
 export type OrderCountAggregateOutputType = {
@@ -79,13 +97,22 @@ export type OrderCountAggregateOutputType = {
   tax: number
   shippingFee: number
   total: number
-  referenceNumber: number
   paymentDate: number
+  paymentMethod: number
+  orderDate: number
+  referenceNumber: number
   verificationCode: number
   orderNumber: number
-  orderDate: number
-  shippingInfoId: number
+  orderType: number
   status: number
+  scheduledAt: number
+  fulfilledAt: number
+  cancellationRequestedAt: number
+  cancellationDate: number
+  cancellationReason: number
+  interacEmail: number
+  refundReferenceNumber: number
+  shippingInfoId: number
   _all: number
 }
 
@@ -111,13 +138,22 @@ export type OrderMinAggregateInputType = {
   tax?: true
   shippingFee?: true
   total?: true
-  referenceNumber?: true
   paymentDate?: true
+  paymentMethod?: true
+  orderDate?: true
+  referenceNumber?: true
   verificationCode?: true
   orderNumber?: true
-  orderDate?: true
-  shippingInfoId?: true
+  orderType?: true
   status?: true
+  scheduledAt?: true
+  fulfilledAt?: true
+  cancellationRequestedAt?: true
+  cancellationDate?: true
+  cancellationReason?: true
+  interacEmail?: true
+  refundReferenceNumber?: true
+  shippingInfoId?: true
 }
 
 export type OrderMaxAggregateInputType = {
@@ -127,13 +163,22 @@ export type OrderMaxAggregateInputType = {
   tax?: true
   shippingFee?: true
   total?: true
-  referenceNumber?: true
   paymentDate?: true
+  paymentMethod?: true
+  orderDate?: true
+  referenceNumber?: true
   verificationCode?: true
   orderNumber?: true
-  orderDate?: true
-  shippingInfoId?: true
+  orderType?: true
   status?: true
+  scheduledAt?: true
+  fulfilledAt?: true
+  cancellationRequestedAt?: true
+  cancellationDate?: true
+  cancellationReason?: true
+  interacEmail?: true
+  refundReferenceNumber?: true
+  shippingInfoId?: true
 }
 
 export type OrderCountAggregateInputType = {
@@ -143,13 +188,22 @@ export type OrderCountAggregateInputType = {
   tax?: true
   shippingFee?: true
   total?: true
-  referenceNumber?: true
   paymentDate?: true
+  paymentMethod?: true
+  orderDate?: true
+  referenceNumber?: true
   verificationCode?: true
   orderNumber?: true
-  orderDate?: true
-  shippingInfoId?: true
+  orderType?: true
   status?: true
+  scheduledAt?: true
+  fulfilledAt?: true
+  cancellationRequestedAt?: true
+  cancellationDate?: true
+  cancellationReason?: true
+  interacEmail?: true
+  refundReferenceNumber?: true
+  shippingInfoId?: true
   _all?: true
 }
 
@@ -246,13 +300,22 @@ export type OrderGroupByOutputType = {
   tax: number
   shippingFee: number
   total: number
+  paymentDate: Date | null
+  paymentMethod: $Enums.PaymentMethod
+  orderDate: Date | null
   referenceNumber: string | null
-  paymentDate: string | null
   verificationCode: string | null
   orderNumber: string | null
-  orderDate: string | null
+  orderType: $Enums.OrderType
+  status: $Enums.OrderStatus
+  scheduledAt: Date | null
+  fulfilledAt: Date | null
+  cancellationRequestedAt: Date | null
+  cancellationDate: Date | null
+  cancellationReason: string | null
+  interacEmail: string | null
+  refundReferenceNumber: string | null
   shippingInfoId: string
-  status: string
   _count: OrderCountAggregateOutputType | null
   _avg: OrderAvgAggregateOutputType | null
   _sum: OrderSumAggregateOutputType | null
@@ -285,13 +348,22 @@ export type OrderWhereInput = {
   tax?: Prisma.FloatFilter<"Order"> | number
   shippingFee?: Prisma.FloatFilter<"Order"> | number
   total?: Prisma.FloatFilter<"Order"> | number
+  paymentDate?: Prisma.DateTimeNullableFilter<"Order"> | Date | string | null
+  paymentMethod?: Prisma.EnumPaymentMethodFilter<"Order"> | $Enums.PaymentMethod
+  orderDate?: Prisma.DateTimeNullableFilter<"Order"> | Date | string | null
   referenceNumber?: Prisma.StringNullableFilter<"Order"> | string | null
-  paymentDate?: Prisma.StringNullableFilter<"Order"> | string | null
   verificationCode?: Prisma.StringNullableFilter<"Order"> | string | null
   orderNumber?: Prisma.StringNullableFilter<"Order"> | string | null
-  orderDate?: Prisma.StringNullableFilter<"Order"> | string | null
+  orderType?: Prisma.EnumOrderTypeFilter<"Order"> | $Enums.OrderType
+  status?: Prisma.EnumOrderStatusFilter<"Order"> | $Enums.OrderStatus
+  scheduledAt?: Prisma.DateTimeNullableFilter<"Order"> | Date | string | null
+  fulfilledAt?: Prisma.DateTimeNullableFilter<"Order"> | Date | string | null
+  cancellationRequestedAt?: Prisma.DateTimeNullableFilter<"Order"> | Date | string | null
+  cancellationDate?: Prisma.DateTimeNullableFilter<"Order"> | Date | string | null
+  cancellationReason?: Prisma.StringNullableFilter<"Order"> | string | null
+  interacEmail?: Prisma.StringNullableFilter<"Order"> | string | null
+  refundReferenceNumber?: Prisma.StringNullableFilter<"Order"> | string | null
   shippingInfoId?: Prisma.StringFilter<"Order"> | string
-  status?: Prisma.StringFilter<"Order"> | string
   shippingInfo?: Prisma.XOR<Prisma.ShippingInfoScalarRelationFilter, Prisma.ShippingInfoWhereInput>
   products?: Prisma.OrderProductListRelationFilter
 }
@@ -303,13 +375,22 @@ export type OrderOrderByWithRelationInput = {
   tax?: Prisma.SortOrder
   shippingFee?: Prisma.SortOrder
   total?: Prisma.SortOrder
-  referenceNumber?: Prisma.SortOrderInput | Prisma.SortOrder
   paymentDate?: Prisma.SortOrderInput | Prisma.SortOrder
+  paymentMethod?: Prisma.SortOrder
+  orderDate?: Prisma.SortOrderInput | Prisma.SortOrder
+  referenceNumber?: Prisma.SortOrderInput | Prisma.SortOrder
   verificationCode?: Prisma.SortOrderInput | Prisma.SortOrder
   orderNumber?: Prisma.SortOrderInput | Prisma.SortOrder
-  orderDate?: Prisma.SortOrderInput | Prisma.SortOrder
-  shippingInfoId?: Prisma.SortOrder
+  orderType?: Prisma.SortOrder
   status?: Prisma.SortOrder
+  scheduledAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  fulfilledAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  cancellationRequestedAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  cancellationDate?: Prisma.SortOrderInput | Prisma.SortOrder
+  cancellationReason?: Prisma.SortOrderInput | Prisma.SortOrder
+  interacEmail?: Prisma.SortOrderInput | Prisma.SortOrder
+  refundReferenceNumber?: Prisma.SortOrderInput | Prisma.SortOrder
+  shippingInfoId?: Prisma.SortOrder
   shippingInfo?: Prisma.ShippingInfoOrderByWithRelationInput
   products?: Prisma.OrderProductOrderByRelationAggregateInput
 }
@@ -324,16 +405,25 @@ export type OrderWhereUniqueInput = Prisma.AtLeast<{
   tax?: Prisma.FloatFilter<"Order"> | number
   shippingFee?: Prisma.FloatFilter<"Order"> | number
   total?: Prisma.FloatFilter<"Order"> | number
+  paymentDate?: Prisma.DateTimeNullableFilter<"Order"> | Date | string | null
+  paymentMethod?: Prisma.EnumPaymentMethodFilter<"Order"> | $Enums.PaymentMethod
+  orderDate?: Prisma.DateTimeNullableFilter<"Order"> | Date | string | null
   referenceNumber?: Prisma.StringNullableFilter<"Order"> | string | null
-  paymentDate?: Prisma.StringNullableFilter<"Order"> | string | null
   verificationCode?: Prisma.StringNullableFilter<"Order"> | string | null
   orderNumber?: Prisma.StringNullableFilter<"Order"> | string | null
-  orderDate?: Prisma.StringNullableFilter<"Order"> | string | null
+  orderType?: Prisma.EnumOrderTypeFilter<"Order"> | $Enums.OrderType
+  status?: Prisma.EnumOrderStatusFilter<"Order"> | $Enums.OrderStatus
+  scheduledAt?: Prisma.DateTimeNullableFilter<"Order"> | Date | string | null
+  fulfilledAt?: Prisma.DateTimeNullableFilter<"Order"> | Date | string | null
+  cancellationRequestedAt?: Prisma.DateTimeNullableFilter<"Order"> | Date | string | null
+  cancellationDate?: Prisma.DateTimeNullableFilter<"Order"> | Date | string | null
+  cancellationReason?: Prisma.StringNullableFilter<"Order"> | string | null
+  interacEmail?: Prisma.StringNullableFilter<"Order"> | string | null
+  refundReferenceNumber?: Prisma.StringNullableFilter<"Order"> | string | null
   shippingInfoId?: Prisma.StringFilter<"Order"> | string
-  status?: Prisma.StringFilter<"Order"> | string
   shippingInfo?: Prisma.XOR<Prisma.ShippingInfoScalarRelationFilter, Prisma.ShippingInfoWhereInput>
   products?: Prisma.OrderProductListRelationFilter
-}, "id" | "id" | "orderId">
+}, "id" | "orderId">
 
 export type OrderOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
@@ -342,13 +432,22 @@ export type OrderOrderByWithAggregationInput = {
   tax?: Prisma.SortOrder
   shippingFee?: Prisma.SortOrder
   total?: Prisma.SortOrder
-  referenceNumber?: Prisma.SortOrderInput | Prisma.SortOrder
   paymentDate?: Prisma.SortOrderInput | Prisma.SortOrder
+  paymentMethod?: Prisma.SortOrder
+  orderDate?: Prisma.SortOrderInput | Prisma.SortOrder
+  referenceNumber?: Prisma.SortOrderInput | Prisma.SortOrder
   verificationCode?: Prisma.SortOrderInput | Prisma.SortOrder
   orderNumber?: Prisma.SortOrderInput | Prisma.SortOrder
-  orderDate?: Prisma.SortOrderInput | Prisma.SortOrder
-  shippingInfoId?: Prisma.SortOrder
+  orderType?: Prisma.SortOrder
   status?: Prisma.SortOrder
+  scheduledAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  fulfilledAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  cancellationRequestedAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  cancellationDate?: Prisma.SortOrderInput | Prisma.SortOrder
+  cancellationReason?: Prisma.SortOrderInput | Prisma.SortOrder
+  interacEmail?: Prisma.SortOrderInput | Prisma.SortOrder
+  refundReferenceNumber?: Prisma.SortOrderInput | Prisma.SortOrder
+  shippingInfoId?: Prisma.SortOrder
   _count?: Prisma.OrderCountOrderByAggregateInput
   _avg?: Prisma.OrderAvgOrderByAggregateInput
   _max?: Prisma.OrderMaxOrderByAggregateInput
@@ -366,13 +465,22 @@ export type OrderScalarWhereWithAggregatesInput = {
   tax?: Prisma.FloatWithAggregatesFilter<"Order"> | number
   shippingFee?: Prisma.FloatWithAggregatesFilter<"Order"> | number
   total?: Prisma.FloatWithAggregatesFilter<"Order"> | number
+  paymentDate?: Prisma.DateTimeNullableWithAggregatesFilter<"Order"> | Date | string | null
+  paymentMethod?: Prisma.EnumPaymentMethodWithAggregatesFilter<"Order"> | $Enums.PaymentMethod
+  orderDate?: Prisma.DateTimeNullableWithAggregatesFilter<"Order"> | Date | string | null
   referenceNumber?: Prisma.StringNullableWithAggregatesFilter<"Order"> | string | null
-  paymentDate?: Prisma.StringNullableWithAggregatesFilter<"Order"> | string | null
   verificationCode?: Prisma.StringNullableWithAggregatesFilter<"Order"> | string | null
   orderNumber?: Prisma.StringNullableWithAggregatesFilter<"Order"> | string | null
-  orderDate?: Prisma.StringNullableWithAggregatesFilter<"Order"> | string | null
+  orderType?: Prisma.EnumOrderTypeWithAggregatesFilter<"Order"> | $Enums.OrderType
+  status?: Prisma.EnumOrderStatusWithAggregatesFilter<"Order"> | $Enums.OrderStatus
+  scheduledAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Order"> | Date | string | null
+  fulfilledAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Order"> | Date | string | null
+  cancellationRequestedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Order"> | Date | string | null
+  cancellationDate?: Prisma.DateTimeNullableWithAggregatesFilter<"Order"> | Date | string | null
+  cancellationReason?: Prisma.StringNullableWithAggregatesFilter<"Order"> | string | null
+  interacEmail?: Prisma.StringNullableWithAggregatesFilter<"Order"> | string | null
+  refundReferenceNumber?: Prisma.StringNullableWithAggregatesFilter<"Order"> | string | null
   shippingInfoId?: Prisma.StringWithAggregatesFilter<"Order"> | string
-  status?: Prisma.StringWithAggregatesFilter<"Order"> | string
 }
 
 export type OrderCreateInput = {
@@ -382,12 +490,21 @@ export type OrderCreateInput = {
   tax: number
   shippingFee: number
   total: number
+  paymentDate?: Date | string | null
+  paymentMethod?: $Enums.PaymentMethod
+  orderDate?: Date | string | null
   referenceNumber?: string | null
-  paymentDate?: string | null
   verificationCode?: string | null
   orderNumber?: string | null
-  orderDate?: string | null
-  status: string
+  orderType?: $Enums.OrderType
+  status: $Enums.OrderStatus
+  scheduledAt?: Date | string | null
+  fulfilledAt?: Date | string | null
+  cancellationRequestedAt?: Date | string | null
+  cancellationDate?: Date | string | null
+  cancellationReason?: string | null
+  interacEmail?: string | null
+  refundReferenceNumber?: string | null
   shippingInfo: Prisma.ShippingInfoCreateNestedOneWithoutOrderInput
   products?: Prisma.OrderProductCreateNestedManyWithoutOrderInput
 }
@@ -399,13 +516,22 @@ export type OrderUncheckedCreateInput = {
   tax: number
   shippingFee: number
   total: number
+  paymentDate?: Date | string | null
+  paymentMethod?: $Enums.PaymentMethod
+  orderDate?: Date | string | null
   referenceNumber?: string | null
-  paymentDate?: string | null
   verificationCode?: string | null
   orderNumber?: string | null
-  orderDate?: string | null
+  orderType?: $Enums.OrderType
+  status: $Enums.OrderStatus
+  scheduledAt?: Date | string | null
+  fulfilledAt?: Date | string | null
+  cancellationRequestedAt?: Date | string | null
+  cancellationDate?: Date | string | null
+  cancellationReason?: string | null
+  interacEmail?: string | null
+  refundReferenceNumber?: string | null
   shippingInfoId: string
-  status: string
   products?: Prisma.OrderProductUncheckedCreateNestedManyWithoutOrderInput
 }
 
@@ -416,12 +542,21 @@ export type OrderUpdateInput = {
   tax?: Prisma.FloatFieldUpdateOperationsInput | number
   shippingFee?: Prisma.FloatFieldUpdateOperationsInput | number
   total?: Prisma.FloatFieldUpdateOperationsInput | number
+  paymentDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  paymentMethod?: Prisma.EnumPaymentMethodFieldUpdateOperationsInput | $Enums.PaymentMethod
+  orderDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   referenceNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  paymentDate?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   verificationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   orderNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  orderDate?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  status?: Prisma.StringFieldUpdateOperationsInput | string
+  orderType?: Prisma.EnumOrderTypeFieldUpdateOperationsInput | $Enums.OrderType
+  status?: Prisma.EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
+  scheduledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  fulfilledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  cancellationRequestedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  cancellationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  cancellationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  interacEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  refundReferenceNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   shippingInfo?: Prisma.ShippingInfoUpdateOneRequiredWithoutOrderNestedInput
   products?: Prisma.OrderProductUpdateManyWithoutOrderNestedInput
 }
@@ -433,13 +568,22 @@ export type OrderUncheckedUpdateInput = {
   tax?: Prisma.FloatFieldUpdateOperationsInput | number
   shippingFee?: Prisma.FloatFieldUpdateOperationsInput | number
   total?: Prisma.FloatFieldUpdateOperationsInput | number
+  paymentDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  paymentMethod?: Prisma.EnumPaymentMethodFieldUpdateOperationsInput | $Enums.PaymentMethod
+  orderDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   referenceNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  paymentDate?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   verificationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   orderNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  orderDate?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  orderType?: Prisma.EnumOrderTypeFieldUpdateOperationsInput | $Enums.OrderType
+  status?: Prisma.EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
+  scheduledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  fulfilledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  cancellationRequestedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  cancellationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  cancellationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  interacEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  refundReferenceNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   shippingInfoId?: Prisma.StringFieldUpdateOperationsInput | string
-  status?: Prisma.StringFieldUpdateOperationsInput | string
   products?: Prisma.OrderProductUncheckedUpdateManyWithoutOrderNestedInput
 }
 
@@ -450,13 +594,22 @@ export type OrderCreateManyInput = {
   tax: number
   shippingFee: number
   total: number
+  paymentDate?: Date | string | null
+  paymentMethod?: $Enums.PaymentMethod
+  orderDate?: Date | string | null
   referenceNumber?: string | null
-  paymentDate?: string | null
   verificationCode?: string | null
   orderNumber?: string | null
-  orderDate?: string | null
+  orderType?: $Enums.OrderType
+  status: $Enums.OrderStatus
+  scheduledAt?: Date | string | null
+  fulfilledAt?: Date | string | null
+  cancellationRequestedAt?: Date | string | null
+  cancellationDate?: Date | string | null
+  cancellationReason?: string | null
+  interacEmail?: string | null
+  refundReferenceNumber?: string | null
   shippingInfoId: string
-  status: string
 }
 
 export type OrderUpdateManyMutationInput = {
@@ -466,12 +619,21 @@ export type OrderUpdateManyMutationInput = {
   tax?: Prisma.FloatFieldUpdateOperationsInput | number
   shippingFee?: Prisma.FloatFieldUpdateOperationsInput | number
   total?: Prisma.FloatFieldUpdateOperationsInput | number
+  paymentDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  paymentMethod?: Prisma.EnumPaymentMethodFieldUpdateOperationsInput | $Enums.PaymentMethod
+  orderDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   referenceNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  paymentDate?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   verificationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   orderNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  orderDate?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  status?: Prisma.StringFieldUpdateOperationsInput | string
+  orderType?: Prisma.EnumOrderTypeFieldUpdateOperationsInput | $Enums.OrderType
+  status?: Prisma.EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
+  scheduledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  fulfilledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  cancellationRequestedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  cancellationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  cancellationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  interacEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  refundReferenceNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type OrderUncheckedUpdateManyInput = {
@@ -481,13 +643,22 @@ export type OrderUncheckedUpdateManyInput = {
   tax?: Prisma.FloatFieldUpdateOperationsInput | number
   shippingFee?: Prisma.FloatFieldUpdateOperationsInput | number
   total?: Prisma.FloatFieldUpdateOperationsInput | number
+  paymentDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  paymentMethod?: Prisma.EnumPaymentMethodFieldUpdateOperationsInput | $Enums.PaymentMethod
+  orderDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   referenceNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  paymentDate?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   verificationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   orderNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  orderDate?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  orderType?: Prisma.EnumOrderTypeFieldUpdateOperationsInput | $Enums.OrderType
+  status?: Prisma.EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
+  scheduledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  fulfilledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  cancellationRequestedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  cancellationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  cancellationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  interacEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  refundReferenceNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   shippingInfoId?: Prisma.StringFieldUpdateOperationsInput | string
-  status?: Prisma.StringFieldUpdateOperationsInput | string
 }
 
 export type OrderCountOrderByAggregateInput = {
@@ -497,13 +668,22 @@ export type OrderCountOrderByAggregateInput = {
   tax?: Prisma.SortOrder
   shippingFee?: Prisma.SortOrder
   total?: Prisma.SortOrder
-  referenceNumber?: Prisma.SortOrder
   paymentDate?: Prisma.SortOrder
+  paymentMethod?: Prisma.SortOrder
+  orderDate?: Prisma.SortOrder
+  referenceNumber?: Prisma.SortOrder
   verificationCode?: Prisma.SortOrder
   orderNumber?: Prisma.SortOrder
-  orderDate?: Prisma.SortOrder
-  shippingInfoId?: Prisma.SortOrder
+  orderType?: Prisma.SortOrder
   status?: Prisma.SortOrder
+  scheduledAt?: Prisma.SortOrder
+  fulfilledAt?: Prisma.SortOrder
+  cancellationRequestedAt?: Prisma.SortOrder
+  cancellationDate?: Prisma.SortOrder
+  cancellationReason?: Prisma.SortOrder
+  interacEmail?: Prisma.SortOrder
+  refundReferenceNumber?: Prisma.SortOrder
+  shippingInfoId?: Prisma.SortOrder
 }
 
 export type OrderAvgOrderByAggregateInput = {
@@ -520,13 +700,22 @@ export type OrderMaxOrderByAggregateInput = {
   tax?: Prisma.SortOrder
   shippingFee?: Prisma.SortOrder
   total?: Prisma.SortOrder
-  referenceNumber?: Prisma.SortOrder
   paymentDate?: Prisma.SortOrder
+  paymentMethod?: Prisma.SortOrder
+  orderDate?: Prisma.SortOrder
+  referenceNumber?: Prisma.SortOrder
   verificationCode?: Prisma.SortOrder
   orderNumber?: Prisma.SortOrder
-  orderDate?: Prisma.SortOrder
-  shippingInfoId?: Prisma.SortOrder
+  orderType?: Prisma.SortOrder
   status?: Prisma.SortOrder
+  scheduledAt?: Prisma.SortOrder
+  fulfilledAt?: Prisma.SortOrder
+  cancellationRequestedAt?: Prisma.SortOrder
+  cancellationDate?: Prisma.SortOrder
+  cancellationReason?: Prisma.SortOrder
+  interacEmail?: Prisma.SortOrder
+  refundReferenceNumber?: Prisma.SortOrder
+  shippingInfoId?: Prisma.SortOrder
 }
 
 export type OrderMinOrderByAggregateInput = {
@@ -536,13 +725,22 @@ export type OrderMinOrderByAggregateInput = {
   tax?: Prisma.SortOrder
   shippingFee?: Prisma.SortOrder
   total?: Prisma.SortOrder
-  referenceNumber?: Prisma.SortOrder
   paymentDate?: Prisma.SortOrder
+  paymentMethod?: Prisma.SortOrder
+  orderDate?: Prisma.SortOrder
+  referenceNumber?: Prisma.SortOrder
   verificationCode?: Prisma.SortOrder
   orderNumber?: Prisma.SortOrder
-  orderDate?: Prisma.SortOrder
-  shippingInfoId?: Prisma.SortOrder
+  orderType?: Prisma.SortOrder
   status?: Prisma.SortOrder
+  scheduledAt?: Prisma.SortOrder
+  fulfilledAt?: Prisma.SortOrder
+  cancellationRequestedAt?: Prisma.SortOrder
+  cancellationDate?: Prisma.SortOrder
+  cancellationReason?: Prisma.SortOrder
+  interacEmail?: Prisma.SortOrder
+  refundReferenceNumber?: Prisma.SortOrder
+  shippingInfoId?: Prisma.SortOrder
 }
 
 export type OrderSumOrderByAggregateInput = {
@@ -565,6 +763,18 @@ export type OrderOrderByRelationAggregateInput = {
 export type OrderScalarRelationFilter = {
   is?: Prisma.OrderWhereInput
   isNot?: Prisma.OrderWhereInput
+}
+
+export type EnumPaymentMethodFieldUpdateOperationsInput = {
+  set?: $Enums.PaymentMethod
+}
+
+export type EnumOrderTypeFieldUpdateOperationsInput = {
+  set?: $Enums.OrderType
+}
+
+export type EnumOrderStatusFieldUpdateOperationsInput = {
+  set?: $Enums.OrderStatus
 }
 
 export type OrderCreateNestedManyWithoutShippingInfoInput = {
@@ -630,12 +840,21 @@ export type OrderCreateWithoutShippingInfoInput = {
   tax: number
   shippingFee: number
   total: number
+  paymentDate?: Date | string | null
+  paymentMethod?: $Enums.PaymentMethod
+  orderDate?: Date | string | null
   referenceNumber?: string | null
-  paymentDate?: string | null
   verificationCode?: string | null
   orderNumber?: string | null
-  orderDate?: string | null
-  status: string
+  orderType?: $Enums.OrderType
+  status: $Enums.OrderStatus
+  scheduledAt?: Date | string | null
+  fulfilledAt?: Date | string | null
+  cancellationRequestedAt?: Date | string | null
+  cancellationDate?: Date | string | null
+  cancellationReason?: string | null
+  interacEmail?: string | null
+  refundReferenceNumber?: string | null
   products?: Prisma.OrderProductCreateNestedManyWithoutOrderInput
 }
 
@@ -646,12 +865,21 @@ export type OrderUncheckedCreateWithoutShippingInfoInput = {
   tax: number
   shippingFee: number
   total: number
+  paymentDate?: Date | string | null
+  paymentMethod?: $Enums.PaymentMethod
+  orderDate?: Date | string | null
   referenceNumber?: string | null
-  paymentDate?: string | null
   verificationCode?: string | null
   orderNumber?: string | null
-  orderDate?: string | null
-  status: string
+  orderType?: $Enums.OrderType
+  status: $Enums.OrderStatus
+  scheduledAt?: Date | string | null
+  fulfilledAt?: Date | string | null
+  cancellationRequestedAt?: Date | string | null
+  cancellationDate?: Date | string | null
+  cancellationReason?: string | null
+  interacEmail?: string | null
+  refundReferenceNumber?: string | null
   products?: Prisma.OrderProductUncheckedCreateNestedManyWithoutOrderInput
 }
 
@@ -691,13 +919,22 @@ export type OrderScalarWhereInput = {
   tax?: Prisma.FloatFilter<"Order"> | number
   shippingFee?: Prisma.FloatFilter<"Order"> | number
   total?: Prisma.FloatFilter<"Order"> | number
+  paymentDate?: Prisma.DateTimeNullableFilter<"Order"> | Date | string | null
+  paymentMethod?: Prisma.EnumPaymentMethodFilter<"Order"> | $Enums.PaymentMethod
+  orderDate?: Prisma.DateTimeNullableFilter<"Order"> | Date | string | null
   referenceNumber?: Prisma.StringNullableFilter<"Order"> | string | null
-  paymentDate?: Prisma.StringNullableFilter<"Order"> | string | null
   verificationCode?: Prisma.StringNullableFilter<"Order"> | string | null
   orderNumber?: Prisma.StringNullableFilter<"Order"> | string | null
-  orderDate?: Prisma.StringNullableFilter<"Order"> | string | null
+  orderType?: Prisma.EnumOrderTypeFilter<"Order"> | $Enums.OrderType
+  status?: Prisma.EnumOrderStatusFilter<"Order"> | $Enums.OrderStatus
+  scheduledAt?: Prisma.DateTimeNullableFilter<"Order"> | Date | string | null
+  fulfilledAt?: Prisma.DateTimeNullableFilter<"Order"> | Date | string | null
+  cancellationRequestedAt?: Prisma.DateTimeNullableFilter<"Order"> | Date | string | null
+  cancellationDate?: Prisma.DateTimeNullableFilter<"Order"> | Date | string | null
+  cancellationReason?: Prisma.StringNullableFilter<"Order"> | string | null
+  interacEmail?: Prisma.StringNullableFilter<"Order"> | string | null
+  refundReferenceNumber?: Prisma.StringNullableFilter<"Order"> | string | null
   shippingInfoId?: Prisma.StringFilter<"Order"> | string
-  status?: Prisma.StringFilter<"Order"> | string
 }
 
 export type OrderCreateWithoutProductsInput = {
@@ -707,12 +944,21 @@ export type OrderCreateWithoutProductsInput = {
   tax: number
   shippingFee: number
   total: number
+  paymentDate?: Date | string | null
+  paymentMethod?: $Enums.PaymentMethod
+  orderDate?: Date | string | null
   referenceNumber?: string | null
-  paymentDate?: string | null
   verificationCode?: string | null
   orderNumber?: string | null
-  orderDate?: string | null
-  status: string
+  orderType?: $Enums.OrderType
+  status: $Enums.OrderStatus
+  scheduledAt?: Date | string | null
+  fulfilledAt?: Date | string | null
+  cancellationRequestedAt?: Date | string | null
+  cancellationDate?: Date | string | null
+  cancellationReason?: string | null
+  interacEmail?: string | null
+  refundReferenceNumber?: string | null
   shippingInfo: Prisma.ShippingInfoCreateNestedOneWithoutOrderInput
 }
 
@@ -723,13 +969,22 @@ export type OrderUncheckedCreateWithoutProductsInput = {
   tax: number
   shippingFee: number
   total: number
+  paymentDate?: Date | string | null
+  paymentMethod?: $Enums.PaymentMethod
+  orderDate?: Date | string | null
   referenceNumber?: string | null
-  paymentDate?: string | null
   verificationCode?: string | null
   orderNumber?: string | null
-  orderDate?: string | null
+  orderType?: $Enums.OrderType
+  status: $Enums.OrderStatus
+  scheduledAt?: Date | string | null
+  fulfilledAt?: Date | string | null
+  cancellationRequestedAt?: Date | string | null
+  cancellationDate?: Date | string | null
+  cancellationReason?: string | null
+  interacEmail?: string | null
+  refundReferenceNumber?: string | null
   shippingInfoId: string
-  status: string
 }
 
 export type OrderCreateOrConnectWithoutProductsInput = {
@@ -755,12 +1010,21 @@ export type OrderUpdateWithoutProductsInput = {
   tax?: Prisma.FloatFieldUpdateOperationsInput | number
   shippingFee?: Prisma.FloatFieldUpdateOperationsInput | number
   total?: Prisma.FloatFieldUpdateOperationsInput | number
+  paymentDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  paymentMethod?: Prisma.EnumPaymentMethodFieldUpdateOperationsInput | $Enums.PaymentMethod
+  orderDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   referenceNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  paymentDate?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   verificationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   orderNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  orderDate?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  status?: Prisma.StringFieldUpdateOperationsInput | string
+  orderType?: Prisma.EnumOrderTypeFieldUpdateOperationsInput | $Enums.OrderType
+  status?: Prisma.EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
+  scheduledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  fulfilledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  cancellationRequestedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  cancellationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  cancellationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  interacEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  refundReferenceNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   shippingInfo?: Prisma.ShippingInfoUpdateOneRequiredWithoutOrderNestedInput
 }
 
@@ -771,13 +1035,22 @@ export type OrderUncheckedUpdateWithoutProductsInput = {
   tax?: Prisma.FloatFieldUpdateOperationsInput | number
   shippingFee?: Prisma.FloatFieldUpdateOperationsInput | number
   total?: Prisma.FloatFieldUpdateOperationsInput | number
+  paymentDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  paymentMethod?: Prisma.EnumPaymentMethodFieldUpdateOperationsInput | $Enums.PaymentMethod
+  orderDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   referenceNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  paymentDate?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   verificationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   orderNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  orderDate?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  orderType?: Prisma.EnumOrderTypeFieldUpdateOperationsInput | $Enums.OrderType
+  status?: Prisma.EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
+  scheduledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  fulfilledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  cancellationRequestedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  cancellationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  cancellationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  interacEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  refundReferenceNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   shippingInfoId?: Prisma.StringFieldUpdateOperationsInput | string
-  status?: Prisma.StringFieldUpdateOperationsInput | string
 }
 
 export type OrderCreateManyShippingInfoInput = {
@@ -787,12 +1060,21 @@ export type OrderCreateManyShippingInfoInput = {
   tax: number
   shippingFee: number
   total: number
+  paymentDate?: Date | string | null
+  paymentMethod?: $Enums.PaymentMethod
+  orderDate?: Date | string | null
   referenceNumber?: string | null
-  paymentDate?: string | null
   verificationCode?: string | null
   orderNumber?: string | null
-  orderDate?: string | null
-  status: string
+  orderType?: $Enums.OrderType
+  status: $Enums.OrderStatus
+  scheduledAt?: Date | string | null
+  fulfilledAt?: Date | string | null
+  cancellationRequestedAt?: Date | string | null
+  cancellationDate?: Date | string | null
+  cancellationReason?: string | null
+  interacEmail?: string | null
+  refundReferenceNumber?: string | null
 }
 
 export type OrderUpdateWithoutShippingInfoInput = {
@@ -802,12 +1084,21 @@ export type OrderUpdateWithoutShippingInfoInput = {
   tax?: Prisma.FloatFieldUpdateOperationsInput | number
   shippingFee?: Prisma.FloatFieldUpdateOperationsInput | number
   total?: Prisma.FloatFieldUpdateOperationsInput | number
+  paymentDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  paymentMethod?: Prisma.EnumPaymentMethodFieldUpdateOperationsInput | $Enums.PaymentMethod
+  orderDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   referenceNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  paymentDate?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   verificationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   orderNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  orderDate?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  status?: Prisma.StringFieldUpdateOperationsInput | string
+  orderType?: Prisma.EnumOrderTypeFieldUpdateOperationsInput | $Enums.OrderType
+  status?: Prisma.EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
+  scheduledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  fulfilledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  cancellationRequestedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  cancellationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  cancellationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  interacEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  refundReferenceNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   products?: Prisma.OrderProductUpdateManyWithoutOrderNestedInput
 }
 
@@ -818,12 +1109,21 @@ export type OrderUncheckedUpdateWithoutShippingInfoInput = {
   tax?: Prisma.FloatFieldUpdateOperationsInput | number
   shippingFee?: Prisma.FloatFieldUpdateOperationsInput | number
   total?: Prisma.FloatFieldUpdateOperationsInput | number
+  paymentDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  paymentMethod?: Prisma.EnumPaymentMethodFieldUpdateOperationsInput | $Enums.PaymentMethod
+  orderDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   referenceNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  paymentDate?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   verificationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   orderNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  orderDate?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  status?: Prisma.StringFieldUpdateOperationsInput | string
+  orderType?: Prisma.EnumOrderTypeFieldUpdateOperationsInput | $Enums.OrderType
+  status?: Prisma.EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
+  scheduledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  fulfilledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  cancellationRequestedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  cancellationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  cancellationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  interacEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  refundReferenceNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   products?: Prisma.OrderProductUncheckedUpdateManyWithoutOrderNestedInput
 }
 
@@ -834,12 +1134,21 @@ export type OrderUncheckedUpdateManyWithoutShippingInfoInput = {
   tax?: Prisma.FloatFieldUpdateOperationsInput | number
   shippingFee?: Prisma.FloatFieldUpdateOperationsInput | number
   total?: Prisma.FloatFieldUpdateOperationsInput | number
+  paymentDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  paymentMethod?: Prisma.EnumPaymentMethodFieldUpdateOperationsInput | $Enums.PaymentMethod
+  orderDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   referenceNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  paymentDate?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   verificationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   orderNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  orderDate?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  status?: Prisma.StringFieldUpdateOperationsInput | string
+  orderType?: Prisma.EnumOrderTypeFieldUpdateOperationsInput | $Enums.OrderType
+  status?: Prisma.EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
+  scheduledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  fulfilledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  cancellationRequestedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  cancellationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  cancellationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  interacEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  refundReferenceNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 
@@ -880,13 +1189,22 @@ export type OrderSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   tax?: boolean
   shippingFee?: boolean
   total?: boolean
-  referenceNumber?: boolean
   paymentDate?: boolean
+  paymentMethod?: boolean
+  orderDate?: boolean
+  referenceNumber?: boolean
   verificationCode?: boolean
   orderNumber?: boolean
-  orderDate?: boolean
-  shippingInfoId?: boolean
+  orderType?: boolean
   status?: boolean
+  scheduledAt?: boolean
+  fulfilledAt?: boolean
+  cancellationRequestedAt?: boolean
+  cancellationDate?: boolean
+  cancellationReason?: boolean
+  interacEmail?: boolean
+  refundReferenceNumber?: boolean
+  shippingInfoId?: boolean
   shippingInfo?: boolean | Prisma.ShippingInfoDefaultArgs<ExtArgs>
   products?: boolean | Prisma.Order$productsArgs<ExtArgs>
   _count?: boolean | Prisma.OrderCountOutputTypeDefaultArgs<ExtArgs>
@@ -899,13 +1217,22 @@ export type OrderSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   tax?: boolean
   shippingFee?: boolean
   total?: boolean
-  referenceNumber?: boolean
   paymentDate?: boolean
+  paymentMethod?: boolean
+  orderDate?: boolean
+  referenceNumber?: boolean
   verificationCode?: boolean
   orderNumber?: boolean
-  orderDate?: boolean
-  shippingInfoId?: boolean
+  orderType?: boolean
   status?: boolean
+  scheduledAt?: boolean
+  fulfilledAt?: boolean
+  cancellationRequestedAt?: boolean
+  cancellationDate?: boolean
+  cancellationReason?: boolean
+  interacEmail?: boolean
+  refundReferenceNumber?: boolean
+  shippingInfoId?: boolean
   shippingInfo?: boolean | Prisma.ShippingInfoDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["order"]>
 
@@ -916,13 +1243,22 @@ export type OrderSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   tax?: boolean
   shippingFee?: boolean
   total?: boolean
-  referenceNumber?: boolean
   paymentDate?: boolean
+  paymentMethod?: boolean
+  orderDate?: boolean
+  referenceNumber?: boolean
   verificationCode?: boolean
   orderNumber?: boolean
-  orderDate?: boolean
-  shippingInfoId?: boolean
+  orderType?: boolean
   status?: boolean
+  scheduledAt?: boolean
+  fulfilledAt?: boolean
+  cancellationRequestedAt?: boolean
+  cancellationDate?: boolean
+  cancellationReason?: boolean
+  interacEmail?: boolean
+  refundReferenceNumber?: boolean
+  shippingInfoId?: boolean
   shippingInfo?: boolean | Prisma.ShippingInfoDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["order"]>
 
@@ -933,16 +1269,25 @@ export type OrderSelectScalar = {
   tax?: boolean
   shippingFee?: boolean
   total?: boolean
-  referenceNumber?: boolean
   paymentDate?: boolean
+  paymentMethod?: boolean
+  orderDate?: boolean
+  referenceNumber?: boolean
   verificationCode?: boolean
   orderNumber?: boolean
-  orderDate?: boolean
-  shippingInfoId?: boolean
+  orderType?: boolean
   status?: boolean
+  scheduledAt?: boolean
+  fulfilledAt?: boolean
+  cancellationRequestedAt?: boolean
+  cancellationDate?: boolean
+  cancellationReason?: boolean
+  interacEmail?: boolean
+  refundReferenceNumber?: boolean
+  shippingInfoId?: boolean
 }
 
-export type OrderOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "orderId" | "subtotal" | "tax" | "shippingFee" | "total" | "referenceNumber" | "paymentDate" | "verificationCode" | "orderNumber" | "orderDate" | "shippingInfoId" | "status", ExtArgs["result"]["order"]>
+export type OrderOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "orderId" | "subtotal" | "tax" | "shippingFee" | "total" | "paymentDate" | "paymentMethod" | "orderDate" | "referenceNumber" | "verificationCode" | "orderNumber" | "orderType" | "status" | "scheduledAt" | "fulfilledAt" | "cancellationRequestedAt" | "cancellationDate" | "cancellationReason" | "interacEmail" | "refundReferenceNumber" | "shippingInfoId", ExtArgs["result"]["order"]>
 export type OrderInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   shippingInfo?: boolean | Prisma.ShippingInfoDefaultArgs<ExtArgs>
   products?: boolean | Prisma.Order$productsArgs<ExtArgs>
@@ -968,13 +1313,22 @@ export type $OrderPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs 
     tax: number
     shippingFee: number
     total: number
+    paymentDate: Date | null
+    paymentMethod: $Enums.PaymentMethod
+    orderDate: Date | null
     referenceNumber: string | null
-    paymentDate: string | null
     verificationCode: string | null
     orderNumber: string | null
-    orderDate: string | null
+    orderType: $Enums.OrderType
+    status: $Enums.OrderStatus
+    scheduledAt: Date | null
+    fulfilledAt: Date | null
+    cancellationRequestedAt: Date | null
+    cancellationDate: Date | null
+    cancellationReason: string | null
+    interacEmail: string | null
+    refundReferenceNumber: string | null
     shippingInfoId: string
-    status: string
   }, ExtArgs["result"]["order"]>
   composites: {}
 }
@@ -1406,13 +1760,22 @@ export interface OrderFieldRefs {
   readonly tax: Prisma.FieldRef<"Order", 'Float'>
   readonly shippingFee: Prisma.FieldRef<"Order", 'Float'>
   readonly total: Prisma.FieldRef<"Order", 'Float'>
+  readonly paymentDate: Prisma.FieldRef<"Order", 'DateTime'>
+  readonly paymentMethod: Prisma.FieldRef<"Order", 'PaymentMethod'>
+  readonly orderDate: Prisma.FieldRef<"Order", 'DateTime'>
   readonly referenceNumber: Prisma.FieldRef<"Order", 'String'>
-  readonly paymentDate: Prisma.FieldRef<"Order", 'String'>
   readonly verificationCode: Prisma.FieldRef<"Order", 'String'>
   readonly orderNumber: Prisma.FieldRef<"Order", 'String'>
-  readonly orderDate: Prisma.FieldRef<"Order", 'String'>
+  readonly orderType: Prisma.FieldRef<"Order", 'OrderType'>
+  readonly status: Prisma.FieldRef<"Order", 'OrderStatus'>
+  readonly scheduledAt: Prisma.FieldRef<"Order", 'DateTime'>
+  readonly fulfilledAt: Prisma.FieldRef<"Order", 'DateTime'>
+  readonly cancellationRequestedAt: Prisma.FieldRef<"Order", 'DateTime'>
+  readonly cancellationDate: Prisma.FieldRef<"Order", 'DateTime'>
+  readonly cancellationReason: Prisma.FieldRef<"Order", 'String'>
+  readonly interacEmail: Prisma.FieldRef<"Order", 'String'>
+  readonly refundReferenceNumber: Prisma.FieldRef<"Order", 'String'>
   readonly shippingInfoId: Prisma.FieldRef<"Order", 'String'>
-  readonly status: Prisma.FieldRef<"Order", 'String'>
 }
     
 

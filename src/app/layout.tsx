@@ -1,7 +1,11 @@
-import { Toaster } from "@/components/ui/sonner";
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+
+import { TRPCReactProvider } from "@/trpc/client";
+import { Toaster } from "@/components/ui/sonner";
+
 import "./globals.css";
 
 const geistSans = localFont({
@@ -29,15 +33,18 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        <div className="min-h-screen">
-          <NuqsAdapter>{children}</NuqsAdapter>
-        </div>
-        <Toaster />
-      </body>
-    </html>
+    <TRPCReactProvider>
+      <html lang="en" suppressHydrationWarning>
+        <body
+          className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        >
+          <div className="min-h-screen">
+            <NuqsAdapter>{children}</NuqsAdapter>
+          </div>
+          <Toaster />
+        </body>
+      </html>
+      <ReactQueryDevtools initialIsOpen={false} />
+    </TRPCReactProvider>
   );
 }

@@ -65,6 +65,11 @@ export type Verification = Prisma.VerificationModel
  */
 export type TwoFactor = Prisma.TwoFactorModel
 /**
+ * Model CompanySettings
+ * 
+ */
+export type CompanySettings = Prisma.CompanySettingsModel
+/**
  * Model Product
  * 
  */
@@ -119,3 +124,8 @@ export type Revenue = Prisma.RevenueModel
  * 
  */
 export type MonthlyProjection = Prisma.MonthlyProjectionModel
+/**
+ * Model Testimonial
+ * 
+ */
+export type Testimonial = Prisma.TestimonialModel
