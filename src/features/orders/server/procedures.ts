@@ -56,6 +56,7 @@ const addHours = (date: Date | string, hours: number) => {
 
 const calculateEstimatedDelivery = (date: string | Date) => {
   const base = new Date(date);
+  if (isNaN(base.getTime())) return "Invalid Date";
   return new Date(base.getTime() + 48 * 3600000).toISOString().split("T")[0];
 };
 

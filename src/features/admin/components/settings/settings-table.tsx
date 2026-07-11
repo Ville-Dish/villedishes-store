@@ -1,3 +1,5 @@
+// src/features/admin/components/settings/settings-table.tsx
+
 import { Button } from "@/components/ui/button";
 import {
   Table,

@@ -30,8 +30,8 @@ export type IncomeExpenseValue = z.infer<typeof incomeExpenseSchema>;
 export const companySettingsSchema = z.object({
   id: z.string().optional(),
   companyName: z.string().min(1, "Company name is required"),
-  about: z.string().optional(),
-  founderNotes: z.string().optional(),
+  about: z.array(z.string()).optional(),
+  founderNotes: z.array(z.string()).optional(),
   supportEmail: z.email().optional(),
   supportPhone: z
     .string({ message: "Phone number is required" })

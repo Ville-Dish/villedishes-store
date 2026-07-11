@@ -48,15 +48,83 @@ interface GeneralSettingsProps {
   initialSettings?: Partial<CompanySettingsValue>;
 }
 
+// ─── Paragraph <-> text helpers ────────────────────────────────────────────
+// about / founderNotes are stored as string[] (one entry per paragraph).
+// The textarea works with a single string, split on blank lines.
+
+const paragraphsToText = (paragraphs?: string[]) =>
+  (paragraphs ?? []).join("\n\n");
+
+const textToParagraphs = (text: string) =>
+  text
+    .split(/\n\s*\n/)
+    .map((p) => p.trim())
+    .filter(Boolean);
+
+// A textarea that edits a string[] of paragraphs. Keeps its own local text
+// state so that reformatting on every keystroke (e.g. collapsing a run of
+// blank lines while the user is still typing) doesn't fight the cursor.
+// It remounts fresh whenever the parent form section is opened for editing,
+// so it always starts in sync with the current field value.
+function ParagraphTextarea({
+  value,
+  onChange,
+  onBlur,
+  name,
+  inputRef,
+  placeholder,
+  rows,
+}: {
+  value?: string[];
+  onChange: (paragraphs: string[]) => void;
+  onBlur?: () => void;
+  name?: string;
+  inputRef?: React.Ref<HTMLTextAreaElement>;
+  placeholder?: string;
+  rows?: number;
+}) {
+  const [text, setText] = useState(() => paragraphsToText(value));
+
+  return (
+    <Textarea
+      ref={inputRef}
+      name={name}
+      placeholder={placeholder}
+      rows={rows}
+      value={text}
+      onChange={(e) => {
+        setText(e.target.value);
+        onChange(textToParagraphs(e.target.value));
+      }}
+      onBlur={onBlur}
+    />
+  );
+}
+
 function DisplayValue({
   value,
   placeholder = "Not set",
   isMultiline = false,
 }: {
-  value?: string;
+  value?: string | string[];
   placeholder?: string;
   isMultiline?: boolean;
 }) {
+  if (Array.isArray(value)) {
+    if (value.length === 0) {
+      return (
+        <span className="text-muted-foreground italic">{placeholder}</span>
+      );
+    }
+    return (
+      <div className="space-y-2">
+        {value.map((paragraph, index) => (
+          <p key={index}>{paragraph}</p>
+        ))}
+      </div>
+    );
+  }
+
   if (!value) {
     return <span className="text-muted-foreground italic">{placeholder}</span>;
   }
@@ -74,7 +142,7 @@ function DisplayField({
   isMultiline = false,
 }: {
   label: string;
-  value?: string;
+  value?: string | string[];
   icon?: React.ReactNode;
   placeholder?: string;
   isMultiline?: boolean;
@@ -114,8 +182,8 @@ export const GeneralSettings = () => {
     defaultValues: {
       id: data?.id ?? "",
       companyName: data?.companyName ?? "",
-      about: data?.about ?? "",
-      founderNotes: data?.founderNotes ?? "",
+      about: data?.about ?? [],
+      founderNotes: data?.founderNotes ?? [],
       supportEmail: data?.supportEmail ?? "",
       supportPhone: data?.supportPhone ?? "",
       website: data?.website ?? "",
@@ -358,15 +426,19 @@ export const GeneralSettings = () => {
                     <FormItem>
                       <FormLabel>About</FormLabel>
                       <FormControl>
-                        <Textarea
-                          placeholder="Tell customers about your company..."
-                          rows={4}
-                          {...field}
+                        <ParagraphTextarea
+                          value={field.value}
+                          onChange={field.onChange}
+                          onBlur={field.onBlur}
+                          name={field.name}
+                          inputRef={field.ref}
+                          placeholder="Tell customers about your company... Separate paragraphs with a blank line."
+                          rows={6}
                         />
                       </FormControl>
                       <FormDescription>
                         A brief description of your company that may appear on
-                        public pages
+                        public pages. Leave a blank line between paragraphs.
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -384,15 +456,19 @@ export const GeneralSettings = () => {
                         Founder Notes
                       </FormLabel>
                       <FormControl>
-                        <Textarea
-                          placeholder="Share your vision, mission, or personal message..."
-                          rows={3}
-                          {...field}
+                        <ParagraphTextarea
+                          value={field.value}
+                          onChange={field.onChange}
+                          onBlur={field.onBlur}
+                          name={field.name}
+                          inputRef={field.ref}
+                          placeholder="Share your vision, mission, or personal message... Separate paragraphs with a blank line."
+                          rows={5}
                         />
                       </FormControl>
                       <FormDescription>
                         Personal notes or message from the founder (internal
-                        use)
+                        use). Leave a blank line between paragraphs.
                       </FormDescription>
                       <FormMessage />
                     </FormItem>

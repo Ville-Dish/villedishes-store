@@ -14,3 +14,7 @@ export const PAGINATION = {
 export const PRODUCT_INFO = {
   maxPrice: 1000,
 };
+
+export const TRANSACTION_INFO = {
+  maxPrice: 1500,
+};

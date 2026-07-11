@@ -27,8 +27,6 @@ export type AggregateCompanySettings = {
 export type CompanySettingsMinAggregateOutputType = {
   id: string | null
   companyName: string | null
-  about: string | null
-  founderNotes: string | null
   supportEmail: string | null
   supportPhone: string | null
   website: string | null
@@ -42,8 +40,6 @@ export type CompanySettingsMinAggregateOutputType = {
 export type CompanySettingsMaxAggregateOutputType = {
   id: string | null
   companyName: string | null
-  about: string | null
-  founderNotes: string | null
   supportEmail: string | null
   supportPhone: string | null
   website: string | null
@@ -74,8 +70,6 @@ export type CompanySettingsCountAggregateOutputType = {
 export type CompanySettingsMinAggregateInputType = {
   id?: true
   companyName?: true
-  about?: true
-  founderNotes?: true
   supportEmail?: true
   supportPhone?: true
   website?: true
@@ -89,8 +83,6 @@ export type CompanySettingsMinAggregateInputType = {
 export type CompanySettingsMaxAggregateInputType = {
   id?: true
   companyName?: true
-  about?: true
-  founderNotes?: true
   supportEmail?: true
   supportPhone?: true
   website?: true
@@ -192,8 +184,8 @@ export type CompanySettingsGroupByArgs<ExtArgs extends runtime.Types.Extensions.
 export type CompanySettingsGroupByOutputType = {
   id: string
   companyName: string
-  about: string | null
-  founderNotes: string | null
+  about: string[]
+  founderNotes: string[]
   supportEmail: string | null
   supportPhone: string | null
   website: string | null
@@ -228,8 +220,8 @@ export type CompanySettingsWhereInput = {
   NOT?: Prisma.CompanySettingsWhereInput | Prisma.CompanySettingsWhereInput[]
   id?: Prisma.StringFilter<"CompanySettings"> | string
   companyName?: Prisma.StringFilter<"CompanySettings"> | string
-  about?: Prisma.StringNullableFilter<"CompanySettings"> | string | null
-  founderNotes?: Prisma.StringNullableFilter<"CompanySettings"> | string | null
+  about?: Prisma.StringNullableListFilter<"CompanySettings">
+  founderNotes?: Prisma.StringNullableListFilter<"CompanySettings">
   supportEmail?: Prisma.StringNullableFilter<"CompanySettings"> | string | null
   supportPhone?: Prisma.StringNullableFilter<"CompanySettings"> | string | null
   website?: Prisma.StringNullableFilter<"CompanySettings"> | string | null
@@ -243,8 +235,8 @@ export type CompanySettingsWhereInput = {
 export type CompanySettingsOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   companyName?: Prisma.SortOrder
-  about?: Prisma.SortOrderInput | Prisma.SortOrder
-  founderNotes?: Prisma.SortOrderInput | Prisma.SortOrder
+  about?: Prisma.SortOrder
+  founderNotes?: Prisma.SortOrder
   supportEmail?: Prisma.SortOrderInput | Prisma.SortOrder
   supportPhone?: Prisma.SortOrderInput | Prisma.SortOrder
   website?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -261,8 +253,8 @@ export type CompanySettingsWhereUniqueInput = Prisma.AtLeast<{
   AND?: Prisma.CompanySettingsWhereInput | Prisma.CompanySettingsWhereInput[]
   OR?: Prisma.CompanySettingsWhereInput[]
   NOT?: Prisma.CompanySettingsWhereInput | Prisma.CompanySettingsWhereInput[]
-  about?: Prisma.StringNullableFilter<"CompanySettings"> | string | null
-  founderNotes?: Prisma.StringNullableFilter<"CompanySettings"> | string | null
+  about?: Prisma.StringNullableListFilter<"CompanySettings">
+  founderNotes?: Prisma.StringNullableListFilter<"CompanySettings">
   supportEmail?: Prisma.StringNullableFilter<"CompanySettings"> | string | null
   supportPhone?: Prisma.StringNullableFilter<"CompanySettings"> | string | null
   website?: Prisma.StringNullableFilter<"CompanySettings"> | string | null
@@ -276,8 +268,8 @@ export type CompanySettingsWhereUniqueInput = Prisma.AtLeast<{
 export type CompanySettingsOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   companyName?: Prisma.SortOrder
-  about?: Prisma.SortOrderInput | Prisma.SortOrder
-  founderNotes?: Prisma.SortOrderInput | Prisma.SortOrder
+  about?: Prisma.SortOrder
+  founderNotes?: Prisma.SortOrder
   supportEmail?: Prisma.SortOrderInput | Prisma.SortOrder
   supportPhone?: Prisma.SortOrderInput | Prisma.SortOrder
   website?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -297,8 +289,8 @@ export type CompanySettingsScalarWhereWithAggregatesInput = {
   NOT?: Prisma.CompanySettingsScalarWhereWithAggregatesInput | Prisma.CompanySettingsScalarWhereWithAggregatesInput[]
   id?: Prisma.StringWithAggregatesFilter<"CompanySettings"> | string
   companyName?: Prisma.StringWithAggregatesFilter<"CompanySettings"> | string
-  about?: Prisma.StringNullableWithAggregatesFilter<"CompanySettings"> | string | null
-  founderNotes?: Prisma.StringNullableWithAggregatesFilter<"CompanySettings"> | string | null
+  about?: Prisma.StringNullableListFilter<"CompanySettings">
+  founderNotes?: Prisma.StringNullableListFilter<"CompanySettings">
   supportEmail?: Prisma.StringNullableWithAggregatesFilter<"CompanySettings"> | string | null
   supportPhone?: Prisma.StringNullableWithAggregatesFilter<"CompanySettings"> | string | null
   website?: Prisma.StringNullableWithAggregatesFilter<"CompanySettings"> | string | null
@@ -312,8 +304,8 @@ export type CompanySettingsScalarWhereWithAggregatesInput = {
 export type CompanySettingsCreateInput = {
   id?: string
   companyName: string
-  about?: string | null
-  founderNotes?: string | null
+  about?: Prisma.CompanySettingsCreateaboutInput | string[]
+  founderNotes?: Prisma.CompanySettingsCreatefounderNotesInput | string[]
   supportEmail?: string | null
   supportPhone?: string | null
   website?: string | null
@@ -327,8 +319,8 @@ export type CompanySettingsCreateInput = {
 export type CompanySettingsUncheckedCreateInput = {
   id?: string
   companyName: string
-  about?: string | null
-  founderNotes?: string | null
+  about?: Prisma.CompanySettingsCreateaboutInput | string[]
+  founderNotes?: Prisma.CompanySettingsCreatefounderNotesInput | string[]
   supportEmail?: string | null
   supportPhone?: string | null
   website?: string | null
@@ -342,8 +334,8 @@ export type CompanySettingsUncheckedCreateInput = {
 export type CompanySettingsUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   companyName?: Prisma.StringFieldUpdateOperationsInput | string
-  about?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  founderNotes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  about?: Prisma.CompanySettingsUpdateaboutInput | string[]
+  founderNotes?: Prisma.CompanySettingsUpdatefounderNotesInput | string[]
   supportEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   supportPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   website?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -357,8 +349,8 @@ export type CompanySettingsUpdateInput = {
 export type CompanySettingsUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   companyName?: Prisma.StringFieldUpdateOperationsInput | string
-  about?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  founderNotes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  about?: Prisma.CompanySettingsUpdateaboutInput | string[]
+  founderNotes?: Prisma.CompanySettingsUpdatefounderNotesInput | string[]
   supportEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   supportPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   website?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -372,8 +364,8 @@ export type CompanySettingsUncheckedUpdateInput = {
 export type CompanySettingsCreateManyInput = {
   id?: string
   companyName: string
-  about?: string | null
-  founderNotes?: string | null
+  about?: Prisma.CompanySettingsCreateaboutInput | string[]
+  founderNotes?: Prisma.CompanySettingsCreatefounderNotesInput | string[]
   supportEmail?: string | null
   supportPhone?: string | null
   website?: string | null
@@ -387,8 +379,8 @@ export type CompanySettingsCreateManyInput = {
 export type CompanySettingsUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   companyName?: Prisma.StringFieldUpdateOperationsInput | string
-  about?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  founderNotes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  about?: Prisma.CompanySettingsUpdateaboutInput | string[]
+  founderNotes?: Prisma.CompanySettingsUpdatefounderNotesInput | string[]
   supportEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   supportPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   website?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -402,8 +394,8 @@ export type CompanySettingsUpdateManyMutationInput = {
 export type CompanySettingsUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   companyName?: Prisma.StringFieldUpdateOperationsInput | string
-  about?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  founderNotes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  about?: Prisma.CompanySettingsUpdateaboutInput | string[]
+  founderNotes?: Prisma.CompanySettingsUpdatefounderNotesInput | string[]
   supportEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   supportPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   website?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -412,6 +404,14 @@ export type CompanySettingsUncheckedUpdateManyInput = {
   assetId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type StringNullableListFilter<$PrismaModel = never> = {
+  equals?: string[] | Prisma.ListStringFieldRefInput<$PrismaModel> | null
+  has?: string | Prisma.StringFieldRefInput<$PrismaModel> | null
+  hasEvery?: string[] | Prisma.ListStringFieldRefInput<$PrismaModel>
+  hasSome?: string[] | Prisma.ListStringFieldRefInput<$PrismaModel>
+  isEmpty?: boolean
 }
 
 export type CompanySettingsCountOrderByAggregateInput = {
@@ -432,8 +432,6 @@ export type CompanySettingsCountOrderByAggregateInput = {
 export type CompanySettingsMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   companyName?: Prisma.SortOrder
-  about?: Prisma.SortOrder
-  founderNotes?: Prisma.SortOrder
   supportEmail?: Prisma.SortOrder
   supportPhone?: Prisma.SortOrder
   website?: Prisma.SortOrder
@@ -447,8 +445,6 @@ export type CompanySettingsMaxOrderByAggregateInput = {
 export type CompanySettingsMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   companyName?: Prisma.SortOrder
-  about?: Prisma.SortOrder
-  founderNotes?: Prisma.SortOrder
   supportEmail?: Prisma.SortOrder
   supportPhone?: Prisma.SortOrder
   website?: Prisma.SortOrder
@@ -457,6 +453,24 @@ export type CompanySettingsMinOrderByAggregateInput = {
   assetId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+}
+
+export type CompanySettingsCreateaboutInput = {
+  set: string[]
+}
+
+export type CompanySettingsCreatefounderNotesInput = {
+  set: string[]
+}
+
+export type CompanySettingsUpdateaboutInput = {
+  set?: string[]
+  push?: string | string[]
+}
+
+export type CompanySettingsUpdatefounderNotesInput = {
+  set?: string[]
+  push?: string | string[]
 }
 
 
@@ -529,8 +543,8 @@ export type $CompanySettingsPayload<ExtArgs extends runtime.Types.Extensions.Int
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
     companyName: string
-    about: string | null
-    founderNotes: string | null
+    about: string[]
+    founderNotes: string[]
     supportEmail: string | null
     supportPhone: string | null
     website: string | null
@@ -964,8 +978,8 @@ export interface Prisma__CompanySettingsClient<T, Null = never, ExtArgs extends 
 export interface CompanySettingsFieldRefs {
   readonly id: Prisma.FieldRef<"CompanySettings", 'String'>
   readonly companyName: Prisma.FieldRef<"CompanySettings", 'String'>
-  readonly about: Prisma.FieldRef<"CompanySettings", 'String'>
-  readonly founderNotes: Prisma.FieldRef<"CompanySettings", 'String'>
+  readonly about: Prisma.FieldRef<"CompanySettings", 'String[]'>
+  readonly founderNotes: Prisma.FieldRef<"CompanySettings", 'String[]'>
   readonly supportEmail: Prisma.FieldRef<"CompanySettings", 'String'>
   readonly supportPhone: Prisma.FieldRef<"CompanySettings", 'String'>
   readonly website: Prisma.FieldRef<"CompanySettings", 'String'>

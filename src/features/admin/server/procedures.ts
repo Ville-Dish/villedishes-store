@@ -1,12 +1,17 @@
+import { PAGINATION, TRANSACTION_INFO } from "@/config/constants";
+import { Prisma } from "@/generated/prisma/client";
 import prisma from "@/lib/prisma/client";
 import { isValidPhoneNumber } from "@/lib/utils";
 import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
 import { TRPCError } from "@trpc/server";
 import z from "zod";
 
-const calculateMonthlyRevenue = async (year: number, month: number) => {
-  const startDate = new Date(year, month - 1, 1);
-  const endDate = new Date(year, month, 0);
+export const calculateMonthlyRevenue = async (year: number, month: number) => {
+  // const startDate = new Date(year, month - 1, 1);
+  // const endDate = new Date(year, month, 0);
+
+  const startDate = new Date(Date.UTC(year, month - 1, 1));
+  const endDate = new Date(Date.UTC(year, month, 0, 23, 59, 59, 999));
 
   const [orders, invoices, incomes] = await Promise.all([
     prisma.order.findMany({
@@ -61,8 +66,126 @@ const calculateMonthlyRevenue = async (year: number, month: number) => {
 export const adminSettingsProcedures = createTRPCRouter({
   // Income
   getAllIncomeData: protectedProcedure.query(async () => {
-    return await prisma.income.findMany();
+    const incomes = await prisma.income.findMany();
+    return incomes;
   }),
+
+  getFilteredIncomes: protectedProcedure
+    .input(
+      z.object({
+        startDate: z.date().optional(),
+        endDate: z.date().optional(),
+        category: z.string().default("ALL"),
+        minAmount: z.number().default(0),
+        maxAmount: z.number().default(1000),
+        page: z.number().min(1).default(PAGINATION.DEFAULT_PAGE),
+        pageSize: z
+          .number()
+          .min(PAGINATION.MIN_PAGE_SIZE)
+          .max(PAGINATION.MAX_PAGE_SIZE)
+          .default(PAGINATION.DEFAULT_PAGE_SIZE),
+        sortField: z.enum(["name", "category", "date", "amount"]).nullish(),
+        sortDirection: z.enum(["asc", "desc"]).nullish(),
+      }),
+    )
+    .query(async ({ input }) => {
+      const {
+        startDate,
+        endDate,
+        category,
+        page,
+        pageSize,
+        minAmount,
+        maxAmount,
+        sortField,
+        sortDirection,
+      } = input;
+
+      const where: Prisma.IncomeWhereInput = {};
+
+      if (category && category !== "ALL") {
+        where.category = category;
+      }
+
+      const whereCondition = { ...where };
+
+      if (minAmount > 0 || maxAmount < TRANSACTION_INFO.maxPrice) {
+        whereCondition.amount = {
+          gte: minAmount,
+          lte: maxAmount,
+        };
+      }
+
+      // Date filter (orderDate is stored as string YYYY-MM-DD)
+      if (startDate || endDate) {
+        whereCondition.date = {};
+
+        if (startDate) {
+          (whereCondition.date as Prisma.DateTimeNullableFilter).gte =
+            startDate.toISOString();
+        }
+
+        if (endDate) {
+          (whereCondition.date as Prisma.DateTimeNullableFilter).lte =
+            endDate.toISOString();
+        }
+      }
+
+      // Build orderBy - "name" sorts on a relation field so needs special handling
+      const dir = sortDirection ?? "desc";
+      let orderBy: Prisma.IncomeOrderByWithRelationInput;
+
+      if (sortField === "name") {
+        orderBy = { name: dir };
+      } else if (sortField === "category") {
+        orderBy = { category: dir };
+      } else if (sortField === "amount") {
+        orderBy = { amount: dir };
+      } else {
+        // default: orderDate desc
+        orderBy = { date: dir };
+      }
+
+      const [incomes, incomeCategory, totalCount] = await Promise.all([
+        prisma.income.findMany({
+          skip: (page - 1) * pageSize,
+          take: pageSize,
+          where: {
+            ...whereCondition,
+          },
+          orderBy,
+        }),
+
+        prisma.income.findMany({
+          select: { category: true },
+          distinct: ["category"],
+          orderBy: { category: "asc" },
+        }),
+
+        prisma.income.count({
+          where: {
+            ...whereCondition,
+          },
+        }),
+      ]);
+
+      const totalPages = Math.ceil(totalCount / pageSize);
+      const hasNextPage = page < totalPages;
+      const hasPreviousPage = page > 1;
+
+      const incomeCategoryList = incomeCategory.map((item) => item.category);
+
+      return {
+        incomes,
+        incomeCategoryList,
+        page,
+        pageSize,
+        totalCount,
+        totalPages,
+        hasNextPage,
+        hasPreviousPage,
+      };
+    }),
 
   addIncome: protectedProcedure
     .input(
@@ -165,6 +288,123 @@ export const adminSettingsProcedures = createTRPCRouter({
   getAllExpenseData: protectedProcedure.query(async () => {
     return await prisma.expense.findMany();
   }),
+
+  getFilteredExpenses: protectedProcedure
+    .input(
+      z.object({
+        startDate: z.date().optional(),
+        endDate: z.date().optional(),
+        category: z.string().default("ALL"),
+        minAmount: z.number().default(0),
+        maxAmount: z.number().default(1000),
+        page: z.number().min(1).default(PAGINATION.DEFAULT_PAGE),
+        pageSize: z
+          .number()
+          .min(PAGINATION.MIN_PAGE_SIZE)
+          .max(PAGINATION.MAX_PAGE_SIZE)
+          .default(PAGINATION.DEFAULT_PAGE_SIZE),
+        sortField: z.enum(["name", "category", "date", "amount"]).nullish(),
+        sortDirection: z.enum(["asc", "desc"]).nullish(),
+      }),
+    )
+    .query(async ({ input }) => {
+      const {
+        startDate,
+        endDate,
+        category,
+        page,
+        pageSize,
+        minAmount,
+        maxAmount,
+        sortField,
+        sortDirection,
+      } = input;
+
+      const where: Prisma.ExpenseWhereInput = {};
+
+      if (category && category !== "ALL") {
+        where.category = category;
+      }
+
+      const whereCondition = { ...where };
+
+      if (minAmount > 0 || maxAmount < TRANSACTION_INFO.maxPrice) {
+        whereCondition.amount = {
+          gte: minAmount,
+          lte: maxAmount,
+        };
+      }
+
+      // Date filter (orderDate is stored as string YYYY-MM-DD)
+      if (startDate || endDate) {
+        whereCondition.date = {};
+
+        if (startDate) {
+          (whereCondition.date as Prisma.DateTimeNullableFilter).gte =
+            startDate.toISOString();
+        }
+
+        if (endDate) {
+          (whereCondition.date as Prisma.DateTimeNullableFilter).lte =
+            endDate.toISOString();
+        }
+      }
+
+      // Build orderBy - "name" sorts on a relation field so needs special handling
+      const dir = sortDirection ?? "desc";
+      let orderBy: Prisma.ExpenseOrderByWithRelationInput;
+
+      if (sortField === "name") {
+        orderBy = { name: dir };
+      } else if (sortField === "category") {
+        orderBy = { category: dir };
+      } else if (sortField === "amount") {
+        orderBy = { amount: dir };
+      } else {
+        // default: orderDate desc
+        orderBy = { date: dir };
+      }
+
+      const [expenses, expenseCategory, totalCount] = await Promise.all([
+        prisma.expense.findMany({
+          skip: (page - 1) * pageSize,
+          take: pageSize,
+          where: {
+            ...whereCondition,
+          },
+          orderBy,
+        }),
+
+        prisma.expense.findMany({
+          select: { category: true },
+          distinct: ["category"],
+          orderBy: { category: "asc" },
+        }),
+
+        prisma.expense.count({
+          where: {
+            ...whereCondition,
+          },
+        }),
+      ]);
+
+      const totalPages = Math.ceil(totalCount / pageSize);
+      const hasNextPage = page < totalPages;
+      const hasPreviousPage = page > 1;
+
+      const expenseCategoryList = expenseCategory.map((item) => item.category);
+
+      return {
+        expenses,
+        expenseCategoryList,
+        page,
+        pageSize,
+        totalCount,
+        totalPages,
+        hasNextPage,
+        hasPreviousPage,
+      };
+    }),
 
   addExpense: protectedProcedure
     .input(
@@ -482,8 +722,8 @@ export const adminSettingsProcedures = createTRPCRouter({
       z.object({
         id: z.string(),
         companyName: z.string().min(1, "Company name is required"),
-        about: z.string().optional(),
-        founderNotes: z.string().optional(),
+        about: z.array(z.string()).optional(),
+        founderNotes: z.array(z.string()).optional(),
         supportEmail: z.email("Please enter a valid email address").optional(),
         supportPhone: z
           .string({ message: "Phone number is required" })
@@ -495,6 +735,7 @@ export const adminSettingsProcedures = createTRPCRouter({
           .optional(),
         website: z.url("Please enter a valid URL").optional(),
         address: z.string().optional(),
+        assetId: z.string().optional(),
         logoUrl: z.url("Please enter a valid URL").optional(),
       }),
     )
@@ -509,6 +750,7 @@ export const adminSettingsProcedures = createTRPCRouter({
         website,
         address,
         logoUrl,
+        assetId,
       } = input;
 
       if (!id) {
@@ -539,6 +781,7 @@ export const adminSettingsProcedures = createTRPCRouter({
           supportPhone,
           website,
           address,
+          assetId,
           logoUrl,
         },
       });

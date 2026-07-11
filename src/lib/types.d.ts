@@ -1,3 +1,5 @@
+// src/lib/types.d.ts
+
 import { Prisma } from "@/generated/prisma/client";
 
 interface ContactDetails {
@@ -306,6 +308,14 @@ interface Expense {
   category: string;
   amount: number;
   date: Date | string;
+}
+
+interface TransactionFilters {
+  category: string;
+  startDate: Date | null; // ISO date string, "" = no filter
+  endDate: Date | null;
+  minAmount: number; // keep as string for controlled inputs, parse on use
+  maxAmount: number;
 }
 
 interface RevenueData {

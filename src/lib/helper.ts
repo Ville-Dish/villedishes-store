@@ -2,53 +2,25 @@
 
 import prisma from "./prisma/client";
 
-// import { PrismaClient } from "@prisma/client";
-
-// const prisma = new PrismaClient();
-// TODO: Delete file  after route.ts
-export async function generateInvoiceNumber() {
-  return await prisma.$transaction(async (tx) => {
-    const maxInvoice = await tx.invoice.findFirst({
-      orderBy: {
-        invoiceNumber: "desc",
-      },
-      select: {
-        invoiceNumber: true,
-      },
-    });
-
-    let nextNumber = 1;
-    if (maxInvoice?.invoiceNumber) {
-      const numericPart = parseInt(maxInvoice.invoiceNumber.split("-")[1], 10);
-      if (!isNaN(numericPart)) {
-        nextNumber = numericPart + 1;
-      }
-    }
-
-    const newInvoiceNumber = `INV-${String(nextNumber).padStart(4, "0")}`;
-
-    // Create a placeholder invoice to reserve the number
-    await tx.invoice.create({
-      data: {
-        invoiceNumber: newInvoiceNumber,
-        customerName: "Placeholder",
-        customerEmail: "placeholder@example.com",
-        customerPhone: "0000000000",
-        amount: 0,
-        amountPaid: 0,
-        amountDue: 0,
-        discountPercentage: 0,
-        status: "PENDING",
-        dateCreated: new Date().toISOString().split("T")[0],
-        dueDate: new Date().toISOString().split("T")[0],
-      },
-    });
-
-    return newInvoiceNumber;
+export const generateInvoiceNumber = async () => {
+  const maxInvoice = await prisma.invoice.findFirst({
+    orderBy: { invoiceNumber: "desc" },
+    select: { invoiceNumber: true },
   });
-}
 
-export async function generateOrderNumber() {
+  let nextNumber = 1;
+
+  if (maxInvoice?.invoiceNumber) {
+    const numericPart = parseInt(maxInvoice.invoiceNumber.split("-")[1], 10);
+    if (!isNaN(numericPart)) {
+      nextNumber = numericPart + 1;
+    }
+  }
+
+  return `INV-${String(nextNumber).padStart(4, "0")}`;
+};
+
+export const generateOrderNumber = async () => {
   return await prisma.$transaction(async (tx) => {
     const maxOrder = await tx.order.findFirst({
       where: {
@@ -74,11 +46,14 @@ export async function generateOrderNumber() {
 
     return `ORD-${String(nextNumber).padStart(4, "0")}`;
   });
-}
+};
 
 export async function calculateMonthlyRevenue(year: number, month: number) {
-  const startDate = new Date(year, month - 1, 1);
-  const endDate = new Date(year, month, 0);
+  // const startDate = new Date(year, month - 1, 1);
+  // const endDate = new Date(year, month, 0);
+
+  const startDate = new Date(Date.UTC(year, month - 1, 1));
+  const endDate = new Date(Date.UTC(year, month, 0, 23, 59, 59, 999));
 
   const [orders, invoices, incomes] = await Promise.all([
     prisma.order.findMany({
@@ -98,8 +73,8 @@ export async function calculateMonthlyRevenue(year: number, month: number) {
     prisma.invoice.findMany({
       where: {
         dateCreated: {
-          gte: startDate.toISOString().split("T")[0],
-          lte: endDate.toISOString().split("T")[0],
+          gte: startDate.toISOString(),
+          lte: endDate.toISOString(),
         },
         status: "PAID",
       },
@@ -129,3 +104,13 @@ export async function calculateMonthlyRevenue(year: number, month: number) {
 
   return orderTotal + invoiceTotal + incomeTotal;
 }
+
+export const addHours = (date: Date | string, hours: number) => {
+  return new Date(new Date(date).getTime() + hours * 60 * 60 * 1000);
+};
+
+export const calculateEstimatedDelivery = (date: string | Date) => {
+  const base = new Date(date);
+  if (isNaN(base.getTime())) return "Invalid Date";
+  return new Date(base.getTime() + 48 * 3600000).toISOString().split("T")[0];
+};

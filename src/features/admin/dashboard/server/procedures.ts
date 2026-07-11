@@ -399,6 +399,7 @@ export const dashboardProcedures = createTRPCRouter({
           where: { revenue: { year } },
           _sum: { actual: true },
         }),
+
         prisma.expense.aggregate({
           where: {
             date: { gte: startDate, lte: endDate },

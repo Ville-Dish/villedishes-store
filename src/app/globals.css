@@ -167,3 +167,7 @@
   background-color: #f6e05e;
   z-index: 1;
 }
+
+body {
+  position: relative;
+}

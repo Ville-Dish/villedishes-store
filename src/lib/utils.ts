@@ -161,8 +161,7 @@ export const passwordStrength = (password: string): PasswordFeedback => {
   return { strength: "weak", errors };
 };
 
-export // Add this above the component (or in utils.ts)
-const getStatusColor = (status: OrderStatus) => {
+export const getStatusColor = (status: OrderStatus) => {
   switch (status) {
     case "CANCELLED":
       return "bg-[#da281c] border-[#da281c] hover:bg-[#b4443c]";

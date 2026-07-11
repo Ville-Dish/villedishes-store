@@ -96,8 +96,8 @@ model TwoFactor {
 model CompanySettings {
   id             String   @id @default(cuid())
   companyName    String   @unique
-  about          String?  @db.Text
-  founderNotes    String? @db.Text
+  about          String[]   @default([])
+  founderNotes    String[]  @default([])
   supportEmail   String?
   supportPhone   String?
   website        String?
