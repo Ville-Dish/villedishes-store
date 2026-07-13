@@ -2,7 +2,11 @@ import { PAGINATION, TRANSACTION_INFO } from "@/config/constants";
 import { Prisma } from "@/generated/prisma/client";
 import prisma from "@/lib/prisma/client";
 import { isValidPhoneNumber } from "@/lib/utils";
-import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  publicProcedure,
+} from "@/trpc/init";
 import { TRPCError } from "@trpc/server";
 import z from "zod";
 
@@ -715,6 +719,36 @@ export const adminSettingsProcedures = createTRPCRouter({
   getCompanySettings: protectedProcedure.query(async () => {
     const settings = await prisma.companySettings.findFirst();
     return settings;
+  }),
+
+  getCompanyIdentity: publicProcedure.query(async () => {
+    const details = await prisma.companySettings.findFirst({
+      select: {
+        about: true,
+        founderNotes: true,
+      },
+    });
+    return {
+      about: details?.about ?? [],
+      founderNotes: details?.founderNotes ?? [],
+    };
+  }),
+
+  getCompanyContact: publicProcedure.query(async () => {
+    const companyContact = await prisma.companySettings.findFirst({
+      select: {
+        supportEmail: true,
+        supportPhone: true,
+        website: true,
+        address: true,
+      },
+    });
+    return {
+      supportPhone: companyContact?.supportPhone ?? "",
+      supportEmail: companyContact?.supportEmail ?? "",
+      website: companyContact?.website ?? "",
+      address: companyContact?.address ?? "",
+    };
   }),
 
   updateCompanySettings: protectedProcedure

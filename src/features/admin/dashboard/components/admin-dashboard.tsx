@@ -29,7 +29,6 @@ export const AdminDashboard = () => {
     selectedYear,
     selectedAnalyticsMonth,
     selectedAnalyticsYear,
-    selectedReportMonth: selectedMonth,
     selectedReportYear,
   } = params;
 

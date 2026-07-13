@@ -19,14 +19,28 @@ import Image from "next/image";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { z } from "zod";
 import { CustomPhoneInput } from "../phone-input";
 import { useTRPC } from "@/trpc/client";
-import { useMutation } from "@tanstack/react-query";
+import {
+  useMutation,
+  useQueryClient,
+  useSuspenseQuery,
+} from "@tanstack/react-query";
 import { ADMIN_EMAIL } from "@/config/constants";
+import { validateAddressFormat } from "@/lib/utils";
 
 export const ContactForm = () => {
   const trpc = useTRPC();
+  const queryClient = useQueryClient();
+
+  const { data: companyContact } = useSuspenseQuery(
+    trpc.adminSettingss.getCompanyContact.queryOptions(),
+  );
+
+  const phoneNumber = companyContact.supportPhone;
+  const email = companyContact.supportEmail;
+  const website = companyContact.website;
+  const address = companyContact.address;
 
   const form = useForm<ContactFormData>({
     resolver: zodResolver(contactSchema),
@@ -103,19 +117,23 @@ export const ContactForm = () => {
                 <div className="grid grid-cols-2">
                   <div className="flex items-center">
                     <Phone className="h-5 w-5 mr-2  text-[#fd9e1d]" />
-                    <p>+1 234 567 8900</p>
+                    <p>{phoneNumber}</p>
                   </div>
                   <div className="flex items-center">
                     <Mail className="h-5 w-5 mr-2 text-[#fd9e1d]" />
-                    <p>villedishes@gmail.com</p>
+                    <p>{email}</p>
                   </div>
                   <div className="flex items-center">
                     <Earth className="h-5 w-5 mr-2 text-[#fd9e1d]" />
-                    <p>www.villedishes.com</p>
+                    <p>{website}</p>
                   </div>
                   <div className="flex items-center">
                     <MapPin className="h-5 w-5 mr-2 text-[#fd9e1d]" />
-                    <p>No walk in yet</p>
+                    <p>
+                      {validateAddressFormat("CA", address)
+                        ? address
+                        : "No walk in yet"}
+                    </p>
                   </div>
                 </div>
                 {/* Image */}

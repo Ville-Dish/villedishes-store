@@ -181,3 +181,123 @@ export const getStatusColor = (status: OrderStatus) => {
       return "bg-gray-400 border-gray-400";
   }
 };
+
+/**
+ * Validates whether a free-text, comma-separated address string matches the
+ * expected format for a given country — and now REQUIRES a postal code.
+ *
+ * Expected shape: "<street>, <city>[, <state/region> <postal code>]..., <country>"
+ *   e.g. "123 Maple Street, Calgary, AB T2P 1J9, Canada"
+ *   e.g. "123 Maple Street, Calgary, T2P 1J9, Canada"
+ *
+ * Rules checked:
+ * - At least 3 comma-separated segments (street, city, country).
+ * - Street segment starts with a number (house/unit number) followed by a name.
+ * - Middle segments (city/state) contain only letters, digits, spaces, hyphens, apostrophes.
+ * - The country passed in and the country named at the end of the address string
+ *   must refer to the same country (accepts either ISO code or common name).
+ * - A postal code matching that country's known format MUST be present somewhere
+ *   after the street segment. If it's missing, the address is invalid — no
+ *   exceptions, even if every other part of the address looks fine.
+ *
+ * This validates structure/format only — it doesn't verify the address exists
+ * (no geocoding).
+ */
+
+// Maps lowercase aliases (codes + common names) to a canonical ISO 3166-1 alpha-2 code.
+const COUNTRY_ALIASES: Record<string, string> = {
+  ca: "CA",
+  canada: "CA",
+  us: "US",
+  usa: "US",
+  "united states": "US",
+  "united states of america": "US",
+  gb: "GB",
+  uk: "GB",
+  "united kingdom": "GB",
+  "great britain": "GB",
+  au: "AU",
+  australia: "AU",
+  de: "DE",
+  germany: "DE",
+  fr: "FR",
+  france: "FR",
+  jp: "JP",
+  japan: "JP",
+  in: "IN",
+  india: "IN",
+};
+
+// Postal code patterns (unanchored source strings — matched with boundaries at search time).
+const POSTAL_CODE_PATTERNS: Record<string, string> = {
+  US: "\\d{5}(?:-\\d{4})?", // 12345 or 12345-6789
+  CA: "[A-Za-z]\\d[A-Za-z]\\s?\\d[A-Za-z]\\d", // T2P 1J9
+  GB: "[A-Za-z]{1,2}\\d[A-Za-z\\d]?\\s?\\d[A-Za-z]{2}", // SW1A 1AA
+  AU: "\\d{4}",
+  DE: "\\d{5}",
+  FR: "\\d{5}",
+  JP: "\\d{3}-?\\d{4}",
+  IN: "\\d{6}",
+};
+
+function resolveCountryCode(input: string): string | undefined {
+  return COUNTRY_ALIASES[input.trim().toLowerCase()];
+}
+
+const STREET_REGEX = /^\d+\s+[A-Za-z0-9\s.'-]+$/; // e.g. "123 Maple Street"
+const MIDDLE_SEGMENT_REGEX = /^[A-Za-z0-9\s'-]+$/; // city / state / region / postal code text
+
+/** Returns true if `text` contains a postal code matching `countryCode`'s format. */
+function hasValidPostalCode(text: string, countryCode: string): boolean {
+  const pattern = POSTAL_CODE_PATTERNS[countryCode];
+  if (!pattern) return false;
+  const regex = new RegExp(`(?:^|[\\s,])(${pattern})(?=[\\s,]|$)`, "i");
+  return regex.test(text);
+}
+
+/**
+ * Returns true if `address` is a well-formed "street, city, ..., country"
+ * string, its trailing country matches `country`, AND it contains a postal
+ * code in that country's format. Missing postal code = false, always.
+ *
+ * @param country ISO code (e.g. "CA") or common name (e.g. "Canada")
+ * @param address e.g. "123 Maple Street, Calgary, AB T2P 1J9, Canada"
+ */
+export function validateAddressFormat(
+  country: string,
+  address: string,
+): boolean {
+  const parts = address
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  // Need at minimum: street, city, country
+  if (parts.length < 3) return false;
+
+  const [street, ...rest] = parts;
+  const countrySegment = rest[rest.length - 1];
+  const middleSegments = rest.slice(0, -1); // city + any state/region/postal segments
+
+  if (!STREET_REGEX.test(street)) return false;
+  if (!middleSegments.every((segment) => MIDDLE_SEGMENT_REGEX.test(segment)))
+    return false;
+
+  const expectedCode = resolveCountryCode(country);
+  const actualCode = resolveCountryCode(countrySegment);
+
+  if (!expectedCode || !actualCode) return false; // unsupported/unrecognized country
+  if (expectedCode !== actualCode) return false;
+
+  // Postal code is mandatory. Search everything after the street segment so a
+  // street-number like "123" can never be mistaken for a postal code.
+  const textAfterStreet = rest.join(", ");
+  if (!hasValidPostalCode(textAfterStreet, expectedCode)) return false;
+
+  return true;
+}
+
+/** List of country codes this validator currently recognizes. */
+export function getSupportedCountryCodes(): string[] {
+  return Array.from(new Set(Object.values(COUNTRY_ALIASES)));
+}
